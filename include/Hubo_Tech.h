@@ -16,8 +16,8 @@ extern "C" {
 
 // For data handling
 #include <math.h>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
 #include <vector>
 #include <complex.h>
 
@@ -219,34 +219,34 @@ public:
     // ~~** Sensors
     // ~* Force-torque
     // Mx
-    double getMx( hubo_ft_index_t sensor );
+    double getMx( hubo_sensor_index_t sensor );
     double getRightHandMx();
     double getLeftHandMx();
     double getRightFootMx();
     double getLeftFootMx();
     // My
-    double getMy( hubo_ft_index_t sensor );
+    double getMy( hubo_sensor_index_t sensor );
     double getRightHandMy();
     double getLeftHandMy();
     double getRightFootMy();
     double getLeftFootMy();
     // Fz
-    double getFz( hubo_ft_index_t sensor );
+    double getFz( hubo_sensor_index_t sensor );
     double getRightFootFz();
     double getLeftFootFz();
     // ~* Accelerometers
-    // AccX
-    double getAccX( int side );
-    double getLeftAccX();
-    double getRightAccX();
-    // AccY
-    double getAccY( int side );
-    double getLeftAccY();
-    double getRightAccY();
-    // AccZ
-    double getAccZ( int side );
-    double getLeftAccZ();
-    double getRightAccZ();
+    // Tilt X
+    double getTiltX( int side );
+    double getLeftTiltX();
+    double getRightTiltX();
+    // Tilt Y
+    double getTiltY( int side );
+    double getLeftTiltY();
+    double getRightTiltY();
+    // Tilt Z
+    double getTiltZ( int side );
+    double getLeftTiltZ();
+    double getRightTiltZ();
     // ~* IMU
     double getAngleX();
     double getAngleY();

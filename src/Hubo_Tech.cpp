@@ -1,4 +1,4 @@
-#include "../include/hubo_plus.h"
+#include <Hubo_Tech.h>
 
 hubo_plus::hubo_plus()
 {
@@ -1258,7 +1258,7 @@ void hubo_plus::getLeftLegAngleStates( Vector6d &angles )
 // ~~** Sensors
 // ~* Force-torque
 // Mx
-double hubo_plus::getMx(hubo_ft_index_t sensor)
+double hubo_plus::getMx(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_R_HAND ||
         sensor==HUBO_FT_L_FOOT || sensor==HUBO_FT_L_HAND )
@@ -1272,7 +1272,7 @@ double hubo_plus::getRightFootMx() { getMx(HUBO_FT_R_FOOT); }
 double hubo_plus::getLeftFootMx()  { getMx(HUBO_FT_L_FOOT); }
 
 // My
-double hubo_plus::getMy(hubo_ft_index_t sensor)
+double hubo_plus::getMy(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_R_HAND ||
         sensor==HUBO_FT_L_FOOT || sensor==HUBO_FT_L_HAND )
@@ -1286,7 +1286,7 @@ double hubo_plus::getRightFootMy() { getMy(HUBO_FT_R_FOOT); }
 double hubo_plus::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
 
 // Fz
-double hubo_plus::getFz(hubo_ft_index_t sensor)
+double hubo_plus::getFz(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT )
         return H_State.ft[sensor].f_z;
@@ -1298,44 +1298,50 @@ double hubo_plus::getLeftFootFz()  { getFz(HUBO_FT_L_FOOT); }
 
 
 // ~* Accelerometers
-// AccX
-double hubo_plus::getAccX(int side)
+// TiltX
+double hubo_plus::getTiltX(int side)
 {
-    if( side==LEFT || side==RIGHT )
-        return H_State.imu.a_foot_x[side];
+    if( side==LEFT )
+        return H_State.imu[TILT_L].a_x;
+    else if( side==RIGHT )
+        return H_State.imu[TILT_R].a_y;
     else
         return 0;
 }
-double hubo_plus::getLeftAccX() { return getAccX(LEFT); }
-double hubo_plus::getRightAccX() { return getAccX(RIGHT); }
+double hubo_plus::getLeftTiltX() { return getTiltX(LEFT); }
+double hubo_plus::getRightTiltX() { return getTiltX(RIGHT); }
 
-// AccY
-double hubo_plus::getAccY(int side)
+// TiltY
+double hubo_plus::getTiltY(int side)
 {
-    if( side==LEFT || side==RIGHT )
-        return H_State.imu.a_foot_y[side];
+    if( side==LEFT )
+        return H_State.imu[TILT_L].a_y;
+    else if( side==RIGHT )
+        return H_State.imu[TILT_R].a_y;
     else
         return 0;
 }
-double hubo_plus::getLeftAccY() { return getAccY(LEFT); }
-double hubo_plus::getRightAccY() { return getAccY(RIGHT); }
+double hubo_plus::getLeftTiltY() { return getTiltY(LEFT); }
+double hubo_plus::getRightTiltY() { return getTiltY(RIGHT); }
 
-// AccZ
-double hubo_plus::getAccZ(int side)
+// TiltZ
+double hubo_plus::getTiltZ(int side)
 {
-    if( side==LEFT || side==RIGHT )
-        return H_State.imu.a_foot_z[side];
+    if( side==LEFT )
+        return H_State.imu[TILT_L].a_z;
+    else if( side==RIGHT )
+        return H_State.imu[TILT_R].a_z;
     else
         return 0;
 }
-double hubo_plus::getLeftAccZ() { return getAccZ(LEFT); }
-double hubo_plus::getRightAccZ() { return getAccZ(RIGHT); }
+double hubo_plus::getLeftTiltZ() { return getTiltZ(LEFT); }
+double hubo_plus::getRightTiltZ() { return getTiltZ(RIGHT); }
 
 // ~* IMU
-double hubo_plus::getAngleX() { return H_State.imu.angle_x; }
-double hubo_plus::getAngleY() { return H_State.imu.angle_y; }
-double hubo_plus::getRotVelX() { return H_State.imu.w_x; }
-double hubo_plus::getRotVelY() { return H_State.imu.w_y; }
+double hubo_plus::getAngleX() { return H_State.imu[IMU].a_x; }
+double hubo_plus::getAngleY() { return H_State.imu[IMU].a_y; }
+double hubo_plus::getRotVelX() { return H_State.imu[IMU].w_x; }
+double hubo_plus::getRotVelY() { return H_State.imu[IMU].w_y; }
 
 
 

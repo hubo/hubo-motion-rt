@@ -95,6 +95,9 @@ void controlLoop()
     setCtrlDefaults( &ctrl );
 //printf("Set ctrldef\n"); fflush(stdout);
 
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        H_ref.mode[i] = 1; // Make sure that the values are not put through Dan's buffer/filter
+
     size_t fs;
     int result = ach_get( &chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != result )
@@ -142,19 +145,6 @@ void controlLoop()
     // Main control loop
     while( !daemon_sig_quit )
     {
-/*
-        cresult = ach_get( &chan_hubo_ctrl, &ctrl, sizeof(ctrl), &fs, NULL, ACH_O_LAST );
-        if( ACH_OK != cresult )
-        {
-            // TODO: Print a debug message
-        }
-        else 
-        {
-            daemon_assert( sizeof(ctrl) == fs, __LINE__ );
-            //printf("Got ctrl ach.\n");
-            //printf("mode:%d\tactive:%d\n", (int)ctrl.joint[LSP].mode, ctrl.active);
-        }
-*/
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
         cresult = ach_get( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl), &fs, NULL, ACH_O_LAST );
         cresult = ach_get( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl), &fs, NULL, ACH_O_LAST );

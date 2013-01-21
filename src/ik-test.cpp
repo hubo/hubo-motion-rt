@@ -1,4 +1,4 @@
-#include "hubo_plus.h"
+#include "Hubo_Tech.h"
 #include <iostream>
 
 int main(int argc, char **argv)
