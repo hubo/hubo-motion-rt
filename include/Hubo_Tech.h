@@ -42,7 +42,7 @@ typedef Eigen::Vector3d Vector3d;
 
 
 typedef enum {
-    SUCCESS = 0,	///< The function completed with no errors
+    SUCCESS = 0,    ///< The function completed with no errors
     JOINT_OOB,      ///< The joint you tried to specify is out of bounds
     SENSOR_OOB,     ///< You requested data from a sensor which doesn't exist
     VALUE_OOB,      ///< Some generic value was out of acceptable bounds
@@ -52,28 +52,45 @@ typedef enum {
     LONG_VECTOR,    ///< The VectorXd you tried to use has too many entries
     REF_STALE,      ///< The reference values were not able to update for some reason
     STATE_STALE,    ///< The state values were not able to update for some reason
-    FASTRAK_STALE,  ///< The Fastrak values were not able to update for some reason
     ALL_STALE,      ///< Nothing was able to update for some reason
     CHAN_OPEN_FAIL, ///< A channel failed to open
 
 } hp_flag_t;
 
 
-typedef struct {
-    float data[4][7];
-} fastrak_c_t;
 
 
-
-class hubo_plus
+class Hubo_Tech
 {
 public:
-    hubo_plus(); // Use daemonize(const char *daemon_name) after calling this constructor
-    hubo_plus(const char *daemon_name);
-
+    /**
+     * Constructor for the Hubo_Tech class.
+    */
+    Hubo_Tech(); /// Use daemonize(const char *daemon_name) after calling this constructor
+    /**
+     * Constructor for the Hubo_Tech class that daemonizes with the name specificied by the parameter.
+    */
+    Hubo_Tech(const char *daemon_name);
+    /**
+     * Gets the current time in seconds from Hubo's 'hubo_state' struct member 'time' over the state ach channel
+    */
     double getTime();
 
-    hp_flag_t update(bool printError=false);   // Retrieves latest data
+    /**
+     * Returns the latest data from the hubo_state and hubo_ref ach channels.
+     * \n The hubo_state channel contains:
+     * \li IMU: angular position and velocity around x, y, z;
+     * \li Force/Torque: moment in x and y; force in z;
+     * \li Joints: latest encoder reference value, position (radians), current (amps), velocity (rad/s), heat (J), temperature (C), if it's active, if it's zeroed;
+     * \li Joint motor controller (JMC) state;
+     * \li Current time (s); refWait (whether or not to wait before before sending reference commands).
+     * \n The hubo_ref channel contains:
+     * \li Joint reference (encoder value);
+     * \li Joint status: GOOD or FROZEN;
+     * \li Timestamp: time reference was sent.
+    */
+    /// Retrieves the latest data from the state and ref channels
+    hp_flag_t update(bool printError=false);   
                     // Returns true if successful
                     // Returns false if both channels are not ACH_OK
     // TODO: Consider making the update return more meaningful
@@ -83,33 +100,109 @@ public:
     // ~~** Setting reference values
 
     // ~* General sets
+    /**
+     * Resets the error flags for the joint.
+     * \param joint joint name
+     * \param send  Whether or not to send command immediately to the control daemon.
+    */
     hp_flag_t resetJointStatus( int joint, bool send=false );
     // Position control
+    /**
+     * Sets joint to position control.
+    */
     hp_flag_t setPositionControl( int joint );
+    /**
+     * Sets joint angle for the joint to specified radian value. If send is true then 
+     * the command will be sent to the motor board immediately, otherwise it won't.
+    */
     hp_flag_t setJointAngle( int joint, double radians, bool send=false );
+    /**
+     * Sets the nominal speed for the joint to speed in radians/s.
+    */
     hp_flag_t setJointNominalSpeed( int joint, double speed );
     // Velocity control
+    /**
+     * Sets the joint to velocity control.
+    */
     hp_flag_t setVelocityControl( int joint );
+    /**
+     * Sets the joint velocity in rad/s.
+    */
     hp_flag_t setJointVelocity( int joint, double vel, bool send=false );
     // Acceleration setting
+    /**
+     * Sets the nomical acceleration for the joint in rad/s^2.
+    */
     hp_flag_t setJointNominalAcceleration( int joint, double acc );
 
     // ~* Arm control sets
     // Position control
+    /**
+     * Sets the entire arm to position control. Which arm to set is specified by the side parameter.
+    */
     hp_flag_t setArmPosCtrl( int side );
+    /**
+     * Sets the joint angles for all the arm angles of the arm specified by the side argument
+     * to the values specified by the angles argument. The send argument specifies whether or
+     * not to send the commands immediately or not.
+    */
     hp_flag_t setArmAngles( int side, Vector6d angles, bool send=false );
+    /**
+     * Sets the left arm joints to position control
+    */
     void setLeftArmPosCtrl();
+    /**
+     * Sets the left arm joint angles to the values specified by the angles argument. The send argument
+     * specifies whether or not to send the commands immediately or not.
+    */
     hp_flag_t setLeftArmAngles( Vector6d angles, bool send=false );
+    /**
+     * Sets the right arm joints to position control
+    */
     void setRightArmPosCtrl();
+    /**
+     * Sets the right arm joint angles to the values specified by the angles argument. The send argument
+     * specifies whether or not to send the commands immediately or not.
+    */
     hp_flag_t setRightArmAngles( Vector6d angles, bool send=false );
+    /**
+     * Sets the nominal speeds for the arm joints, specified by the side argument, to the values
+     * specified by the speeds argument.
+    */
     hp_flag_t setArmNomSpeeds( int side, Vector6d speeds );
+    /**
+     * Sets the nominal speeds for the left arm joints to the values specified by the speeds argument.
+    */
     hp_flag_t setLeftArmNomSpeeds( Vector6d speeds );
+    /**
+     * Sets the nominal speeds for the right arm joints to the values specified by the speeds argument.
+    */
     hp_flag_t setRightArmNomSpeeds( Vector6d speeds );
     // Velocity control
+    /*
+     * Sets the arm joints to velocity control. The side argument specifies which arm (LEFT or RIGHT).
+    */
     hp_flag_t setArmVelCtrl( int side );
+    /*
+     * Sets the velocities (in rad/s) for the joints of the arm to the values specified by vels argument.
+     * The side argument specifies which arm (LEFT or RIGHT). The send argument specifies whether or not
+     * to send the commands immediately.
+    */
     hp_flag_t setArmVels( int side, Vector6d vels, bool send=false );
+    /**
+     * Sets the left arm joints to velocity controlled. The send argument specifies whether or not
+     * to send the commands immediately.
+    */
     void setLeftArmVelCtrl();
+    /**
+     * Sets the velocities for the left arm joints to the values specified by the vels argument.
+     * The send argument specifies whether or not to send the commands immediately
+    */
     hp_flag_t setLeftArmVels( Vector6d vels, bool send=false );
+    /**
+     * Sets the right arm joints to velocity controlled. The send argument specifies whether or not
+     * to send the commands immediately.
+    */
     void setRightArmVelCtrl();
     hp_flag_t setRightArmVels( Vector6d vels, bool send=false );
     // Acceleration settings
@@ -300,7 +393,6 @@ protected:
     ach_channel_t chan_hubo_fin_ctrl_right;
     ach_channel_t chan_hubo_fin_ctrl_left;
     ach_channel_t chan_hubo_aux_ctrl;
-    ach_channel_t chan_fastrak;
 
     hubo_ref H_Ref;
     hubo_board_cmd H_Cmd;
@@ -325,8 +417,6 @@ protected:
     // 5) Left Fingers
     // 6) Auxiliary ( Neck & Waist )
 
-    fastrak_c_t fastrak;
-    double fastrakScale;
 
 private:
     
