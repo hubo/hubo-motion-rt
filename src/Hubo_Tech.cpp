@@ -123,12 +123,12 @@ hp_flag_t hubo_plus::update(bool printError)
     r1 = ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != r1 && printError )
         fprintf( stdout, "Ach report -- Ref Channel: %s at time=%f",
-			ach_result_to_string((ach_status_t)r1), getTime() );
+            ach_result_to_string((ach_status_t)r1), getTime() );
 
     r2 = ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != r2 && printError )
         fprintf( stdout, "Ach report -- State Channel: %s at time=%f",
-			ach_result_to_string((ach_status_t)r2), getTime() );
+            ach_result_to_string((ach_status_t)r2), getTime() );
 
     if( r1==ACH_OK && r2==ACH_OK )
         return SUCCESS;

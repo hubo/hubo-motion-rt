@@ -1,0 +1,11 @@
+/**
+\mainpage Hubo_Tech Index Page
+
+\section Purpose
+The Hubo_Tech package provides a C++ interface to shared memory for sending commands to Hubo's control daemon. It also provides access to the CAN bus without interfering with the controller process.
+
+\section Installation
+(To be added shortly...)
+\subsection Dependencies
+Hubo_Tech depends on hubo-ach, a Linux-specific inter-process communication library. You can download and install hubo-ach at https://github.com/golems/hubo-ach
+ */
