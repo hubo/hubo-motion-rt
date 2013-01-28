@@ -1,3 +1,10 @@
+/**
+ * \file Hubo_Tech.h
+ * \brief Programming interface for passing joint control and CAN commands to Hubo daemons.
+ * 
+ * \author MX Grey
+ */
+
 #ifndef HUBO_PLUS_H
 #define HUBO_PLUS_H
 
@@ -24,8 +31,6 @@ extern "C" {
 typedef Eigen::Matrix< double, 6, 1 > Vector6d;
 typedef Eigen::Vector3d Vector3d;
 
-#define FASTRAK_CHAN_NAME "fastrak"
-
 #define CtrlNE  0
 #define CtrlRA  1
 #define CtrlLA  2
@@ -37,20 +42,19 @@ typedef Eigen::Vector3d Vector3d;
 
 
 typedef enum {
-
-    SUCCESS = 0,
-    JOINT_OOB,      // The joint you tried to specify is out of bounds
-    SENSOR_OOB,     // You requested data from a sensor which doesn't exist
-    VALUE_OOB,      // Some generic value was out of acceptable bounds
-    WRONG_MODE,     // You are not in the correct control mode to do what you asked
-    BAD_SIDE,       // You did not use LEFT or RIGHT correctly
-    SHORT_VECTOR,   // The VectorXd you tried to use has too few entries
-    LONG_VECTOR,    // The VectorXd you tried to use has too many entries
-    REF_STALE,      // The reference values were not able to update for some reason
-    STATE_STALE,    // The state values were not able to update for some reason
-    FASTRAK_STALE,  // The Fastrak values were not able to update for some reason
-    ALL_STALE,      // Nothing was able to update for some reason
-    CHAN_OPEN_FAIL, // A channel failed to open
+    SUCCESS = 0,	///< The function completed with no errors
+    JOINT_OOB,      ///< The joint you tried to specify is out of bounds
+    SENSOR_OOB,     ///< You requested data from a sensor which doesn't exist
+    VALUE_OOB,      ///< Some generic value was out of acceptable bounds
+    WRONG_MODE,     ///< You are not in the correct control mode to do what you asked
+    BAD_SIDE,       ///< You did not use LEFT or RIGHT correctly
+    SHORT_VECTOR,   ///< The VectorXd you tried to use has too few entries
+    LONG_VECTOR,    ///< The VectorXd you tried to use has too many entries
+    REF_STALE,      ///< The reference values were not able to update for some reason
+    STATE_STALE,    ///< The state values were not able to update for some reason
+    FASTRAK_STALE,  ///< The Fastrak values were not able to update for some reason
+    ALL_STALE,      ///< Nothing was able to update for some reason
+    CHAN_OPEN_FAIL, ///< A channel failed to open
 
 } hp_flag_t;
 
@@ -254,7 +258,6 @@ public:
     double getRotVelY();
 
 
-
     // ~~~*** Board Commands ***~~~ //
     // TODO: All of these
     void sendCommands();
@@ -263,21 +266,10 @@ public:
     void homeAllJoints( bool send=true );
 
 
-
-    
-
     // ~~~*** Kinematics ***~~~ //
     inline double wrapToPi(double fAng)
     {
-        return mod(fAng + M_PI, 2*M_PI) - M_PI;
-    }
-
-    inline double mod(double x, double y)
-    {
-        if (0 == y)
-            return x;
-        
-        return x - y * floor(x/y);
+        return ((fAng + M_PI) % (2*M_PI)) - M_PI;
     }
     
     void DH2HG(Eigen::Isometry3d &B, double t, double f, double r, double d);
@@ -294,19 +286,6 @@ public:
 
     void HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q);
     void HuboDrillIK(Vector6d &q, double y);
-
-
-    // ~~~*** Fastrak ***~~~ //
-    hp_flag_t initFastrak(bool assert=false);
-    void setFastrakScale( double scale );
-    double getFastrakScale();
-    hp_flag_t getFastrak( Eigen::Vector3d &position, Eigen::Quaterniond &quat, int sensor=1, bool update=true );
-    hp_flag_t getFastrak( Eigen::Vector3d &position, Eigen::Matrix3d &rotation, int sensor=1, bool update=true );
-    hp_flag_t getFastrak( Eigen::Isometry3d &tf, int sensor=1, bool update=true );
-
-
-
-
 
 
 protected:
