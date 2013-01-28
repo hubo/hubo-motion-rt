@@ -123,17 +123,17 @@ StopHubo()
         
         for entry in $( ls $LOCK_DIR )
         do
-            sudo killall -e $entry
+            sudo killall $entry
         done
 
-        sleep 1[s]
+        sleep 1
         
         for entry in $( ls $LOCK_DIR )
         do
             echo " -- $entry refuses to quit!"
         done
 	
-		Ach close
+#		Ach close
 
 		sudo ifconfig can0 down
 		sudo ifconfig can1 down
@@ -294,7 +294,7 @@ KillHubo()
 	*)
         for entry in $( ls $LOCK_DIR )
         do
-            sudo killall -e -s SIGKILL $entry
+            sudo killall -s SIGKILL $entry
             sudo rm $LOCK_DIR/$entry
         done
 	;;
@@ -474,6 +474,7 @@ ConfigHubo()
 	*)
 		sudo mkdir $DAEMON_DIR
 		sudo mkdir $DAEMON_LOG_DIR
+        sudo mkdir $LOCK_DIR
 		sudo cp joint.table $DAEMON_DIR/joint.table
 		sudo cp joint.table $DAEMON_DIR/default-joint.table
 		sudo chmod a-w $DAEMON_DIR/default-joint.table
