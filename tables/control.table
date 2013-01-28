@@ -1,0 +1,82 @@
+# File: control.table
+# This file contains the default settings for controling Hubo's joints.
+# The control daemon will use these values at startup, but they can be
+# overwritten at any time using the Hubo_Tech library.
+
+# Tabs are expanded to spaces in this table to make sure that it is readable
+# no matter what size people default their tabs to.
+
+
+# AUXILIARY JOINTS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+WST     0.75        0.4         1.0             -1.571      1.571       0.5
+NKY     0.75        0.4         1.0             -1.571      1.571       0.5
+NK1     0.75        0.4         1.0             -1.571      1.571       0.5
+NK2     0.75        0.4         1.0             -1.571      1.571       0.5
+
+# LEFT ARM JOINTS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+LSP     0.75        0.3         1.0             -2.0        2.0         0.5
+LSR     0.75        0.3         1.0             -0.3        2.0         0.5
+LSY     0.75        0.3         1.0             -2.25       2.0         0.5
+LEB     0.75        0.3         1.0             -2.5        0.0         0.5
+LWY     0.75        0.3         1.0             -2.0        2.0         0.5
+LWP     0.75        0.3         1.0             -1.25       1.0         0.5
+
+# RIGHT ARM JOINTS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+RSP     0.75        0.3         1.0             -2.0        2.0         0.5
+RSR     0.75        0.3         1.0             -2.0        0.3         0.5
+RSY     0.75        0.3         1.0             -2.0        2.0         0.5
+REB     0.75        0.3         1.0             -2.5        0.0         0.5
+RWY     0.75        0.3         1.0             -2.0        2.0         0.5
+RWP     0.75        0.3         1.0             -1.4        1.2         0.5
+
+# LEFT LEG JOINTS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+LHY     0.5         0.6         1.0             -1.30       1.30        0.5
+LHR     0.5         0.6         1.0             0.00        0.58        0.5
+LHP     0.5         0.6         1.0             0.00        1.80        0.5
+LKN     0.5         0.6         1.0             0.00        2.50        0.5
+LAP     0.5         0.6         1.0             -1.26       1.80        0.5
+LAR     0.5         0.6         1.0             -0.31       0.23        0.5
+
+# RIGHT LEG JOINTS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+RHY     0.5         0.6         1.0             -1.30       1.30        0.5
+RHR     0.5         0.6         1.0             -0.58       0.00        0.5
+RHP     0.5         0.6         1.0             -1.80       0.00        0.5
+RKN     0.5         0.6         1.0             0.00        2.50        0.5
+RAP     0.5         0.6         1.0             -1.26       1.80        0.5
+RAR     0.5         0.6         1.0             -0.23       0.31        0.5
+
+# RIGHT FINGERS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+RF1     0.75        0.4         1.0             0.0         0.0         0.5
+RF2     0.75        0.4         1.0             0.0         0.0         0.5
+RF3     0.75        0.4         1.0             0.0         0.0         0.5
+RF4     0.75        0.4         1.0             0.0         0.0         0.5
+RF5     0.75        0.4         1.0             0.0         0.0         0.5
+
+# LEFT FINGERS
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
+LF1     0.75        0.4         1.0             0.0         0.0         0.5
+LF2     0.75        0.4         1.0             0.0         0.0         0.5
+LF3     0.75        0.4         1.0             0.0         0.0         0.5
+LF4     0.75        0.4         1.0             0.0         0.0         0.5
+LF5     0.75        0.4         1.0             0.0         0.0         0.5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -47,10 +47,11 @@ struct hubo_joint_control {
     double acceleration;
 
     double speed_limit;
-    double accel_limit;
 
     double pos_min;
     double pos_max;
+
+    double timeOut;
 
     hubo_ctrl_mode_t mode;
 };
