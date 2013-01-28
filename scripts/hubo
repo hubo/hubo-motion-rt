@@ -1,6 +1,6 @@
 #!/bin/sh
 
-### BEGIN INIT INFOR
+### BEGIN INIT INFO
 # Provides:             hubo-daemon control-daemon
 # Required-Start:       N/A
 # Required-Stop:        N/A
@@ -16,7 +16,7 @@
 
 
 # M.X. Grey ( mxgrey@gatech.edu )
-# Last updated: 01/20/2013
+# Last updated: 01/27/2013
 # Contact the author for support or questions regarding operation.
 
 HUBO_BITRATE=0x0014 # 1 Mbit/s
@@ -42,8 +42,8 @@ HUBO_AUX_CTRL_CHAN='hubo-AUX-control'
 FASTRAK_CHAN='fastrak'
 
 DAEMON_DIR='/etc/hubo-daemon'
-DAEMON_LOG_DIR='/var/log/hubo-daemon'
-GENERIC_DAEMON_LOG_DIR='/var/log/daemon'
+DAEMON_LOG_DIR='/var/log/hubo'
+LOCK_DIR='/var/lock/hubo'
 
 sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
 sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
@@ -120,8 +120,18 @@ StopHubo()
 	;;
 
 	*)
-		sudo killall -e hubo-daemon
-		sudo killall -e control-daemon
+        
+        for entry in $( ls $LOCK_DIR )
+        do
+            sudo killall -e $entry
+        done
+
+        sleep 1[s]
+        
+        for entry in $( ls $LOCK_DIR )
+        do
+            echo " -- $entry refuses to quit!"
+        done
 	
 		Ach close
 
@@ -173,9 +183,9 @@ StartHubo()
 			fi
 		done	
 		
-		sudo ./hubo-daemon $DAEMON_ARGS
-		sudo ./control-daemon
-		sudo ./hubo-console
+		sudo hubo-daemon $DAEMON_ARGS
+		sudo control-daemon
+		sudo hubo-console
 	;;
 	esac
 }
@@ -282,13 +292,11 @@ KillHubo()
 	;;
 
 	*)
-		# This forcibly interrupts all hubo-daemon processes
-		sudo killall -e -s SIGKILL hubo-daemon
-		sudo killall -e -s SIGKILL control-daemon
-
-		# This forcibly unlocks hubo-daemon
-		sudo rm /var/lock/hubo-daemon
-		sudo rm /var/lock/control-daemon
+        for entry in $( ls $LOCK_DIR )
+        do
+            sudo killall -e -s SIGKILL $entry
+            sudo rm $LOCK_DIR/$entry
+        done
 	;;
 	esac
 }
@@ -320,20 +328,59 @@ LogHubo()
 		echo
 	;;
 
-	*)
+	'')
 		echo 
 		echo "System Log:"
-		sudo tail /var/log/syslog | grep hubo-daemon
+        
+        for entry in $( ls $DAEMON_LOG_DIR | grep '\-output' )
+        do
+            daemonname="${entry%-output}"
+    		sudo tail -n 50 /var/log/syslog | grep $daemonname
+        done
+
+        for entry in $( ls $DAEMON_LOG_DIR )
+        do
+
+            echo "~\~\~\~\~\~\~\~\~\~\~\~\~\~\~\~"
+            echo "$entry:"
+            cat $DAEMON_LOG_DIR/$entry
+            echo
+
+        done
+    ;;
+
+    'hubo')
+
+		echo 
+		echo "System Log:"
+		sudo tail -n 50 /var/log/syslog | grep hubo-daemon
 		echo "_______________________________"
 		echo
 		echo "Hubo Output:"
-		cat $DAEMON_LOG_DIR/daemon-output
+		cat $DAEMON_LOG_DIR/hubo-daemon-output
 		echo "_______________________________"
 		echo
 		echo "Hubo Errors:"
-		cat $DAEMON_LOG_DIR/daemon-error
+		cat $DAEMON_LOG_DIR/hubo-daemon-error
 		echo
-#TODO: Print out the logs of ALL daemons
+
+    ;;
+
+    *)
+        
+		echo 
+		echo "System Log:"
+		sudo tail -n 50 /var/log/syslog | grep $1
+		echo "_______________________________"
+		echo
+		echo "$1 Output:"
+		cat $DAEMON_LOG_DIR/$1-output
+		echo "_______________________________"
+		echo
+		echo "$1 Errors:"
+		cat $DAEMON_LOG_DIR/$1-error
+		echo
+
 	;;
 	esac
 }
@@ -345,7 +392,7 @@ SaveLog()
 		echo
 		echo
 		echo 'Type the following into the terminal:'
-		echo '   sudo ./run.sh savelog filename.log'
+		echo '   sudo service tech save daemonName filename.log'
 		echo 'in order to save the latest logs into'
 		echo 'the file filename.log'
 		echo
@@ -359,29 +406,50 @@ SaveLog()
 	;;
 	
 	'')
-		echo "System Log:" > saved.log
-		tail /var/log/syslog | grep hubo-daemon >> saved.log
-		echo "_______________________________" >> saved.log
-		echo >> saved.log
-		echo "Hubo Output:" >> saved.log
-		cat $DAEMON_LOG_DIR/daemon-output >> saved.log
-		echo "_______________________________" >> saved.log
-		echo >> saved.log
-		echo "Hubo Errors:" >> saved.log
-		cat $DAEMON_LOG_DIR/daemon-error >> saved.log
+        echo 
+        echo 'You need to specify a daemon name to save its logs'
+        echo '   Valid daemons include:'
+        
+        for entry in $( ls $DAEMON_LOG_DIR | grep '\-output' )
+        do
+            daemonname="${entry%-output}"
+    		echo " -- $daemonname"
+        done
+
 	;;
 
 	*)
-		echo "System Log:" > $1
-		tail /var/log/syslog | grep hubo-daemon >> $1
-		echo "_______________________________" >> $1
-		echo >> $1
-		echo "Hubo Output:" >> $1
-		cat $DAEMON_LOG_DIR/daemon-output >> $1
-		echo "_______________________________" >> $1
-		echo >> $1
-		echo "Hubo Errors:" >> $1
-		cat $DAEMON_LOG_DIR/daemon-error >> $1
+    
+        case "$2" in
+
+        '')
+            echo "System Log:" > saved.log
+            sudo tail /var/log/syslog | grep $1 >> saved.log
+            echo "_______________________________" >> saved.log
+            echo >> saved.log
+            echo "Hubo Output:" >> saved.log
+            sudo cat $DAEMON_LOG_DIR/$1-output >> saved.log
+            echo "_______________________________" >> saved.log
+            echo >> saved.log
+            echo "Hubo Errors:" >> saved.log
+            sudo cat $DAEMON_LOG_DIR/$1-error >> saved.log
+        ;;
+
+        *)
+
+            echo "System Log:" > $2
+            sudo tail /var/log/syslog | grep $1 >> $2
+            echo "_______________________________" >> $2
+            echo >> $2
+            echo "$1 Output:" >> $2
+            sudo cat $DAEMON_LOG_DIR/$1-output >> $2
+            echo "_______________________________" >> $2
+            echo >> $2
+            echo "$1 Errors:" >> $2
+            sudo cat $DAEMON_LOG_DIR/$1-error >> $2
+        ;;
+        esac
+
 	;;
 	esac
 }
@@ -406,7 +474,6 @@ ConfigHubo()
 	*)
 		sudo mkdir $DAEMON_DIR
 		sudo mkdir $DAEMON_LOG_DIR
-		sudo mkdir $GENERIC_DAEMON_LOG_DIR
 		sudo cp joint.table $DAEMON_DIR/joint.table
 		sudo cp joint.table $DAEMON_DIR/default-joint.table
 		sudo chmod a-w $DAEMON_DIR/default-joint.table
@@ -566,8 +633,8 @@ case "$1" in
 	;;
 
 # Save the latest log
-	'savelog' )
-		SaveLog $2
+	'save' )
+		SaveLog $2 $3
 	;;
 
 # Debug

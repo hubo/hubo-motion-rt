@@ -10,7 +10,7 @@ int daemon_sig_quit = 0;
 int daemon_sig_usr1 = 0;
 int daemon_sig_usr2 = 0;
 
-char lockfile[100] = "/var/lock/default-daemon";
+char lockfile[100] = "/var/lock/hubo/default-daemon";
 char gdaemon_name[100] = "default-daemon";
 
 
@@ -63,7 +63,7 @@ void daemonize(const char *daemon_name)
 
 
     // Create the lockfile
-    sprintf(lockfile, "/var/lock/%s", daemon_name);
+    sprintf(lockfile, "/var/lock/hubo/%s", daemon_name);
     if( lockfile && lockfile[0] )
     {
         lfp = open(lockfile,O_RDWR|O_CREAT|O_EXCL,0640);
@@ -191,8 +191,8 @@ void daemonize(const char *daemon_name)
     // Create files for logging, in case they don't exist already
     char outfile[100];
     char errfile[100];
-    sprintf(outfile, "/var/log/daemon/%s-output", daemon_name);
-    sprintf(errfile,  "/var/log/daemon/%s-error", daemon_name);
+    sprintf(outfile, "/var/log/hubo/%s-output", daemon_name);
+    sprintf(errfile,  "/var/log/hubo/%s-error", daemon_name);
     if(     !fopen( outfile, "w" ) ||
             !fopen( errfile, "w" ) )
     {
@@ -270,36 +270,6 @@ void daemon_assert( int result, int line )
         exit( EXIT_FAILURE );
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
