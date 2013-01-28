@@ -1,12 +1,11 @@
 #include <Hubo_Tech.h>
 
-hubo_plus::hubo_plus()
+Hubo_Tech::Hubo_Tech()
 {
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
     memset( &H_Param, 0, sizeof(H_Param) );
-    memset( &fastrak, 0, sizeof(fastrak) );
 
     memset( H_Arm_Ctrl,  0, 2*sizeof(H_Arm_Ctrl[0]) );
     memset( H_Leg_Ctrl,  0, 2*sizeof(H_Leg_Ctrl[0]) );
@@ -99,24 +98,19 @@ hubo_plus::hubo_plus()
         ctrlMap[ auxjoints[i] ] = CtrlAX;
         localMap[ auxjoints[i] ] = i;
     }
-
-
-    for(int i=0; i<LEG_JOINT_COUNT; i++)
-
-    fastrakScale = 1.0;
     
 }
 
-hubo_plus::hubo_plus(const char *daemon_name)
+Hubo_Tech::Hubo_Tech(const char *daemon_name)
 {
-    hubo_plus();
+    Hubo_Tech();
 
     daemonize(daemon_name);
 }
 
-double hubo_plus::getTime() { return H_State.time; }
+double Hubo_Tech::getTime() { return H_State.time; }
 
-hp_flag_t hubo_plus::update(bool printError)
+tech_flag_t Hubo_Tech::update(bool printError)
 {
     int r1, r2;
     size_t fs;
@@ -143,7 +137,7 @@ hp_flag_t hubo_plus::update(bool printError)
     }
 }
 
-void hubo_plus::sendControls()
+void Hubo_Tech::sendControls()
 {
     if(ctrlOn[CtrlRA])
         ach_put( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]) );
@@ -163,7 +157,7 @@ void hubo_plus::sendControls()
                                 r, ach_result_to_string((ach_status_t)r));
 */ //TODO: Maybe generate error messages or something
 }
-void hubo_plus::sendCommands()
+void Hubo_Tech::sendCommands()
 {
     int r = ach_put( &chan_hubo_board_cmd, &H_Cmd, sizeof(H_Cmd) );
     if( r != ACH_OK ) fprintf(stderr, "Problem sending board commands: (%d) %s\n",
@@ -174,7 +168,7 @@ void hubo_plus::sendCommands()
 // ~~** Setting reference values
 
 // ~* General sets
-hp_flag_t hubo_plus::resetJointStatus( int joint, bool send )
+tech_flag_t Hubo_Tech::resetJointStatus( int joint, bool send )
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -212,10 +206,10 @@ hp_flag_t hubo_plus::resetJointStatus( int joint, bool send )
     return SUCCESS;
 }
 // Position control
-hp_flag_t hubo_plus::setPositionControl(int joint)
+tech_flag_t Hubo_Tech::setPositionControl(int joint)
 { return setJointAngle( joint, H_State.joint[joint].pos ); }
 
-hp_flag_t hubo_plus::setJointAngle(int joint, double radians, bool send)
+tech_flag_t Hubo_Tech::setJointAngle(int joint, double radians, bool send)
 {
 
     if( joint < HUBO_JOINT_COUNT )
@@ -262,7 +256,7 @@ hp_flag_t hubo_plus::setJointAngle(int joint, double radians, bool send)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setJointNominalSpeed(int joint, double speed)
+tech_flag_t Hubo_Tech::setJointNominalSpeed(int joint, double speed)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -319,7 +313,7 @@ hp_flag_t hubo_plus::setJointNominalSpeed(int joint, double speed)
 }
 
 // Velocity control
-hp_flag_t hubo_plus::setVelocityControl( int joint )
+tech_flag_t Hubo_Tech::setVelocityControl( int joint )
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -361,7 +355,7 @@ hp_flag_t hubo_plus::setVelocityControl( int joint )
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setJointVelocity(int joint, double vel, bool send)
+tech_flag_t Hubo_Tech::setJointVelocity(int joint, double vel, bool send)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -407,7 +401,7 @@ hp_flag_t hubo_plus::setJointVelocity(int joint, double vel, bool send)
 }
 
 // Acceleration setting
-hp_flag_t hubo_plus::setJointNominalAcceleration(int joint, double acc)
+tech_flag_t Hubo_Tech::setJointNominalAcceleration(int joint, double acc)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -438,7 +432,7 @@ hp_flag_t hubo_plus::setJointNominalAcceleration(int joint, double acc)
 
 // ~* Arm control sets
 // Position control
-hp_flag_t hubo_plus::setArmPosCtrl(int side)
+tech_flag_t Hubo_Tech::setArmPosCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<ARM_JOINT_COUNT; i++)
@@ -449,7 +443,7 @@ hp_flag_t hubo_plus::setArmPosCtrl(int side)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setArmAngles(int side, Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setArmAngles(int side, Vector6d angles, bool send)
 {
     if( angles.size() < ARM_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -470,18 +464,18 @@ hp_flag_t hubo_plus::setArmAngles(int side, Vector6d angles, bool send)
     return SUCCESS;
 }
 
-void hubo_plus::setLeftArmPosCtrl() { setArmPosCtrl(LEFT); }
+void Hubo_Tech::setLeftArmPosCtrl() { setArmPosCtrl(LEFT); }
 
-hp_flag_t hubo_plus::setLeftArmAngles(Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setLeftArmAngles(Vector6d angles, bool send)
 { return setArmAngles( LEFT, angles, send ); }
 
-void hubo_plus::setRightArmPosCtrl() { setArmPosCtrl(RIGHT); }
+void Hubo_Tech::setRightArmPosCtrl() { setArmPosCtrl(RIGHT); }
 
-hp_flag_t hubo_plus::setRightArmAngles(Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setRightArmAngles(Vector6d angles, bool send)
 { return setArmAngles( RIGHT, angles, send ); }
 
 
-hp_flag_t hubo_plus::setArmNomSpeeds(int side, Vector6d speeds)
+tech_flag_t Hubo_Tech::setArmNomSpeeds(int side, Vector6d speeds)
 {
     if( speeds.size() < ARM_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -505,15 +499,15 @@ hp_flag_t hubo_plus::setArmNomSpeeds(int side, Vector6d speeds)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLeftArmNomSpeeds(Vector6d speeds)
+tech_flag_t Hubo_Tech::setLeftArmNomSpeeds(Vector6d speeds)
 { return setArmNomSpeeds(LEFT, speeds); }
 
-hp_flag_t hubo_plus::setRightArmNomSpeeds(Vector6d speeds)
+tech_flag_t Hubo_Tech::setRightArmNomSpeeds(Vector6d speeds)
 { return setArmNomSpeeds(RIGHT, speeds); }
 
 
 // Velocity Control
-hp_flag_t hubo_plus::setArmVelCtrl(int side)
+tech_flag_t Hubo_Tech::setArmVelCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<ARM_JOINT_COUNT; i++)
@@ -524,7 +518,7 @@ hp_flag_t hubo_plus::setArmVelCtrl(int side)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setArmVels(int side, Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setArmVels(int side, Vector6d vels, bool send)
 {
     if( vels.size() < ARM_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -544,19 +538,19 @@ hp_flag_t hubo_plus::setArmVels(int side, Vector6d vels, bool send)
     return SUCCESS;
 }
 
-void hubo_plus::setLeftArmVelCtrl() { setArmVelCtrl(LEFT); }
+void Hubo_Tech::setLeftArmVelCtrl() { setArmVelCtrl(LEFT); }
 
-hp_flag_t hubo_plus::setLeftArmVels(Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setLeftArmVels(Vector6d vels, bool send)
 { return setArmVels(LEFT, vels, send); }
 
-void hubo_plus::setRightArmVelCtrl() { setArmVelCtrl(RIGHT); }
+void Hubo_Tech::setRightArmVelCtrl() { setArmVelCtrl(RIGHT); }
 
-hp_flag_t hubo_plus::setRightArmVels(Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setRightArmVels(Vector6d vels, bool send)
 { return setArmVels(RIGHT, vels, send); }
 
 
 // Acceleration settings
-hp_flag_t hubo_plus::setArmNomAcc(int side, Vector6d acc)
+tech_flag_t Hubo_Tech::setArmNomAcc(int side, Vector6d acc)
 {
     if( acc.size() < ARM_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -572,16 +566,16 @@ hp_flag_t hubo_plus::setArmNomAcc(int side, Vector6d acc)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLeftArmNomAcc(Vector6d acc)
+tech_flag_t Hubo_Tech::setLeftArmNomAcc(Vector6d acc)
 { return setArmNomAcc( LEFT, acc ); }
 
-hp_flag_t hubo_plus::setRightArmNomAcc(Vector6d acc)
+tech_flag_t Hubo_Tech::setRightArmNomAcc(Vector6d acc)
 { return setArmNomAcc( RIGHT, acc ); }
 
 
 // ~* Leg control sets
 // Position control
-hp_flag_t hubo_plus::setLegPosCtrl(int side)
+tech_flag_t Hubo_Tech::setLegPosCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<LEG_JOINT_COUNT; i++)
@@ -592,7 +586,7 @@ hp_flag_t hubo_plus::setLegPosCtrl(int side)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLegAngles(int side, Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setLegAngles(int side, Vector6d angles, bool send)
 {
     if( angles.size() < LEG_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -613,18 +607,18 @@ hp_flag_t hubo_plus::setLegAngles(int side, Vector6d angles, bool send)
     return SUCCESS;
 }
 
-void hubo_plus::setLeftLegPosCtrl() { setLegPosCtrl(LEFT); }
+void Hubo_Tech::setLeftLegPosCtrl() { setLegPosCtrl(LEFT); }
 
-hp_flag_t hubo_plus::setLeftLegAngles(Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setLeftLegAngles(Vector6d angles, bool send)
 { return setLegAngles( LEFT, angles, send ); }
 
-void hubo_plus::setRightLegPosCtrl() { setLegPosCtrl(RIGHT); }
+void Hubo_Tech::setRightLegPosCtrl() { setLegPosCtrl(RIGHT); }
 
-hp_flag_t hubo_plus::setRightLegAngles(Vector6d angles, bool send)
+tech_flag_t Hubo_Tech::setRightLegAngles(Vector6d angles, bool send)
 { return setLegAngles( RIGHT, angles, send ); }
 
 
-hp_flag_t hubo_plus::setLegNomSpeeds(int side, Vector6d speeds)
+tech_flag_t Hubo_Tech::setLegNomSpeeds(int side, Vector6d speeds)
 {
     if( speeds.size() < LEG_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -648,15 +642,15 @@ hp_flag_t hubo_plus::setLegNomSpeeds(int side, Vector6d speeds)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLeftLegNomSpeeds(Vector6d speeds)
+tech_flag_t Hubo_Tech::setLeftLegNomSpeeds(Vector6d speeds)
 { return setLegNomSpeeds(LEFT, speeds); }
 
-hp_flag_t hubo_plus::setRightLegNomSpeeds(Vector6d speeds)
+tech_flag_t Hubo_Tech::setRightLegNomSpeeds(Vector6d speeds)
 { return setLegNomSpeeds(RIGHT, speeds); }
 
 
 // Velocity Control
-hp_flag_t hubo_plus::setLegVelCtrl(int side)
+tech_flag_t Hubo_Tech::setLegVelCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<LEG_JOINT_COUNT; i++)
@@ -667,7 +661,7 @@ hp_flag_t hubo_plus::setLegVelCtrl(int side)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLegVels(int side, Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setLegVels(int side, Vector6d vels, bool send)
 {
     if( vels.size() < LEG_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -687,19 +681,19 @@ hp_flag_t hubo_plus::setLegVels(int side, Vector6d vels, bool send)
     return SUCCESS;
 }
 
-void hubo_plus::setLeftLegVelCtrl() { setLegVelCtrl(LEFT); }
+void Hubo_Tech::setLeftLegVelCtrl() { setLegVelCtrl(LEFT); }
 
-hp_flag_t hubo_plus::setLeftLegVels(Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setLeftLegVels(Vector6d vels, bool send)
 { return setLegVels(LEFT, vels, send); }
 
-void hubo_plus::setRightLegVelCtrl() { setLegVelCtrl(RIGHT); }
+void Hubo_Tech::setRightLegVelCtrl() { setLegVelCtrl(RIGHT); }
 
-hp_flag_t hubo_plus::setRightLegVels(Vector6d vels, bool send)
+tech_flag_t Hubo_Tech::setRightLegVels(Vector6d vels, bool send)
 { return setLegVels(RIGHT, vels, send); }
 
 
 // Acceleration settings
-hp_flag_t hubo_plus::setLegNomAcc(int side, Vector6d acc)
+tech_flag_t Hubo_Tech::setLegNomAcc(int side, Vector6d acc)
 {
     if( acc.size() < LEG_JOINT_COUNT )
         return SHORT_VECTOR;
@@ -715,16 +709,16 @@ hp_flag_t hubo_plus::setLegNomAcc(int side, Vector6d acc)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setLeftLegNomAcc(Vector6d acc)
+tech_flag_t Hubo_Tech::setLeftLegNomAcc(Vector6d acc)
 { return setLegNomAcc( LEFT, acc ); }
 
-hp_flag_t hubo_plus::setRightLegNomAcc(Vector6d acc)
+tech_flag_t Hubo_Tech::setRightLegNomAcc(Vector6d acc)
 { return setLegNomAcc( RIGHT, acc ); }
 
 
 // ~~** Setting limit values
 // ~* General sets
-hp_flag_t hubo_plus::setJointAngleMin(int joint, double radians)
+tech_flag_t Hubo_Tech::setJointAngleMin(int joint, double radians)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -752,7 +746,7 @@ hp_flag_t hubo_plus::setJointAngleMin(int joint, double radians)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setJointAngleMax(int joint, double radians)
+tech_flag_t Hubo_Tech::setJointAngleMax(int joint, double radians)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -780,7 +774,7 @@ hp_flag_t hubo_plus::setJointAngleMax(int joint, double radians)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setJointSpeedMax(int joint, double speed)
+tech_flag_t Hubo_Tech::setJointSpeedMax(int joint, double speed)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -808,40 +802,11 @@ hp_flag_t hubo_plus::setJointSpeedMax(int joint, double speed)
     return SUCCESS;
 }
 
-hp_flag_t hubo_plus::setJointAccelMax(int joint, double accel)
-{
-    if( joint < HUBO_JOINT_COUNT )
-    {
-        switch( ctrlMap[joint] )
-        {
-            case CtrlRA:
-                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlLA:
-                H_Arm_Ctrl[LEFT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlRL:
-                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlLL:
-                H_Leg_Ctrl[LEFT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlRF:
-                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlLF:
-                H_Fin_Ctrl[LEFT].joint[localMap[joint]].accel_limit = accel; break;
-            case CtrlAX:
-                H_Aux_Ctrl.joint[localMap[joint]].accel_limit = accel; break;
-        }
-    }
-    else
-        return JOINT_OOB;
-
-    return SUCCESS;
-}
-
-
 
 // ~~** Getting Reference Values
 // ~* General gets
 // Position control
-hubo_ctrl_mode_t hubo_plus::getCtrlMode(int joint)
+hubo_ctrl_mode_t Hubo_Tech::getCtrlMode(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -868,7 +833,7 @@ hubo_ctrl_mode_t hubo_plus::getCtrlMode(int joint)
         return CTRL_OFF;
 }
 
-double hubo_plus::getJointAngle(int joint)
+double Hubo_Tech::getJointAngle(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
         return H_Ref.ref[joint];
@@ -876,7 +841,7 @@ double hubo_plus::getJointAngle(int joint)
         return 0;
 }
 
-double hubo_plus::getJointAngleCtrl(int joint)
+double Hubo_Tech::getJointAngleCtrl(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -902,11 +867,11 @@ double hubo_plus::getJointAngleCtrl(int joint)
         return 0;
 }
 
-double hubo_plus::getJointNominalSpeed(int joint)
+double Hubo_Tech::getJointNominalSpeed(int joint)
 { return getJointVelocity(joint); }
 
 // Velocity control
-double hubo_plus::getJointVelocity(int joint)
+double Hubo_Tech::getJointVelocity(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -933,7 +898,7 @@ double hubo_plus::getJointVelocity(int joint)
 }
 
 // Acceleration setting
-double hubo_plus::getJointNominalAcceleration(int joint)
+double Hubo_Tech::getJointNominalAcceleration(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -959,7 +924,7 @@ double hubo_plus::getJointNominalAcceleration(int joint)
         return 0;
 }
 
-int hubo_plus::getJointStatus( int joint )
+int Hubo_Tech::getJointStatus( int joint )
 {
     if( joint < HUBO_JOINT_COUNT )
         return H_Ref.status[joint];
@@ -969,7 +934,7 @@ int hubo_plus::getJointStatus( int joint )
 
 // ~* Arm control gets
 // Position control
-hp_flag_t hubo_plus::getArmAngles(int side, Vector6d &angles)
+tech_flag_t Hubo_Tech::getArmAngles(int side, Vector6d &angles)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -983,20 +948,20 @@ hp_flag_t hubo_plus::getArmAngles(int side, Vector6d &angles)
 
     return SUCCESS;
 }
-void hubo_plus::getLeftArmAngles(Vector6d &angles)
+void Hubo_Tech::getLeftArmAngles(Vector6d &angles)
 { getArmAngles(LEFT, angles); }
-void hubo_plus::getRightArmAngles(Vector6d &angles)
+void Hubo_Tech::getRightArmAngles(Vector6d &angles)
 { getArmAngles(RIGHT, angles); }
 
-hp_flag_t hubo_plus::getArmNomSpeeds(int side, Vector6d &speeds)
+tech_flag_t Hubo_Tech::getArmNomSpeeds(int side, Vector6d &speeds)
 { return getArmVels(side, speeds); }
-void hubo_plus::getLeftArmNomSpeeds(Vector6d &speeds)
+void Hubo_Tech::getLeftArmNomSpeeds(Vector6d &speeds)
 { getArmVels(LEFT, speeds); }
-void hubo_plus::getRightArmNomSpeeds(Vector6d &speeds)
+void Hubo_Tech::getRightArmNomSpeeds(Vector6d &speeds)
 { getArmVels(RIGHT, speeds); }
 
 // Velocity control
-hp_flag_t hubo_plus::getArmVels(int side, Vector6d &vels)
+tech_flag_t Hubo_Tech::getArmVels(int side, Vector6d &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1011,13 +976,13 @@ hp_flag_t hubo_plus::getArmVels(int side, Vector6d &vels)
 
     return SUCCESS;
 }
-void hubo_plus::getLeftArmVels(Vector6d &vels)
+void Hubo_Tech::getLeftArmVels(Vector6d &vels)
 { getArmVels(LEFT, vels); }
-void hubo_plus::getRightArmVels(Vector6d &vels)
+void Hubo_Tech::getRightArmVels(Vector6d &vels)
 { getArmVels(RIGHT, vels); }
 
 // Acceleration settings
-hp_flag_t hubo_plus::getArmNomAcc(int side, Vector6d &acc)
+tech_flag_t Hubo_Tech::getArmNomAcc(int side, Vector6d &acc)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1030,15 +995,15 @@ hp_flag_t hubo_plus::getArmNomAcc(int side, Vector6d &acc)
     else
         return BAD_SIDE;
 }
-void hubo_plus::getLeftArmNomAcc(Vector6d &acc)
+void Hubo_Tech::getLeftArmNomAcc(Vector6d &acc)
 { getArmNomAcc(LEFT, acc); }
-void hubo_plus::getRightArmNomAcc(Vector6d &acc)
+void Hubo_Tech::getRightArmNomAcc(Vector6d &acc)
 { getArmNomAcc(RIGHT, acc); }
 
 
 // ~* Leg control gets
 // Position control
-hp_flag_t hubo_plus::getLegAngles(int side, Vector6d &angles)
+tech_flag_t Hubo_Tech::getLegAngles(int side, Vector6d &angles)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1052,20 +1017,20 @@ hp_flag_t hubo_plus::getLegAngles(int side, Vector6d &angles)
 
     return SUCCESS;
 }
-void hubo_plus::getLeftLegAngles(Vector6d &angles)
+void Hubo_Tech::getLeftLegAngles(Vector6d &angles)
 { getLegAngles(LEFT, angles); }
-void hubo_plus::getRightLegAngles(Vector6d &angles)
+void Hubo_Tech::getRightLegAngles(Vector6d &angles)
 { getLegAngles(RIGHT, angles); }
 
-hp_flag_t hubo_plus::getLegNomSpeeds(int side, Vector6d &speeds)
+tech_flag_t Hubo_Tech::getLegNomSpeeds(int side, Vector6d &speeds)
 { return getLegVels(side, speeds); }
-void hubo_plus::getLeftLegNomSpeeds(Vector6d &speeds)
+void Hubo_Tech::getLeftLegNomSpeeds(Vector6d &speeds)
 { getLegVels(LEFT, speeds); }
-void hubo_plus::getRightLegNomSpeeds(Vector6d &speeds)
+void Hubo_Tech::getRightLegNomSpeeds(Vector6d &speeds)
 { getLegVels(RIGHT, speeds); }
 
 // Velocity control
-hp_flag_t hubo_plus::getLegVels(int side, Vector6d &vels)
+tech_flag_t Hubo_Tech::getLegVels(int side, Vector6d &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1080,13 +1045,13 @@ hp_flag_t hubo_plus::getLegVels(int side, Vector6d &vels)
 
     return SUCCESS;
 }
-void hubo_plus::getLeftLegVels(Vector6d &vels)
+void Hubo_Tech::getLeftLegVels(Vector6d &vels)
 { getLegVels(LEFT, vels); }
-void hubo_plus::getRightLegVels(Vector6d &vels)
+void Hubo_Tech::getRightLegVels(Vector6d &vels)
 { getLegVels(RIGHT, vels); }
 
 // Acceleration settings
-hp_flag_t hubo_plus::getLegNomAcc(int side, Vector6d &acc)
+tech_flag_t Hubo_Tech::getLegNomAcc(int side, Vector6d &acc)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1099,15 +1064,15 @@ hp_flag_t hubo_plus::getLegNomAcc(int side, Vector6d &acc)
     else
         return BAD_SIDE;
 }
-void hubo_plus::getLeftLegNomAcc(Vector6d &acc)
+void Hubo_Tech::getLeftLegNomAcc(Vector6d &acc)
 { getLegNomAcc(LEFT, acc); }
-void hubo_plus::getRightLegNomAcc(Vector6d &acc)
+void Hubo_Tech::getRightLegNomAcc(Vector6d &acc)
 { getLegNomAcc(RIGHT, acc); }
 
 
 // ~~** Getting limit values
 // ~* General gets
-double hubo_plus::getJointAngleMin( int joint )
+double Hubo_Tech::getJointAngleMin( int joint )
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -1133,7 +1098,7 @@ double hubo_plus::getJointAngleMin( int joint )
         return 0;
 }
 
-double hubo_plus::getJointAngleMax(int joint)
+double Hubo_Tech::getJointAngleMax(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -1159,7 +1124,7 @@ double hubo_plus::getJointAngleMax(int joint)
         return 0;
 }
 
-double hubo_plus::getJointSpeedMax(int joint)
+double Hubo_Tech::getJointSpeedMax(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -1185,39 +1150,12 @@ double hubo_plus::getJointSpeedMax(int joint)
         return 0;
 }
 
-double hubo_plus::getJointAccelMax(int joint)
-{
-    if( joint < HUBO_JOINT_COUNT )
-    {
-        switch( ctrlMap[joint] )
-        {
-            case CtrlRA:
-                return H_Arm_Ctrl[RIGHT].joint[localMap[joint]].accel_limit; break;
-            case CtrlLA:
-                return H_Arm_Ctrl[LEFT].joint[localMap[joint]].accel_limit; break;
-            case CtrlRL:
-                return H_Leg_Ctrl[RIGHT].joint[localMap[joint]].accel_limit; break;
-            case CtrlLL:
-                return H_Leg_Ctrl[LEFT].joint[localMap[joint]].accel_limit; break;
-            case CtrlRF:
-                return H_Fin_Ctrl[RIGHT].joint[localMap[joint]].accel_limit; break;
-            case CtrlLF:
-                return H_Fin_Ctrl[LEFT].joint[localMap[joint]].accel_limit; break;
-            case CtrlAX:
-                return H_Aux_Ctrl.joint[localMap[joint]].accel_limit; break;
-        }
-    }
-    else
-        return 0;
-}
-
-
 
 // ~~~*** State Readings ***~~~ //
 
 // ~~** State
 // TODO: Stuff like state position, velocity, whatever
-double hubo_plus::getJointAngleState(int joint)
+double Hubo_Tech::getJointAngleState(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
         return H_State.joint[joint].pos;
@@ -1225,7 +1163,7 @@ double hubo_plus::getJointAngleState(int joint)
         return 0;
 }
 
-hp_flag_t hubo_plus::getArmAngleStates( int side, Vector6d &angles )
+tech_flag_t Hubo_Tech::getArmAngleStates( int side, Vector6d &angles )
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<ARM_JOINT_COUNT; i++)
@@ -1235,12 +1173,12 @@ hp_flag_t hubo_plus::getArmAngleStates( int side, Vector6d &angles )
 
     return SUCCESS;
 } 
-void hubo_plus::getRightArmAngleStates( Vector6d &angles )
+void Hubo_Tech::getRightArmAngleStates( Vector6d &angles )
 { getArmAngleStates( RIGHT, angles ); }
-void hubo_plus::getLeftArmAngleStates( Vector6d &angles )
+void Hubo_Tech::getLeftArmAngleStates( Vector6d &angles )
 { getArmAngleStates( LEFT, angles ); }
 
-hp_flag_t hubo_plus::getLegAngleStates( int side, Vector6d &angles )
+tech_flag_t Hubo_Tech::getLegAngleStates( int side, Vector6d &angles )
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<LEG_JOINT_COUNT; i++)
@@ -1250,15 +1188,15 @@ hp_flag_t hubo_plus::getLegAngleStates( int side, Vector6d &angles )
 
     return SUCCESS;
 } 
-void hubo_plus::getRightLegAngleStates( Vector6d &angles )
+void Hubo_Tech::getRightLegAngleStates( Vector6d &angles )
 { getLegAngleStates( RIGHT, angles ); }
-void hubo_plus::getLeftLegAngleStates( Vector6d &angles )
+void Hubo_Tech::getLeftLegAngleStates( Vector6d &angles )
 { getLegAngleStates( LEFT, angles ); }
 
 // ~~** Sensors
 // ~* Force-torque
 // Mx
-double hubo_plus::getMx(hubo_sensor_index_t sensor)
+double Hubo_Tech::getMx(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_R_HAND ||
         sensor==HUBO_FT_L_FOOT || sensor==HUBO_FT_L_HAND )
@@ -1266,13 +1204,13 @@ double hubo_plus::getMx(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double hubo_plus::getRightHandMx() { getMx(HUBO_FT_R_HAND); }
-double hubo_plus::getLeftHandMx()  { getMx(HUBO_FT_L_HAND); }
-double hubo_plus::getRightFootMx() { getMx(HUBO_FT_R_FOOT); }
-double hubo_plus::getLeftFootMx()  { getMx(HUBO_FT_L_FOOT); }
+double Hubo_Tech::getRightHandMx() { getMx(HUBO_FT_R_HAND); }
+double Hubo_Tech::getLeftHandMx()  { getMx(HUBO_FT_L_HAND); }
+double Hubo_Tech::getRightFootMx() { getMx(HUBO_FT_R_FOOT); }
+double Hubo_Tech::getLeftFootMx()  { getMx(HUBO_FT_L_FOOT); }
 
 // My
-double hubo_plus::getMy(hubo_sensor_index_t sensor)
+double Hubo_Tech::getMy(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_R_HAND ||
         sensor==HUBO_FT_L_FOOT || sensor==HUBO_FT_L_HAND )
@@ -1280,26 +1218,26 @@ double hubo_plus::getMy(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double hubo_plus::getRightHandMy() { getMy(HUBO_FT_R_HAND); }
-double hubo_plus::getLeftHandMy()  { getMy(HUBO_FT_L_HAND); }
-double hubo_plus::getRightFootMy() { getMy(HUBO_FT_R_FOOT); }
-double hubo_plus::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
+double Hubo_Tech::getRightHandMy() { getMy(HUBO_FT_R_HAND); }
+double Hubo_Tech::getLeftHandMy()  { getMy(HUBO_FT_L_HAND); }
+double Hubo_Tech::getRightFootMy() { getMy(HUBO_FT_R_FOOT); }
+double Hubo_Tech::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
 
 // Fz
-double hubo_plus::getFz(hubo_sensor_index_t sensor)
+double Hubo_Tech::getFz(hubo_sensor_index_t sensor)
 {
     if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT )
         return H_State.ft[sensor].f_z;
     else
         return 0;
 }
-double hubo_plus::getRightFootFz() { getFz(HUBO_FT_R_FOOT); }
-double hubo_plus::getLeftFootFz()  { getFz(HUBO_FT_L_FOOT); }
+double Hubo_Tech::getRightFootFz() { getFz(HUBO_FT_R_FOOT); }
+double Hubo_Tech::getLeftFootFz()  { getFz(HUBO_FT_L_FOOT); }
 
 
 // ~* Accelerometers
 // TiltX
-double hubo_plus::getTiltX(int side)
+double Hubo_Tech::getTiltX(int side)
 {
     if( side==LEFT )
         return H_State.imu[TILT_L].a_x;
@@ -1308,11 +1246,11 @@ double hubo_plus::getTiltX(int side)
     else
         return 0;
 }
-double hubo_plus::getLeftTiltX() { return getTiltX(LEFT); }
-double hubo_plus::getRightTiltX() { return getTiltX(RIGHT); }
+double Hubo_Tech::getLeftTiltX() { return getTiltX(LEFT); }
+double Hubo_Tech::getRightTiltX() { return getTiltX(RIGHT); }
 
 // TiltY
-double hubo_plus::getTiltY(int side)
+double Hubo_Tech::getTiltY(int side)
 {
     if( side==LEFT )
         return H_State.imu[TILT_L].a_y;
@@ -1321,11 +1259,11 @@ double hubo_plus::getTiltY(int side)
     else
         return 0;
 }
-double hubo_plus::getLeftTiltY() { return getTiltY(LEFT); }
-double hubo_plus::getRightTiltY() { return getTiltY(RIGHT); }
+double Hubo_Tech::getLeftTiltY() { return getTiltY(LEFT); }
+double Hubo_Tech::getRightTiltY() { return getTiltY(RIGHT); }
 
 // TiltZ
-double hubo_plus::getTiltZ(int side)
+double Hubo_Tech::getTiltZ(int side)
 {
     if( side==LEFT )
         return H_State.imu[TILT_L].a_z;
@@ -1334,19 +1272,19 @@ double hubo_plus::getTiltZ(int side)
     else
         return 0;
 }
-double hubo_plus::getLeftTiltZ() { return getTiltZ(LEFT); }
-double hubo_plus::getRightTiltZ() { return getTiltZ(RIGHT); }
+double Hubo_Tech::getLeftTiltZ() { return getTiltZ(LEFT); }
+double Hubo_Tech::getRightTiltZ() { return getTiltZ(RIGHT); }
 
 // ~* IMU
-double hubo_plus::getAngleX() { return H_State.imu[IMU].a_x; }
-double hubo_plus::getAngleY() { return H_State.imu[IMU].a_y; }
-double hubo_plus::getRotVelX() { return H_State.imu[IMU].w_x; }
-double hubo_plus::getRotVelY() { return H_State.imu[IMU].w_y; }
+double Hubo_Tech::getAngleX() { return H_State.imu[IMU].a_x; }
+double Hubo_Tech::getAngleY() { return H_State.imu[IMU].a_y; }
+double Hubo_Tech::getRotVelX() { return H_State.imu[IMU].w_x; }
+double Hubo_Tech::getRotVelY() { return H_State.imu[IMU].w_y; }
 
 
 
 // ~~~*** Board Commands ***~~~ //
-hp_flag_t hubo_plus::homeJoint( int joint, bool send )
+tech_flag_t Hubo_Tech::homeJoint( int joint, bool send )
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -1401,7 +1339,7 @@ hp_flag_t hubo_plus::homeJoint( int joint, bool send )
     return SUCCESS;
 }
 
-void hubo_plus::homeAllJoints( bool send )
+void Hubo_Tech::homeAllJoints( bool send )
 {
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         homeJoint( i, false );
@@ -1424,7 +1362,7 @@ void hubo_plus::homeAllJoints( bool send )
 inline double min(double x, double y) { return ( x > y ) ? y : x; }
 inline double max(double x, double y) { return ( x < y ) ? y : x; }
 
-void hubo_plus::DH2HG(Eigen::Isometry3d &B, double t, double f, double r, double d)
+void Hubo_Tech::DH2HG(Eigen::Isometry3d &B, double t, double f, double r, double d)
 {
     // Convert DH parameters (standard convention) to Homogenuous transformation matrix.
     B = Eigen::Matrix4d::Identity();
@@ -1437,7 +1375,7 @@ void hubo_plus::DH2HG(Eigen::Isometry3d &B, double t, double f, double r, double
 }
 
 
-void hubo_plus::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
+void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     Eigen::Isometry3d hand;
     hand(0,0) =  1; hand(0,1) =  0; hand(0,2) = 0; hand(0,3) =   0;
     hand(1,0) =  0; hand(1,1) =  0; hand(1,2) =-1; hand(1,3) =   0;
@@ -1447,7 +1385,7 @@ void hubo_plus::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     huboArmFK(B, q, side, hand);
 }
 
-void hubo_plus::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Eigen::Isometry3d &endEffector)
+void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Eigen::Isometry3d &endEffector)
 {
     // Declarations
     Eigen::Isometry3d neck, hand, T;
@@ -1514,7 +1452,7 @@ void hubo_plus::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
 }
 
 
-void hubo_plus::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side) {
+void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side) {
     // Hand	
     Eigen::Isometry3d hand;
     hand(0,0) =  1; hand(0,1) =  0; hand(0,2) = 0; hand(0,3) =   0;
@@ -1525,7 +1463,7 @@ void hubo_plus::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
     huboArmIK(q, B, qPrev, side, hand);
 }
   
-void hubo_plus::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
+void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
 {
     Eigen::ArrayXXd qAll(6,8);
     
@@ -1824,7 +1762,7 @@ void hubo_plus::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
 }
 
 
-void hubo_plus::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
+void Hubo_Tech::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     // Declarations
     Eigen::Isometry3d neck, waist, T;
     Eigen::MatrixXd limits(6,2);
@@ -1892,7 +1830,7 @@ void hubo_plus::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     }
 }
 
-void hubo_plus::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side) {
+void Hubo_Tech::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side) {
     Eigen::ArrayXXd qAll(6,8);
     
     // Declarations
@@ -2041,7 +1979,7 @@ void hubo_plus::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
     //    q = q.cwiseMax(limits.col(0));
 }
 
-void hubo_plus::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {
+void Hubo_Tech::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {
     Eigen::Isometry3d drill;
     
     double ld = 7*25.4/1000.0;
@@ -2055,7 +1993,7 @@ void hubo_plus::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {
     huboArmFK(B, q, RIGHT, drill);
 }
 
-void hubo_plus::HuboDrillIK(Vector6d &q, double y) {
+void Hubo_Tech::HuboDrillIK(Vector6d &q, double y) {
     Vector6d qPrev; qPrev.setZero();
     Eigen::Isometry3d drill, B;
     
@@ -2089,98 +2027,6 @@ void hubo_plus::HuboDrillIK(Vector6d &q, double y) {
     huboArmIK(q, B, qPrev, RIGHT, drill);
     
 }
-
-
-
-
-
-// ~~~*** Fastrak ***~~~ //
-hp_flag_t hubo_plus::initFastrak(bool assert)
-{
-    int r = ach_open( &chan_fastrak, FASTRAK_CHAN_NAME, NULL );
-
-    if( ACH_OK != r )
-    {
-        fprintf(stderr, "Unable to open fastrak channel: (%d) %s\n",
-            r, ach_result_to_string((ach_status_t)r));
-        if(assert)
-            daemon_assert( ACH_OK == r, __LINE__ );
-        return CHAN_OPEN_FAIL;
-    }
-
-    return SUCCESS;    
-}
-
-void hubo_plus::setFastrakScale( double scale ) { fastrakScale = scale; }
-double hubo_plus::getFastrakScale() { return fastrakScale; };
-
-hp_flag_t hubo_plus::getFastrak( Eigen::Vector3d &position, Eigen::Quaterniond &quat, int sensor, bool update )
-{
-    int r = ACH_OK;
-    sensor--;
-    if(update)
-    {
-        size_t fs;
-        r = ach_get( &chan_fastrak, &fastrak, sizeof(fastrak), &fs, NULL, ACH_O_LAST );
-        if( r == ACH_OK )
-            daemon_assert( sizeof(fastrak) == fs, __LINE__ );
-    }
-
-    if( sensor < 4 )
-    {
-        position[0] = fastrak.data[sensor][0]/fastrakScale;
-        position[1] = fastrak.data[sensor][1]/fastrakScale;
-        position[2] = fastrak.data[sensor][2]/fastrakScale;
-
-        quat.w() = (double)fastrak.data[sensor][3];
-        quat.x() = (double)fastrak.data[sensor][4];
-        quat.y() = (double)fastrak.data[sensor][5];
-        quat.z() = (double)fastrak.data[sensor][6];
-    }
-    else
-        return SENSOR_OOB;
-
-    if( ACH_OK != r )
-        return FASTRAK_STALE;
-
-    return SUCCESS;
-}
-
-
-hp_flag_t hubo_plus::getFastrak( Eigen::Vector3d &position, Eigen::Matrix3d &rotation, int sensor, bool update )
-{
-    Eigen::Quaterniond quat;
-    hp_flag_t flag = getFastrak( position, quat, sensor, update );
-
-    if( flag==SENSOR_OOB )
-        return flag;
-
-    rotation = quat.matrix();
-
-    return flag;
-}
-
-
-hp_flag_t hubo_plus::getFastrak( Eigen::Isometry3d &tf, int sensor, bool update )
-{
-    Eigen::Vector3d position;
-    Eigen::Quaterniond quat;
-
-    hp_flag_t flag = getFastrak( position, quat, sensor, update );
-
-    if( flag==SENSOR_OOB )
-        return flag;
-
-    tf = Eigen::Matrix4d::Identity();
-    tf.translate( position );
-    tf.rotate( quat );
-
-    return flag;
-    
-}
-
-
-
 
 
 

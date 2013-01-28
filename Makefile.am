@@ -9,7 +9,7 @@ init_d_SCRIPTS = scripts/hubo
 include_HEADERS = include/Hubo_Tech.h include/control-daemon.h include/daemonizer.h
 
 
-bin_PROGRAMS = control-daemon balance-test home-test ik-test test-plus
+bin_PROGRAMS = control-daemon home-test test-plus
 
 
 hubo_techdir = $(prefix)/lib
@@ -21,14 +21,14 @@ libhubotech_la_LIBADD = -lm -lach -lhuboparams
 control_daemon_SOURCES = src/control-daemon.c
 control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
 
-balance_test_SOURCES = src/balance-test.cpp
-balance_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
+#balance_test_SOURCES = src/balance-test.cpp
+#balance_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
 
 home_test_SOURCES = src/home-test.cpp
 home_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
 
-ik_test_SOURCES = src/ik-test.cpp
-ik_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
+#ik_test_SOURCES = src/ik-test.cpp
+#ik_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
 
 test_plus_SOURCES = src/test-plus.cpp
 test_plus_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la

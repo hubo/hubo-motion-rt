@@ -405,7 +405,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	// open file for read access and if it fails, return -1
 	if (!(ptr_file=fopen(ctrlFileLocation, "r")))
     {
-        fprintf(stderr, "Unable to locate %s\n -- Try reinstalling or reconfiguring!\n",fileLocation);
+        fprintf(stderr, "Unable to locate %s\n -- Try reinstalling or reconfiguring!\n",ctrlFileLocation);
 		return -1;
     }
 	// instantiate stucts for getting values from control.table
@@ -459,18 +459,18 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (7 == sscanf(buff, "%s%f%f%f%f%f%f",
+		if (7 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf",
 			name,
 			&tempJC.velocity,
 			&tempJC.acceleration,
 			&tempJC.speed_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
-            &tempJC.timeOut, ) ) // check that all values are found
+            &tempJC.timeOut ) ) // check that all values are found
 		{
 
 			// check to make sure jointName is valid
-			size_t x;
+			size_t x; int i;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
 				if (0 == strcmp(name, jointNameStrings[x])) {
 					i = jointNameValues[x];

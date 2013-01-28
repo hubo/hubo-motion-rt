@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 {
 	
-	hubo_plus hubo;
+	Hubo_Tech hubo;
 
 //    Vector6d acc;
 //    acc << 0.2, 0.2, 0.2, 0.2, 0.2, 0.2;
