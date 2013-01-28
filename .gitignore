@@ -4,6 +4,33 @@
 dox/
 doc/
 
+
+################
+## Autotools
+################
+.deps
+.libs
+AUTHORS
+COPYING
+ChangeLog
+Makefile.in
+README
+*.m4
+*.cache
+*.o
+config*
+*.lo
+*.la
+m4/
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+stamp-h1
+
+
+
 #################
 ## Eclipse
 #################

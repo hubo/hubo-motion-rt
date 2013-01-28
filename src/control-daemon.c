@@ -11,9 +11,11 @@ ach_channel_t chan_hubo_rf_ctrl;
 ach_channel_t chan_hubo_lf_ctrl;
 ach_channel_t chan_hubo_aux_ctrl;
 
+static char *ctrlFileLocation = "/etc/hubo-daemon/control.table";
+
 
 void controlLoop();
-void setCtrlDefaults( struct hubo_control *ctrl );
+int setCtrlDefaults( struct hubo_control *ctrl );
 
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
@@ -92,7 +94,8 @@ void controlLoop()
 
     setJointParams( &H_param, &H_state);
 //printf("About to set ctrldef\n"); fflush(stdout);
-    setCtrlDefaults( &ctrl );
+    if(setCtrlDefaults( &ctrl )==-1)
+        return;
 //printf("Set ctrldef\n"); fflush(stdout);
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -376,7 +379,7 @@ int main(int argc, char **argv)
 }
 
 
-void setCtrlDefaults( struct hubo_control *ctrl )
+int setCtrlDefaults( struct hubo_control *ctrl )
 {
     // TODO: Make this into something that parses default.ctrl table files
 
@@ -397,103 +400,116 @@ void setCtrlDefaults( struct hubo_control *ctrl )
 	memset( &lfctrl, 0, sizeof(struct hubo_fin_control) );
 	memset( &auxctrl, 0, sizeof(struct hubo_aux_control) );
 
-    for(int i=0; i<ARM_JOINT_COUNT; i++)
+	FILE *ptr_file;
+
+	// open file for read access and if it fails, return -1
+	if (!(ptr_file=fopen(ctrlFileLocation, "r")))
     {
-        lactrl.joint[i].mode = CTRL_HOME;
-        lactrl.joint[i].velocity = 0.75;
-        lactrl.joint[i].acceleration = 0.4;
-        lactrl.joint[i].speed_limit = 1.0;
-        lactrl.joint[i].pos_min = 0;
-        lactrl.joint[i].pos_max = 0;
-
-        ractrl.joint[i].mode = CTRL_HOME;
-        ractrl.joint[i].velocity = 0.75;
-        ractrl.joint[i].acceleration = 0.4;
-        ractrl.joint[i].speed_limit = 1.0;
-        ractrl.joint[i].pos_min = 0;
-        ractrl.joint[i].pos_max = 0;
-
-
-        rlctrl.joint[i].mode = CTRL_HOME;
-        rlctrl.joint[i].velocity = 0.5;
-        rlctrl.joint[i].acceleration = 0.3;
-        rlctrl.joint[i].speed_limit = 1.0;
-        rlctrl.joint[i].pos_min = 0;
-        rlctrl.joint[i].pos_max = 0;
-
-        llctrl.joint[i].mode = CTRL_HOME;
-        llctrl.joint[i].velocity = 0.5;
-        llctrl.joint[i].acceleration = 0.3;
-        llctrl.joint[i].speed_limit = 1.0;
-        llctrl.joint[i].pos_min = 0;
-        llctrl.joint[i].pos_max = 0;
+        fprintf(stderr, "Unable to locate %s\n -- Try reinstalling or reconfiguring!\n",fileLocation);
+		return -1;
     }
+	// instantiate stucts for getting values from control.table
+	// file and copying them to
+	struct hubo_joint_control tempJC;
+    memset( &tempJC, 0, sizeof(tempJC) );
 
-    for(int i=0; i<AUX_JOINT_COUNT; i++)
+
+	// array of joint name values from header file hubo.h
+	uint16_t jointNameValues[] =
+			{WST, NKY, NK1, NK2,
+			LSP, LSR, LSY, LEB, LWY, LWR, LWP,
+			RSP, RSR, RSY, REB, RWY, RWR, RWP,
+			LHY, LHR, LHP, LKN, LAP, LAR,
+			RHY, RHR, RHP, RKN, RAP, RAR,
+			RF1, RF2, RF3, RF4, RF5,
+			LF1, LF2, LF3, LF4, LF5};
+
+	// array of joint name strings (total of 40)
+	char *jointNameStrings[] =
+			{"WST", "NKY", "NK1", "NK2",
+			 "LSP", "LSR", "LSY", "LEB", "LWY", "LWR", "LWP",
+			 "RSP", "RSR", "RSY", "REB", "RWY", "RWR", "RWP",
+			 "LHY", "LHR", "LHP", "LKN", "LAP", "LAR",
+			 "RHY", "RHR", "RHP", "RKN", "RAP", "RAR",
+			 "RF1", "RF2", "RF3", "RF4", "RF5",
+			 "LF1", "LF2", "LF3", "LF4", "LF5"};
+
+
+	char *charPointer;
+	size_t jntNameCheck = 0;
+	char buff[1024];
+    char name[4];
+    int jointSort[7];
+
+	// read in each non-commented line of the config file corresponding to each joint
+	while (fgets(buff, sizeof(buff), ptr_file) != NULL)
     {
-        auxctrl.joint[i].mode = CTRL_HOME;
-    }
+		// set first occurrence of comment character, '#' to the
+		// null character, '\0'.
+		charPointer = strchr(buff, '#');
+		if (NULL != charPointer) {
+			*charPointer = '\0';
+		}
 
-    // Left Arm Min
-    lactrl.joint[0].pos_min = -2.0;
-    lactrl.joint[1].pos_min = -0.3;
-    lactrl.joint[2].pos_min = -2.25;
-    lactrl.joint[3].pos_min = -2.5;
-    lactrl.joint[4].pos_min = -2.0;
-    lactrl.joint[5].pos_min = -1.25;
-    // Left Arm Max
-    lactrl.joint[0].pos_max = 2.0;
-    lactrl.joint[1].pos_max = 2.0;
-    lactrl.joint[2].pos_max = 2.0;
-    lactrl.joint[3].pos_max = 0.0;
-    lactrl.joint[4].pos_max = 2.0; //2.0; this pi/2 limit is on the board
-    lactrl.joint[5].pos_max = 1.0;
+		// check if a line is longer than the buffer, 'buff', and return -1 if so.
+		if ( strlen(buff) == sizeof(buff)-1 ) {
+			fprintf(stderr, "Control Table Parser: Line length overflow");
+			return -1; // parsing failed
+		}
 
-    // Right Arm Min
-    ractrl.joint[0].pos_min = -2.0;
-    ractrl.joint[1].pos_min = -2.0;
-    ractrl.joint[2].pos_min = -2.0;
-    ractrl.joint[3].pos_min = -2.5;
-    ractrl.joint[4].pos_min = -2.0; //-2.0; this -pi/2 limit is on the board
-    ractrl.joint[5].pos_min = -1.4;
-    // Right Arm Max
-    ractrl.joint[0].pos_max = 2.0;
-    ractrl.joint[1].pos_max = 0.3;
-    ractrl.joint[2].pos_max = 2.0;
-    ractrl.joint[3].pos_max = 0.0;
-    ractrl.joint[4].pos_max = 2.0;
-    ractrl.joint[5].pos_max = 1.2;
+		// read in the buffered line from fgets, matching the following pattern
+		// to get all the parameters for the joint on this line.
+		if (7 == sscanf(buff, "%s%f%f%f%f%f%f",
+			name,
+			&tempJC.velocity,
+			&tempJC.acceleration,
+			&tempJC.speed_limit,
+			&tempJC.pos_min,
+			&tempJC.pos_max,
+            &tempJC.timeOut, ) ) // check that all values are found
+		{
 
-    // Left Leg Min
-    llctrl.joint[0].pos_min = -1.30;
-    llctrl.joint[1].pos_min =  0.00;
-    llctrl.joint[2].pos_min =  0.00;
-    llctrl.joint[3].pos_min =  0.00;
-    llctrl.joint[4].pos_min = -1.26;
-    llctrl.joint[5].pos_min = -0.31;
-    // Left Leg Max
-    llctrl.joint[0].pos_max = 1.30;
-    llctrl.joint[1].pos_max = 0.58;
-    llctrl.joint[2].pos_max = 1.80;
-    llctrl.joint[3].pos_max = 2.50;
-    llctrl.joint[4].pos_max = 1.80;
-    llctrl.joint[5].pos_max = 0.23;
+			// check to make sure jointName is valid
+			size_t x;
+			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
+				if (0 == strcmp(name, jointNameStrings[x])) {
+					i = jointNameValues[x];
+					jntNameCheck = 1;
+					break;
+				}
+			}
 
-    // Right Leg Min
-    rlctrl.joint[0].pos_min = -1.30;
-    rlctrl.joint[1].pos_min = -0.58;
-    rlctrl.joint[2].pos_min = -1.80;
-    rlctrl.joint[3].pos_min =  0.00;
-    rlctrl.joint[4].pos_min = -1.26;
-    rlctrl.joint[5].pos_min = -0.23;
-    // Right Leg Max
-    rlctrl.joint[0].pos_max = 1.30;
-    rlctrl.joint[1].pos_max = 0.00;
-    rlctrl.joint[2].pos_max = 0.00;
-    rlctrl.joint[3].pos_max = 2.50;
-    rlctrl.joint[4].pos_max = 1.80;
-    rlctrl.joint[5].pos_max = 0.31;
+			// if joint name is invalid print error and return -1
+			if (jntNameCheck != 1) {
+				fprintf(stderr, "joint name '%s' is incorrect\n", name);
+				return -1; // parsing failed
+			}
+            else
+            {
+                for(int k=0; k<ARM_JOINT_COUNT; k++)
+                    if( leftarmjoints[k]==i )
+                        memcpy( &lactrl.joint[k], &tempJC, sizeof(tempJC) );
 
+                for(int k=0; k<ARM_JOINT_COUNT; k++)
+                    if( rightarmjoints[k]==i )
+                        memcpy( &ractrl.joint[k], &tempJC, sizeof(tempJC) );
+
+                for(int k=0; k<LEG_JOINT_COUNT; k++)
+                    if( leftlegjoints[k]==i )
+                        memcpy( &llctrl.joint[k], &tempJC, sizeof(tempJC) );
+
+                for(int k=0; k<LEG_JOINT_COUNT; k++)
+                    if( rightlegjoints[k]==i )
+                        memcpy( &rlctrl.joint[k], &tempJC, sizeof(tempJC) );
+
+                for(int k=0; k<AUX_JOINT_COUNT; k++)
+                    if( auxjoints[k]==i )
+                        memcpy( &auxctrl.joint[k], &tempJC, sizeof(tempJC) );
+            } // end: jntNameCheck
+		} // end: sscanf
+	} // end: fgets
+
+	fclose(ptr_file);	// close file stream
 
     ach_put( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl) );
     ach_put( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl) );
@@ -502,50 +518,8 @@ void setCtrlDefaults( struct hubo_control *ctrl )
     ach_put( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl) );
     ach_put( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl) );
     ach_put( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl) );
-/*
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-    {
-        ctrl->joint[i].mode = CTRL_HOME;
-        ctrl->joint[i].velocity = 0.75;
-        ctrl->joint[i].acceleration = 0.4;
-        ctrl->joint[i].speed_limit = 1.0;
-        ctrl->joint[i].pos_min = 0;
-        ctrl->joint[i].pos_max = 0;
-    }
 
-    ctrl->joint[LSP].pos_min = -2.0;
-    ctrl->joint[LSR].pos_min = -0.3;
-    ctrl->joint[LSY].pos_min = -2.25;
-    ctrl->joint[LEB].pos_min = -2.0;
-    ctrl->joint[LWY].pos_min = -2.0;
-    ctrl->joint[LWP].pos_min = -1.25;
-
-
-    ctrl->joint[LSP].pos_max = 2.0;
-    ctrl->joint[LSR].pos_max = 2.0;
-    ctrl->joint[LSY].pos_max = 2.0;
-    ctrl->joint[LEB].pos_max = 0.0;
-    ctrl->joint[LWY].pos_max = 2.0;
-    ctrl->joint[LWP].pos_max = 1.0;
-
-
-    ctrl->joint[RSP].pos_min = -2.0;
-    ctrl->joint[RSR].pos_min = -2.0;
-    ctrl->joint[RSY].pos_min = -2.0;
-    ctrl->joint[REB].pos_min = -2.0;
-    ctrl->joint[RWY].pos_min = -2.0;
-    ctrl->joint[RWP].pos_min = -1.4;
-
-
-    ctrl->joint[RSP].pos_max = 2.0;
-    ctrl->joint[RSR].pos_max = 0.3;
-    ctrl->joint[RSY].pos_max = 2.0;
-    ctrl->joint[REB].pos_max = 0.0;
-    ctrl->joint[RWY].pos_max = 2.0;
-    ctrl->joint[RWP].pos_max = 1.2;
-*/
- 
-    
+    return 0;
 
 }
 
