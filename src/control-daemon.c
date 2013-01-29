@@ -1,3 +1,43 @@
+/*
+ * Copyright (c) 2013, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author(s): Grey <mxgrey@gatech.edu>
+ * Georgia Tech Humanoid Robotics Lab
+ * Under Direction of Prof. Mike Stilman <mstilman@cc.gatech.edu>
+ *
+ *
+ * This file is provided under the following "BSD-style" License:
+ *
+ *
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include "control-daemon.h"
 
 ach_channel_t chan_hubo_ref;
@@ -11,7 +51,7 @@ ach_channel_t chan_hubo_rf_ctrl;
 ach_channel_t chan_hubo_lf_ctrl;
 ach_channel_t chan_hubo_aux_ctrl;
 
-static char *ctrlFileLocation = "/etc/hubo-daemon/control.table";
+static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
 
 
 void controlLoop();
@@ -93,10 +133,8 @@ void controlLoop()
     memset( &H_param, 0, sizeof(H_param) );
 
     setJointParams( &H_param, &H_state);
-//printf("About to set ctrldef\n"); fflush(stdout);
     if(setCtrlDefaults( &ctrl )==-1)
         return;
-//printf("Set ctrldef\n"); fflush(stdout);
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         H_ref.mode[i] = 1; // Make sure that the values are not put through Dan's buffer/filter
@@ -111,7 +149,6 @@ void controlLoop()
     {
         daemon_assert( sizeof(H_state) == fs, __LINE__ );
     }
-
     result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != result )
     {
@@ -143,7 +180,7 @@ void controlLoop()
     double t0 = H_state.time;
     double t, dt, err;
 
-    fprintf(stdout, "Beginning control loop\n");
+    fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
 
     // Main control loop
     while( !daemon_sig_quit )
@@ -173,7 +210,7 @@ void controlLoop()
         dt = t - t0;
 
         
-        if(ctrl.active == 2 && H_ref.paused==0)
+        if((ctrl.active == 2 || H_state.refWait==1) && H_ref.paused==0)
         {
             H_ref.paused=1;
             ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
@@ -342,7 +379,7 @@ int main(int argc, char **argv)
 
 
     daemonize( "control-daemon" );
-
+    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
@@ -468,7 +505,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 			&tempJC.pos_max,
             &tempJC.timeOut ) ) // check that all values are found
 		{
-
+//fprintf( stdout, "%s\t%f\t%f\t%f\t%f\t%f\t%f\n", name, tempJC.velocity, tempJC.acceleration, tempJC.speed_limit, tempJC.pos_min, tempJC.pos_max, tempJC.timeOut );
 			// check to make sure jointName is valid
 			size_t x; int i;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
@@ -493,7 +530,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 for(int k=0; k<ARM_JOINT_COUNT; k++)
                     if( rightarmjoints[k]==i )
                         memcpy( &ractrl.joint[k], &tempJC, sizeof(tempJC) );
-
+                
                 for(int k=0; k<LEG_JOINT_COUNT; k++)
                     if( leftlegjoints[k]==i )
                         memcpy( &llctrl.joint[k], &tempJC, sizeof(tempJC) );
@@ -502,9 +539,18 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                     if( rightlegjoints[k]==i )
                         memcpy( &rlctrl.joint[k], &tempJC, sizeof(tempJC) );
 
+                for(int k=0; k<FIN_JOINT_COUNT; k++)
+                    if( leftfinjoints[k]==i )
+                        memcpy( &lfctrl.joint[k], &tempJC, sizeof(tempJC) );
+
+                for(int k=0; k<FIN_JOINT_COUNT; k++)
+                    if( rightfinjoints[k]==i )
+                        memcpy( &rfctrl.joint[k], &tempJC, sizeof(tempJC) );                        
+
                 for(int k=0; k<AUX_JOINT_COUNT; k++)
                     if( auxjoints[k]==i )
                         memcpy( &auxctrl.joint[k], &tempJC, sizeof(tempJC) );
+
             } // end: jntNameCheck
 		} // end: sscanf
 	} // end: fgets

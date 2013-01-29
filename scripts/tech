@@ -83,7 +83,7 @@ Ach()
 	*)
 
 		sudo ach -1 -C $HUBO_REF_CHAN   -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_STATE_CHAN -m 10 -n 3000 -o 666
+		sudo ach -1 -C $HUBO_STATE_CHAN -m 10 -n 8000 -o 666
 		sudo ach -1 -C $HUBO_BOARD_CHAN -m 10 -n 3000 -o 666
 		sudo ach -1 -C $HUBO_RL_CTRL_CHAN  -m 10 -n 3000 -o 666
 		sudo ach -1 -C $HUBO_LL_CTRL_CHAN  -m 10 -n 3000 -o 666
@@ -133,7 +133,7 @@ StopHubo()
             echo " -- $entry refuses to quit!"
         done
 	
-#		Ach close
+		Ach close
 
 		sudo ifconfig can0 down
 		sudo ifconfig can1 down
@@ -154,7 +154,7 @@ StartHubo()
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
 		echo 'hubo-daemon, and start up'
-		echo 'the hubo-console.'
+		echo 'the tech-console.'
 		echo
 		echo 'You can pass in arguments to the'
 		echo 'hubo-daemon by appending them to'
@@ -185,7 +185,7 @@ StartHubo()
 		
 		sudo hubo-daemon $DAEMON_ARGS
 		sudo control-daemon
-		sudo hubo-console
+		sudo tech-console
 	;;
 	esac
 }
@@ -223,9 +223,9 @@ VirtualHubo()
 		
 		Ach
 	
-		sudo ./hubo-daemon -v
-		sudo ./control-daemon
-		sudo ./hubo-console
+		sudo hubo-daemon -v
+		sudo control-daemon
+		sudo tech-console
 	;;
 	esac
 }
@@ -260,10 +260,9 @@ DebugHubo()
 
 		Ach
 	
-		sudo ./hubo-daemon -d $1
-		sudo ./control-daemon
-		sleep 1
-		sudo ./hubo-console
+		sudo hubo-daemon -d $1
+		sudo control-daemon
+		sudo tech-console
 	;;
 	esac
 }

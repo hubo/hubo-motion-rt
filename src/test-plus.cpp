@@ -10,13 +10,13 @@ int main(int argc, char **argv)
 //    Vector6d acc;
 //    acc << 0.2, 0.2, 0.2, 0.2, 0.2, 0.2;
 //    hubo.setRightArmNomAcc( acc );
-/*
+
     Vector6d angles1, angles2, check;
     angles1 << -0.6703, -0.101632, 0.3296, -1.8217, -1.9074, -0.0;
     angles2 << -0.6055, -0.0782,  -0.2416, -1.6655, -1.9774, 0.0;
 
     hubo.setRightArmAngles( angles1, true ); 
-    std::cout << "Arm angles set to Angles1" << std::endl;
+/*    std::cout << "Arm angles set to Angles1" << std::endl;
     hubo.update();
     hubo.getRightArmAngles( check );
     while( (angles1-check).norm() > 0.075 )
@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     angles[3] <<  -0.518417,   0.172191,  -0.566084, -0.0727671, 0, 0;
     angles[4] << 0, 0, 0, 0, 0, 0;
 */
+/*
     Vector6d q;
     double y=0, V=0, tprev=hubo.getTime(), dt=0;
     int i=0, imax=100;
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
 
         hubo.sendControls();
    } 
-    
+*/  
     
 /*    
     double tol = 0.075;

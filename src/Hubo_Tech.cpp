@@ -1,3 +1,44 @@
+/*
+ * Copyright (c) 2013, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author(s): Grey <mxgrey@gatech.edu>
+ * Georgia Tech Humanoid Robotics Lab
+ * Under Direction of Prof. Mike Stilman <mstilman@cc.gatech.edu>
+ *
+ *
+ * This file is provided under the following "BSD-style" License:
+ *
+ *
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+
 #include <Hubo_Tech.h>
 
 Hubo_Tech::Hubo_Tech()
@@ -1357,6 +1398,178 @@ void Hubo_Tech::homeAllJoints( bool send )
     }
 }
 
+tech_flag_t Hubo_Tech::jointBeep( int joint, double elapseTime, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        H_Cmd.type = D_JMC_BEEP;
+        H_Cmd.joint = joint;
+        H_Cmd.dValues[0] = elapseTime;
+
+    }
+    else
+        return JOINT_OOB;
+
+    if(send)
+        sendCommands();
+
+    return SUCCESS;
+}
+
+tech_flag_t Hubo_Tech::resetJoint( int joint, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        H_Cmd.type = D_ZERO_ENCODER;
+        H_Cmd.joint = joint;
+    }
+    else
+        return JOINT_OOB;
+
+    if(send)
+        sendCommands();
+
+    return SUCCESS;
+}
+
+void Hubo_Tech::startAllSensors( bool send )
+{
+    H_Cmd.type = D_NULL_SENSORS_ALL;
+
+    if(send)
+        sendCommands();
+}
+
+tech_flag_t Hubo_Tech::startSensor( hubo_sensor_index_t sensor, bool send )
+{
+    if( sensor < SENSOR_INDEX_COUNT )
+    {
+        H_Cmd.type = D_NULL_SENSOR;
+        switch( sensor )
+        {
+            case HUBO_FT_R_HAND: H_Cmd.param[0] = D_R_HAND_FT; break;
+            case HUBO_FT_L_HAND: H_Cmd.param[0] = D_L_HAND_FT; break;
+            case HUBO_FT_R_FOOT: H_Cmd.param[0] = D_R_FOOT_FT; break;
+            case HUBO_FT_L_FOOT: H_Cmd.param[0] = D_L_FOOT_FT; break;
+            case HUBO_IMU0: H_Cmd.param[0] = D_IMU_SENSOR_0; break;
+            case HUBO_IMU1: H_Cmd.param[0] = D_IMU_SENSOR_1; break;
+            case HUBO_IMU2: H_Cmd.param[0] = D_IMU_SENSOR_2; break;
+            default: return SENSOR_OOB;
+        }
+    }
+    else
+        return SENSOR_OOB;
+
+    if(send)
+        sendCommands();
+
+    return SUCCESS;
+}
+
+tech_flag_t Hubo_Tech::zeroTilt( hubo_sensor_index_t sensor, bool send )
+{
+    if( sensor < SENSOR_INDEX_COUNT )
+    {
+        H_Cmd.type = D_NULL_SENSOR;
+        switch( sensor )
+        {
+            case HUBO_FT_R_FOOT: H_Cmd.param[0] = D_R_FOOT_ACC; break;
+            case HUBO_FT_L_FOOT: H_Cmd.param[0] = D_L_FOOT_ACC; break;
+            case HUBO_IMU0: H_Cmd.param[0] = D_IMU_SENSOR_0; break;
+            case HUBO_IMU1: H_Cmd.param[0] = D_IMU_SENSOR_1; break;
+            case HUBO_IMU2: H_Cmd.param[0] = D_IMU_SENSOR_2; break;
+            default: return SENSOR_OOB;
+        }
+    }
+    else
+        return SENSOR_OOB;
+
+    if(send)
+        sendCommands();
+    
+    return SUCCESS;
+
+}
+
+tech_flag_t Hubo_Tech::initializeBoard( int joint, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        H_Cmd.type = D_JMC_INITIALIZE;
+        H_Cmd.joint = joint;
+    }
+    else
+        return JOINT_OOB;
+
+    if(send)
+        sendCommands();
+
+    return SUCCESS;
+}
+
+void Hubo_Tech::initializeAll( bool send )
+{
+    H_Cmd.type = D_JMC_INITIALIZE_ALL;
+    
+    if(send)
+        sendCommands();
+}
+
+tech_flag_t Hubo_Tech::motorCtrlSwitch( int joint, bool on, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        H_Cmd.type = D_CTRL_SWITCH;
+        H_Cmd.joint = joint;
+        if(on)
+            H_Cmd.param[0] = D_ENABLE;
+        else
+            H_Cmd.param[0] = D_DISABLE;
+    }
+    else
+        return JOINT_OOB;
+
+    // TODO: Consider how to inform control daemon that the motor is turned off
+    
+    if(send)
+        sendCommands();
+    
+    return SUCCESS;
+}
+
+tech_flag_t Hubo_Tech::motorCtrlOn( int joint, bool send )
+{ return motorCtrlSwitch( joint, true, send ); }
+
+tech_flag_t Hubo_Tech::motorCtrlOff( int joint, bool send )
+{ return motorCtrlSwitch( joint, false, send ); }
+
+tech_flag_t Hubo_Tech::fetSwitch( int joint, bool on, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        H_Cmd.type = D_FET_SWITCH;
+        H_Cmd.joint = joint;
+        if(on)
+            H_Cmd.param[0] = D_ENABLE;
+        else
+            H_Cmd.param[0] = D_DISABLE;
+    }
+    else
+        return JOINT_OOB;
+
+    // TODO: Consider how to inform control daemon that the motor is turned off
+    
+    if(send)
+        sendCommands();
+    
+    return SUCCESS;
+}
+
+tech_flag_t Hubo_Tech::fetOn( int joint, bool send )
+{ return fetSwitch( joint, true, send ); }
+
+tech_flag_t Hubo_Tech::fetOff( int joint, bool send )
+{ return fetSwitch( joint, false, send ); }
 
 // ~~~*** Kinematics ***~~~ //
 inline double min(double x, double y) { return ( x > y ) ? y : x; }
