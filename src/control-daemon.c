@@ -163,6 +163,7 @@ void controlLoop()
     double adr;
     double dtMax = 0.1;
     double errorFactor = 10;
+    double timeElapse[HUBO_JOINT_COUNT];
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
@@ -186,12 +187,39 @@ void controlLoop()
     while( !daemon_sig_quit )
     {
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<ARM_JOINT_COUNT; j++)
+                timeElapse[rightarmjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<ARM_JOINT_COUNT; j++)
+                timeElapse[leftarmjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<LEG_JOINT_COUNT; j++)
+                timeElapse[rightlegjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_ll_ctrl, &llctrl, sizeof(llctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<LEG_JOINT_COUNT; j++)
+                timeElapse[leftlegjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<FIN_JOINT_COUNT; j++)
+                timeElapse[rightfinjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<FIN_JOINT_COUNT; j++)
+                timeElapse[leftfinjoints[j]] = 0.0;
+
         cresult = ach_get( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<AUX_JOINT_COUNT; j++)
+                timeElapse[auxjoints[j]] = 0.0;
 
         sortJointControls( &ctrl, &ractrl, &lactrl,
                                   &rlctrl, &llctrl,
@@ -247,6 +275,9 @@ void controlLoop()
 
                         if( ctrl.joint[jnt].mode == CTRL_VEL )
                         {
+                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+                                ctrl.joint[jnt].velocity = 0.0;
+                           
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
                             if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
@@ -321,7 +352,7 @@ void controlLoop()
                                 jnt, (int)ctrl.joint[jnt].mode );
                         }
 
-                        //r0[jnt] = H_ref.ref[jnt];
+                        timeElapse[jnt] += dt;
                         V0[jnt] = V[jnt];
                         reset[jnt]=0;
                     }
