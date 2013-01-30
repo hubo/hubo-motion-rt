@@ -226,7 +226,7 @@ void controlLoop()
                 }
             }
         }
-        else if(ctrl.active==1)
+        else if(ctrl.active==1 && H_state.refWait==0)
             H_ref.paused=0;
 
 
