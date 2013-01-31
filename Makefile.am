@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -I$(top_srcdir)/include
-AM_CFLAGS = -std=gnu99
+AM_CPPFLAGS = -I$(top_srcdir)/include -L/usr/local/lib
+AM_CFLAGS = -std=gnu99 -L/usr/local/lib
 
 EXTRA_DIST = tables/control.table
 
@@ -19,19 +19,19 @@ control_daemon_SOURCES = src/control-daemon.c
 control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
 
 tech_console_SOURCES = src/tech-console.cpp
-tech_console_LDADD = -lm -lach -lreadline libhubotech.la -lhuboparams libdaemonizer.la
+tech_console_LDADD = -lm -lach -lreadline libhubotech.la libdaemonizer.la -lhuboparams
 
 #balance_test_SOURCES = src/balance-test.cpp
 #balance_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
 
 home_test_SOURCES = src/home-test.cpp
-home_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
+home_test_LDADD = -lm -lach libhubotech.la libdaemonizer.la -lhuboparams
 
 #ik_test_SOURCES = src/ik-test.cpp
 #ik_test_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
 
 test_plus_SOURCES = src/test-plus.cpp
-test_plus_LDADD = -lm -lach libhubotech.la -lhuboparams libdaemonizer.la
+test_plus_LDADD = -lm -lach libhubotech.la libdaemonizer.la -lhuboparams
 
 hubo_techdir = $(prefix)/lib
 hubo_tech_LTLIBRARIES = libhubotech.la libdaemonizer.la
