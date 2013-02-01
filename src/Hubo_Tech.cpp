@@ -2241,6 +2241,159 @@ void Hubo_Tech::HuboDrillIK(Vector6d &q, double y) {
     
 }
 
+/**
+ * @function initLocalCOMs
+ */
+void Hubo_Tech::initLocalCOMs() {
+
+  // Leg
+  // Initialize the number of leg DOF
+  mLocalCOMs_Leg.resize(  mNumDofs_Leg ); 
+  // Fill the values from urdf
+  mLocalCOMs_Leg[0] << -0.0347, 0.000, 0.072;
+  mLocalCOMs_Leg[1] << 0.049747912596, 0.012531116599, 0.015643664572;
+  mLocalCOMs_Leg[2] << -0.019504891350, -0.059577480789, 0.175201757627;
+  mLocalCOMs_Leg[3] << -0.012825433376, -0.007275670525, 0.171431348038;
+  mLocalCOMs_Leg[4] << -0.019870246084, -0.045969255056, -0.011506941050;
+  mLocalCOMs_Leg[5] << 0.051509407797, 0.002163982128, 0.069388069491;
+
+  mMasses_Leg.resize( mNumDofs_Leg );
+  mMasses_Leg[0] = 0.826;  mMasses_Leg[1] = 1.932;
+  mMasses_Leg[2] =  2.82;  mMasses_Leg[3] = 1.809; 
+  mMasses_Leg[4] = 1.634;  mMasses_Leg[5] =  1.003;
+
+  mMass_Total_Leg = 0;
+  for( int i = 0; i < mMasses_Leg.size(); ++i ) {
+    mMass_Total_Leg += mMasses_Leg[i];
+  }
+  
+  // Arm
+  // Initialize the number of arm dofs
+  mLocalCOMs_Arm.resize( mNumDofs_Arm );
+  // Fill the values from urdf
+  mLocalCOMs_Arm[0] << -0.0347, 0.000, 0.072;
+  mLocalCOMs_Arm[1] << 0.049747912596, 0.012531116599, 0.015643664572;
+  mLocalCOMs_Arm[2] << -0.019504891350, -0.059577480789, 0.175201757627;
+  mLocalCOMs_Arm[3] << -0.012825433376, -0.007275670525, 0.171431348038;
+  mLocalCOMs_Arm[4] << -0.019870246084, -0.045969255056, -0.011506941050;
+  mLocalCOMs_Arm[5] << 0.051509407797, 0.002163982128, 0.069388069491;
+
+
+  mMasses_Arm.resize( mNumDofs_Arm );
+  mMasses_Arm[0] = 0.826; mMasses_Arm[1] = 1.932; 
+  mMasses_Arm[2] = 2.82; mMasses_Arm[3] = 1.809; 
+  mMasses_Arm[4] = 1.634; mMasses_Arm[5] = 1.003;
+
+  mMass_Total_Arm = 0;
+  for( int i = 0; i < mMasses_Arm.size(); ++i ) {
+    mMass_Total_Arm += mMasses_Arm[i];
+  }
+
+  
+  // Torso
+  // Initialize the number of torso dofs
+  mLocalCOMs_Torso.resize( mNumDofs_Torso );
+  // Fill the values from urdf
+  mMasses_Torso.resize( mNumDofs_Torso );
+
+}
+
+/**
+ * @function getCOM_FUllBody
+ */
+Eigen::Vector3d Hubo_Tech::getCOM_FullBody() {
+
+  Eigen::Vector3d COM_fullBody;
+
+  Eigen::Vector3d COM_rightArm;
+  Eigen::Vector3d COM_rightLeg;
+  Eigen::Vector3d COM_leftArm;
+  Eigen::Vector3d COM_leftLeg;
+
+  COM_rightArm = getCOM_Arm( RIGHT );
+  COM_leftArm = getCOM_Arm( LEFT );
+  COM_rightLeg = getCOM_Leg( RIGHT );
+  COM_leftLeg = getCOM_Leg( LEFT );
+
+  std::cout<< " * COM Right Arm: "<< COM_rightArm.transpose() << std::endl;
+  std::cout<< " * COM Left Arm: "<< COM_leftArm.transpose() << std::endl;
+  std::cout<< " * COM Right Leg: "<< COM_rightLeg.transpose() << std::endl;
+  std::cout<< " * COM Left Leg: "<< COM_rightLeg.transpose() << std::endl;
+
+  // Find the sum
+  COM_fullBody = ( COM_rightArm*mMass_Total_Arm + COM_leftArm*mMass_Total_Arm + COM_rightLeg*mMass_Total_Leg + COM_leftLeg*mMass_Total_Leg ) / ( 2*mMass_Total_Arm + 2*mMass_Total_Leg );
+
+
+  return COM_fullBody;
+}
+
+/**
+ * @function getCOM_Arm
+ */
+Eigen::Vector3d Hubo_Tech::getCOM_Arm( int _side ) {
+
+  Eigen:: Vector3d COM_arm;
+  Eigen::Isometry3d Dofs_arm;
+  Vector6d angles_arm;
+  Eigen::Vector3d sumMassPoses;
+  double sumMasses;
+
+  // Initialize mass - posses to 0
+  sumMassPoses << 0, 0, 0;
+    
+  getArmAngles( _side, angles_arm );
+    
+  for (int i = 0; i < mNumDofs_Arm; i++) {
+    huboArmFK( Dofs_arm, angles_arm, _side );
+    sumMassPoses += Dofs_arm * mLocalCOMs_Arm[i] *mMasses_Arm[i];
+  }
+  
+  /** P = Sum(m*p) / Sum(m) */
+  COM_arm = sumMassPoses / mMass_Total_Arm; 
+  return COM_arm;
+
+}
+
+/**
+ * @function getCOM_Leg
+ */
+Eigen::Vector3d Hubo_Tech::getCOM_Leg( int _side ) {
+
+  Eigen:: Vector3d COM_leg;
+  Eigen::Isometry3d Dofs_leg;
+  Vector6d angles_leg;
+  Eigen::Vector3d sumMassPoses;
+  double sumMasses;
+
+  // Initialize mass - posses to 0
+  sumMassPoses << 0, 0, 0;
+    
+  getLegAngles( _side, angles_leg );
+    
+  for (int i = 0; i < mNumDofs_Leg; i++) {
+    huboLegFK( Dofs_leg, angles_leg, _side );
+    sumMassPoses += Dofs_leg * mLocalCOMs_Leg[i] *mMasses_Leg[i];
+  }
+  
+  /** P = Sum(m*p) / Sum(m) */
+  COM_leg = sumMassPoses / mMass_Total_Leg; 
+  return COM_leg;
+}
+
+/**
+ * @function getCOM_Torso
+ */
+Eigen::Vector3d Hubo_Tech::getCOM_Torso() {
+
+  Eigen:: Vector3d COM_torso;
+  Eigen::Isometry3d Dofs_leg;
+  Eigen::Vector3d sumMassPoses;
+  double sumMasses;
+
+
+  return COM_torso;
+}
+
 
 
 

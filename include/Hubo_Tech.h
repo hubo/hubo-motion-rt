@@ -439,6 +439,14 @@ public:
     void HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q);
     void HuboDrillIK(Vector6d &q, double y);
 
+    // ~~~*** Center of Mass ***~~~ //
+
+    /** Functions */
+    void initLocalCOMs();
+    Eigen::Vector3d getCOM_FullBody();
+    Eigen::Vector3d getCOM_Arm( int _side = LEFT );
+    Eigen::Vector3d getCOM_Leg( int _side = LEFT );
+    Eigen::Vector3d getCOM_Torso();
 
 protected:
 
@@ -476,6 +484,22 @@ protected:
     // 5) Left Fingers
     // 6) Auxiliary ( Neck & Waist )
 
+
+    /** Constant values */
+    static const int mNumDofs_Arm = 6;
+    static const int mNumDofs_Leg = 6;
+    static const int mNumDofs_Torso = 2;
+
+    double mMass_Total_Arm;
+    double mMass_Total_Leg;
+    std::vector<Eigen::Vector3d> mLocalCOMs_Leg;
+    std::vector<double> mMasses_Leg;
+
+    std::vector<Eigen::Vector3d> mLocalCOMs_Arm;
+    std::vector<double> mMasses_Arm;
+
+    std::vector<Eigen::Vector3d> mLocalCOMs_Torso;
+    std::vector<double> mMasses_Torso;
 
 private:
     
