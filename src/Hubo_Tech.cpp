@@ -43,6 +43,17 @@
 
 Hubo_Tech::Hubo_Tech()
 {
+    techInit();
+}
+
+Hubo_Tech::Hubo_Tech(const char *daemon_name)
+{
+    techInit();
+    daemonize(daemon_name);
+}
+
+Hubo_Tech::techInit()
+{
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
@@ -89,6 +100,9 @@ Hubo_Tech::Hubo_Tech()
     assert( ACH_OK == r );
     
     r = ach_open( &chan_hubo_aux_ctrl, HUBO_CHAN_AUX_CTRL_NAME, NULL );
+    assert( ACH_OK == r );
+    
+    r = ach_open( &chan_ctrl_state, CTRL_CHAN_STATE, NULL );
     assert( ACH_OK == r );
 
     size_t fs;
@@ -140,13 +154,6 @@ Hubo_Tech::Hubo_Tech()
         localMap[ auxjoints[i] ] = i;
     }
     
-}
-
-Hubo_Tech::Hubo_Tech(const char *daemon_name)
-{
-    Hubo_Tech();
-
-    daemonize(daemon_name);
 }
 
 double Hubo_Tech::getTime() { return H_State.time; }
@@ -968,7 +975,7 @@ double Hubo_Tech::getJointNominalAcceleration(int joint)
 int Hubo_Tech::getJointStatus( int joint )
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_Ref.status[joint];
+        return C_State.status[joint];
     else
         return 0;
 }
@@ -1323,6 +1330,52 @@ double Hubo_Tech::getRotVelX() { return H_State.imu[IMU].w_x; }
 double Hubo_Tech::getRotVelY() { return H_State.imu[IMU].w_y; }
 
 
+tech_flag_t Hubo_Tech::passJointAngle(int joint, double radians, bool send)
+{
+
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA: // Right Arm
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].position = radians;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Arm_Ctrl[RIGHT].active=1; ctrlOn[CtrlRA] = true; break;
+            case CtrlLA: // Left Arm
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].position = radians;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Arm_Ctrl[LEFT].active=1; ctrlOn[CtrlLA] = true; break;
+            case CtrlRL: // Right Leg
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].position = radians;
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Leg_Ctrl[RIGHT].active=1; ctrlOn[CtrlRL] = true; break;
+            case CtrlLL: // Left Leg
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].position = radians;
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Leg_Ctrl[LEFT].active=1; ctrlOn[CtrlLL] = true; break;
+            case CtrlRF: // Right Fingers
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].position = radians;
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Fin_Ctrl[RIGHT].active=1; ctrlOn[CtrlRF] = true; break;
+            case CtrlLF: // Left Fingers
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].position = radians;
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_PASS;
+                H_Fin_Ctrl[LEFT].active=1; ctrlOn[CtrlLF] = true; break;
+            case CtrlAX: // Right Fingers
+                H_Aux_Ctrl.joint[localMap[joint]].position = radians;
+                H_Aux_Ctrl.joint[localMap[joint]].mode = CTRL_PASS;
+                H_Aux_Ctrl.active=1; ctrlOn[CtrlAX] = true; break;
+                
+        }
+
+        if(send)
+            sendControls();
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
 
 // ~~~*** Board Commands ***~~~ //
 tech_flag_t Hubo_Tech::homeJoint( int joint, bool send )

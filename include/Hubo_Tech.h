@@ -339,6 +339,9 @@ public:
     double getJointAngleMax( int joint );
     double getJointSpeedMax( int joint );
 
+    // Passthrough Mode: Reference values will not be touched by
+    // the control-daemon. Use of this mode is strongly discouraged.
+    tech_flag_t passJointAngle( int joint, double radians, bool send=false );
 
     // ~~~*** State Readings ***~~~ //
 
@@ -453,6 +456,7 @@ protected:
     ach_channel_t chan_hubo_ref;
     ach_channel_t chan_hubo_board_cmd;
     ach_channel_t chan_hubo_state;
+    ach_channel_t chan_ctrl_state;
     ach_channel_t chan_hubo_arm_ctrl_right;
     ach_channel_t chan_hubo_arm_ctrl_left;
     ach_channel_t chan_hubo_leg_ctrl_right;
@@ -464,6 +468,7 @@ protected:
     hubo_ref H_Ref;
     hubo_board_cmd H_Cmd;
     hubo_state H_State;
+    hubo_ctrl_state C_State;
     hubo_arm_control H_Arm_Ctrl[2];
     hubo_leg_control H_Leg_Ctrl[2];
     hubo_fin_control H_Fin_Ctrl[2];
@@ -483,6 +488,8 @@ protected:
     // 4) Right Fingers
     // 5) Left Fingers
     // 6) Auxiliary ( Neck & Waist )
+
+    void techInit();
 
 
     /** Constant values */

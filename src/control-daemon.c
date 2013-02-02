@@ -50,6 +50,7 @@ ach_channel_t chan_hubo_ll_ctrl;
 ach_channel_t chan_hubo_rf_ctrl;
 ach_channel_t chan_hubo_lf_ctrl;
 ach_channel_t chan_hubo_aux_ctrl;
+ach_channel_t chan_ctrl_state;
 
 static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
 
@@ -118,6 +119,7 @@ void controlLoop()
     struct hubo_fin_control lfctrl;
     struct hubo_aux_control auxctrl;
     struct hubo_param H_param;
+    struct hubo_ctrl_state C_state;
 
     memset( &H_ref,   0, sizeof(H_ref)   );
     memset( &H_cmd,   0, sizeof(H_cmd)   );
@@ -131,6 +133,7 @@ void controlLoop()
     memset( &lfctrl,  0, sizeof(lfctrl)  );
     memset( &auxctrl, 0, sizeof(auxctrl) );
     memset( &H_param, 0, sizeof(H_param) );
+    memset( &C_state, 0, sizeof(C_state) );
 
     setJointParams( &H_param, &H_state);
     if(setCtrlDefaults( &ctrl )==-1)
@@ -238,10 +241,10 @@ void controlLoop()
         dt = t - t0;
 
         
-        if((ctrl.active == 2 || H_state.refWait==1) && H_ref.paused==0)
+        if((ctrl.active == 2 || H_state.refWait==1) && C_state.paused==0)
         {
-            H_ref.paused=1;
-            ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
+            C_state.paused=1;
+            ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
             fprintf(stdout, "Pausing control\n");
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
@@ -255,7 +258,7 @@ void controlLoop()
             }
         }
         else if(ctrl.active==1 && H_state.refWait==0)
-            H_ref.paused=0;
+            C_state.paused=0;
 
 
         if( 0 < dt && dt < dtMax && H_state.refWait==0 )
@@ -266,6 +269,9 @@ void controlLoop()
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
+
+                if( ctrl.joint[jnt].mode == CTRL_PASS)
+                    H_ref.ref[jnt] = ctrl.joint[jnt].position;
 
                 if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].speed_limit*dtMax) // TODO: Validate this condition
                     && fail[jnt]==0 )
@@ -365,7 +371,7 @@ void controlLoop()
                     V[jnt]=0; V0[jnt]=0;
                     H_ref.ref[jnt] = H_state.joint[jnt].pos;
                     fail[jnt]=1;
-                    H_ref.status[jnt] = 1;
+                    C_state.status[jnt] = 1;
                 }
                 else if( ctrl.joint[jnt].mode == CTRL_RESET && reset[jnt]==0 )
                 {
@@ -374,16 +380,17 @@ void controlLoop()
                     dr[jnt]=0;
                     fail[jnt]=0;
                     reset[jnt]=1;
-                    H_ref.status[jnt] = 0;
+                    C_state.status[jnt] = 0;
                 }
             }
 
-            if(ctrl.active == 1 && H_ref.paused==0) 
+            if(ctrl.active == 1 && C_state.paused==0) 
             { //if(iter==maxi) printf("Sending ACH, r:%f\n", H_ref.ref[LSP]);
                 presult = ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
                         presult, ach_result_to_string(presult));
+                ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
             }
             
         }
@@ -440,6 +447,9 @@ int main(int argc, char **argv)
 
     r = ach_open(&chan_hubo_board_cmd, HUBO_CHAN_BOARD_CMD_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
+
+    r = ach_open(&chan_ctrl_state, CTRL_CHAN_STATE, NULL );
+    daemon_assert( ACH_OK == r, __LINE__ ); 
 
     controlLoop();
 

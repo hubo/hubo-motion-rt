@@ -62,6 +62,7 @@
 #define     HUBO_CHAN_RF_CTRL_NAME      "hubo-RF-control" // Right Finger control channel
 #define     HUBO_CHAN_LF_CTRL_NAME      "hubo-LF-control" // Left Finger control channel
 #define     HUBO_CHAN_AUX_CTRL_NAME     "hubo-AUX-control"// Neck and Waist control channel
+#define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
 
 // TODO: Save these as parameters defined in a table instead:
@@ -78,7 +79,8 @@ typedef enum {
     CTRL_POS,
     CTRL_VEL,
     CTRL_HOME,
-    CTRL_RESET
+    CTRL_RESET,
+    CTRL_PASS
 } hubo_ctrl_mode_t;
 
 
@@ -122,6 +124,10 @@ struct hubo_aux_control {
     int active;
 };
 
+struct hubo_ctrl_state {
+    int status[HUBO_JOINT_COUNT];
+    int paused;
+};
 
 
 #endif // CONTROLDAEMON_H

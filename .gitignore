@@ -21,7 +21,7 @@ README
 config*
 *.lo
 *.la
-m4/
+m4/*
 depcomp
 install-sh
 libtool
