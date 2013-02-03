@@ -1,3 +1,18 @@
+/*
+
+    Please make note: This is only a prototype for a
+    manipulator daemon and is meant for demonstration
+    purposes ONLY. The final version will be a robust
+    state machine which monitors the arms, handles
+    manipulation-related tasks, and makes sure that
+    everything behaves sanely. 
+
+*/
+
+
+
+
+
 #include "manip.h"
 
 int main( int argc, char **argv )
