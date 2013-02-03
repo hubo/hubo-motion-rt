@@ -25,7 +25,7 @@ proto_manip_daemon_SOURCES = src/proto-manip-daemon.cpp
 proto_manip_daemon_LDADD = -lm -lach libhubotech.la libdaemonizer.la -lhuboparams
 
 
-hubo_techdir = $(prefix)/lib
+hubo_techdir = /usr/lib
 hubo_tech_LTLIBRARIES = libhubotech.la libdaemonizer.la
 libdaemonizer_la_SOURCES = src/daemonizer.c
 libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
