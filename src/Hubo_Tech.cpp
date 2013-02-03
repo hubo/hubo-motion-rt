@@ -46,13 +46,29 @@ Hubo_Tech::Hubo_Tech()
     techInit();
 }
 
-Hubo_Tech::Hubo_Tech(const char *daemon_name)
+Hubo_Tech::Hubo_Tech(const char *daemon_name, int priority)
 {
     techInit();
-    daemonize(daemon_name);
+    daemonize(daemon_name, priority);
 }
 
-Hubo_Tech::techInit()
+Hubo_Tech::~Hubo_Tech()
+{
+    ach_close( &chan_hubo_ref );
+    ach_close( &chan_hubo_state );
+    ach_close( &chan_hubo_board_cmd );
+    ach_close( &chan_hubo_arm_ctrl_left );
+    ach_close( &chan_hubo_arm_ctrl_right );
+    ach_close( &chan_hubo_leg_ctrl_left );
+    ach_close( &chan_hubo_leg_ctrl_right );
+    ach_close( &chan_hubo_fin_ctrl_left );
+    ach_close( &chan_hubo_fin_ctrl_right );
+    ach_close( &chan_hubo_aux_ctrl );
+
+    daemon_close();
+}
+
+void Hubo_Tech::techInit()
 {
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
@@ -156,6 +172,8 @@ Hubo_Tech::techInit()
     
 }
 
+
+
 double Hubo_Tech::getTime() { return H_State.time; }
 
 tech_flag_t Hubo_Tech::update(bool printError)
@@ -171,6 +189,8 @@ tech_flag_t Hubo_Tech::update(bool printError)
     if( ACH_OK != r2 && printError )
         fprintf( stdout, "Ach report -- State Channel: %s at time=%f",
             ach_result_to_string((ach_status_t)r2), getTime() );
+
+    ach_get( &chan_ctrl_state, &C_State, sizeof(C_State), &fs, NULL, ACH_O_LAST );
 
     if( r1==ACH_OK && r2==ACH_OK )
         return SUCCESS;
@@ -1422,7 +1442,7 @@ tech_flag_t Hubo_Tech::homeJoint( int joint, bool send )
     if(send)
     {
         sendControls();
-        while( H_Ref.paused==0 )
+        while( C_State.paused==0 )
             update();
         sendCommands();
         
@@ -1442,7 +1462,7 @@ void Hubo_Tech::homeAllJoints( bool send )
     if(send)
     {
         sendControls();
-        while( H_Ref.paused==0 )
+        while( C_State.paused==0 )
             update();
         sendCommands();
         

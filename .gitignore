@@ -10,11 +10,7 @@ doc/
 ################
 .deps
 .libs
-AUTHORS
-COPYING
-ChangeLog
 Makefile.in
-README
 *.m4
 *.cache
 *.o

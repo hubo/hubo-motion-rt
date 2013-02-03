@@ -81,7 +81,7 @@ static void fork_sig_handler(int signum)
 }
 
 
-void daemonize(const char *daemon_name)
+void daemonize(const char *daemon_name, int priority)
 {
     char pbuff[100];
 
@@ -260,15 +260,19 @@ void daemonize(const char *daemon_name)
     // Tell parent process that everything is okay
     kill( parent, SIGUSR1 );
 
-    // Real Time
-    struct sched_param param;
-    // Declare ourself as a real time task
 
-    param.sched_priority = MY_PRIORITY;
-    if( sched_setscheduler(0, SCHED_FIFO, &param) == -1 )
+    if( priority >= 0 )
     {
-        fprintf(stderr, "sched_setscheduler Failed!\n");
-        exit( EXIT_FAILURE );
+        // Real Time
+        struct sched_param param;
+        // Declare ourself as a real time task
+
+        param.sched_priority = priority;
+        if( sched_setscheduler(0, SCHED_FIFO, &param) == -1 )
+        {
+            fprintf(stderr, "sched_setscheduler Failed!\n");
+            exit( EXIT_FAILURE );
+        }
     }
 
     // Lock memory

@@ -416,8 +416,8 @@ int main(int argc, char **argv)
     // TODO: Parse runtime arguments
 
 
-    daemonize( "control-daemon" );
-    
+    daemonize( "control-daemon", 49 );
+   
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 

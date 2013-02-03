@@ -111,10 +111,11 @@ public:
     /**
      * Constructor for the Hubo_Tech class that daemonizes with the name specificied by the parameter.
     */
-    Hubo_Tech(const char *daemon_name);
+    Hubo_Tech(const char *daemon_name, int priority=-1);
     /**
      * Gets the current time in seconds from Hubo's 'hubo_state' struct member 'time' over the state ach channel
     */
+    ~Hubo_Tech();
     double getTime();
 
     /**
@@ -453,6 +454,8 @@ public:
 
 protected:
 
+    void techInit();
+
     ach_channel_t chan_hubo_ref;
     ach_channel_t chan_hubo_board_cmd;
     ach_channel_t chan_hubo_state;
@@ -489,7 +492,6 @@ protected:
     // 5) Left Fingers
     // 6) Auxiliary ( Neck & Waist )
 
-    void techInit();
 
 
     /** Constant values */
