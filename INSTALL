@@ -5,11 +5,13 @@ Prerequisite: hubo-ach (https://github.com/hubo/hubo-ach)
 
 0. This package uses autotools. If you're not sure whether you have autotools, put the following
 into the terminal:
+
 $ sudo apt-get update
 $ sudo apt-get upgrade
 $ sudo apt-get install autoconf
 
 It also depends on the Eigen C++ Library 3.0. Get it with the following command on Ubuntu:
+
 $ sudo apt-get install libeigen3-dev
 
 ____________________________________________________________
@@ -20,8 +22,7 @@ In the directory which contains Makefile.am and configure.ac, run the following 
 the terminal:
 
 $ mkdir m4
-(Sometimes there is a complaint about this not existing. If it already exists, then don't worry
-about this step.)
+(If it already exists, then don't worry about this step.)
 
 $ autoreconf -i
 (Give this some time. It can take a while.)
@@ -40,6 +41,14 @@ ____________________________________________________________
 
 $ make
 (If an error occurs here, please contact mxgrey@gatech.edu)
+Possible issues:
+
+ -- Cannot link to libhuboparams.so or error: hubo-jointparams.h: No such file or directory:
+    Make sure to install the latest version of hubo-ach (which means running "$ git pull",
+    "$ autoreconf -i", "$ ./configure" and "$ sudo make install" in your hubo-ach directory.
+
+ -- error: eigen3/Eigen/Core or eigen3/Eigen/Geometry: No such file or directory:
+    Make sure you have installed eigen3 as instructed above and not eigen2.
 
 $ sudo make install
 (This will make the package system-wide and install the libraries)
