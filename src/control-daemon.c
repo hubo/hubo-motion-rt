@@ -2,26 +2,23 @@
  * Copyright (c) 2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Grey <mxgrey@gatech.edu>
- * Georgia Tech Humanoid Robotics Lab
- * Under Direction of Prof. Mike Stilman <mstilman@cc.gatech.edu>
+ * Author: Michael X. Grey <mxgrey@gatech.edu>
+ * Date: Feb 03, 2013
+ *
+ * Humanoid Robotics Lab      Georgia Institute of Technology
+ * Director: Mike Stilman     http://www.golems.org
  *
  *
  * This file is provided under the following "BSD-style" License:
- *
- *
  *   Redistribution and use in source and binary forms, with or
  *   without modification, are permitted provided that the following
  *   conditions are met:
- *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *
  *   * Redistributions in binary form must reproduce the above
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *
  *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
  *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -35,7 +32,6 @@
  *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *   POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 #include "control-daemon.h"
@@ -253,7 +249,6 @@ void controlLoop()
                     H_ref.ref[jnt] = 0; 
                     V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
                     dr[jnt]=0;
-//    if(jnt==LSR) printf("Homed. r:%f\n", H_ref.ref[jnt]);
                 }
             }
         }
@@ -264,8 +259,7 @@ void controlLoop()
         if( 0 < dt && dt < dtMax && H_state.refWait==0 )
         {
             iter++; if(iter>maxi) iter=0;
-//    if(iter==maxi) printf("Active:%d Joint:(%d,%d) Mode:(%d,%d) Position:%f Velocity:%f Accel:%f\n", ctrl.active, 1, leftarmjoints[1], (int)lactrl.joint[1].mode, (int)ctrl.joint[leftarmjoints[1]].mode,
-//                                        ctrl.joint[leftarmjoints[1]].position,ctrl.joint[leftarmjoints[1]].velocity,ctrl.joint[leftarmjoints[1]].acceleration);
+
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
@@ -305,15 +299,11 @@ void controlLoop()
                         else if( ctrl.joint[jnt].mode == CTRL_POS )
                         {
                             dr[jnt] = ctrl.joint[jnt].position - H_ref.ref[jnt]; // Check how far we are from desired position
-//			if(jnt==LSR && maxi==iter) printf("err:%f\tVdi:%f\t",err,ctrl.joint[jnt].velocity);
-			
+
                             ctrl.joint[jnt].velocity = sign(dr[jnt])*fabs(ctrl.joint[jnt].velocity); // Set velocity into the correct direction
 
-//			if(jnt==LSR && maxi==iter) printf("dt:%f\trd:%f\tdri:%f\t",dt,ctrl.joint[jnt].position,dr[jnt]);
 
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
-
-//			if(jnt==LSR && maxi==iter) printf("Vd:%f\tV0:%f\tdVi:%f\t",ctrl.joint[jnt].velocity,V0[jnt],dV[jnt]);
 
                             adr = sqrt(fabs(2.0*ctrl.joint[jnt].acceleration*dr[jnt]));
                             if( fabs(V0[jnt]) >= adr ) // Slow down before reaching goal
@@ -323,8 +313,6 @@ void controlLoop()
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
                             else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) ) // Make sure the sign is correct
                                 dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
-			
-//			if(jnt==LSR && maxi==iter) printf("dV:%f\t",dV[jnt]);
 
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
 
@@ -339,9 +327,6 @@ void controlLoop()
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
                                 H_ref.ref[jnt] += dr[jnt];
-
-//			if(jnt==LSR && maxi==iter) printf("r:%f\tdr:%f\tV:%f\n", H_ref.ref[jnt], dr[jnt], V[jnt]);
-			
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_HOME )
                         {
@@ -349,8 +334,6 @@ void controlLoop()
                             V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
                             //r[jnt]=0; r0[jnt]=0;
                             dr[jnt]=0;
-//            if(jnt==LSR && maxi==iter) printf("Homed. r:%f\n", H_ref.ref[jnt]);
-                            
                         }
                         else
                         {
@@ -385,7 +368,7 @@ void controlLoop()
             }
 
             if(ctrl.active == 1 && C_state.paused==0) 
-            { //if(iter==maxi) printf("Sending ACH, r:%f\n", H_ref.ref[LSP]);
+            {
                 presult = ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
@@ -546,7 +529,6 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 			&tempJC.pos_max,
             &tempJC.timeOut ) ) // check that all values are found
 		{
-//fprintf( stdout, "%s\t%f\t%f\t%f\t%f\t%f\t%f\n", name, tempJC.velocity, tempJC.acceleration, tempJC.speed_limit, tempJC.pos_min, tempJC.pos_max, tempJC.timeOut );
 			// check to make sure jointName is valid
 			size_t x; int i;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {

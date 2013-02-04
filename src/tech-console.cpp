@@ -30,26 +30,23 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Copyright (c) 2013, Georgia Tech Research Corporation
  * All rights reserved.
  *
- * Author(s): Grey <mxgrey@gatech.edu>
- * Georgia Tech Humanoid Robotics Lab
- * Under Direction of Prof. Mike Stilman <mstilman@cc.gatech.edu>
+ * Author: Michael X. Grey <mxgrey@gatech.edu>
+ * Date: Feb 03, 2013
+ *
+ * Humanoid Robotics Lab      Georgia Institute of Technology
+ * Director: Mike Stilman     http://www.golems.org
  *
  *
  * This file is provided under the following "BSD-style" License:
- *
- *
  *   Redistribution and use in source and binary forms, with or
  *   without modification, are permitted provided that the following
  *   conditions are met:
- *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- *
  *   * Redistributions in binary form must reproduce the above
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *
  *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
  *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
@@ -63,7 +60,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *   POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 #include <Hubo_Tech.h>
