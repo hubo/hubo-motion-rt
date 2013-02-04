@@ -4,4 +4,6 @@ See INSTALL for installation instructions.
 
 See USAGE for instructions on using this software.
 
-For examples of applications which use and link to the Hubo-Control-API, please see http://github.com/golems/examples-Hubo-Control-API. There you will also find instructions on how to use the API to make your own daemons and controllers.
+For examples of applications which use and link to the Hubo-Control-API, please see
+http://github.com/golems/examples-Hubo-Control-API. There you will also find instructions
+on how to use the API to make your own daemons and controllers.

@@ -2,17 +2,20 @@ Installation Instructions
 *************************
 
 
-0. This package uses autotools. If you're not sure whether you have autotools, put the following into the terminal:
+0. This package uses autotools. If you're not sure whether you have autotools, put the following
+into the terminal:
 $ sudo apt-get install autotools-dev
 
 ____________________________________________________________
 
 1. Now to use autotools:
 
--- In the directory which contains Makefile.am and configure.ac, run the following commands into the terminal:
+-- In the directory which contains Makefile.am and configure.ac, run the following commands into
+the terminal:
 
 $ mkdir m4
-(Sometimes there is a complaint about this not existing. If it already exists, then don't worry about this step.)
+(Sometimes there is a complaint about this not existing. If it already exists, then don't worry
+about this step.)
 
 $ autoreconf -i
 (Give this some time. It can take a while.)
@@ -39,12 +42,15 @@ ____________________________________________________________
 
 3. Everything should be ready to go.
 
-If you try running the software according to the instructions in USAGE and you get something like the following error:
+If you try running the software according to the instructions in USAGE and you get something like
+the following error:
 
 "libhuboparams.so.x.x.x cannot be found" or "libdaemonizer.so.x.x.x cannot be found"
 
-then the libraries were installed to a directory which is not in your ldconfig path. Feel free to contact mxgrey@gatech.edu to figure out how to resolve the issue.
+then the libraries were installed to a directory which is not in your ldconfig path. Feel free to
+contact mxgrey@gatech.edu to figure out how to resolve the issue.
 
 ____________________________________________________________
 
-4. If any problems not mentioned here occur or if you have any confusion or issues with installation or compilation whatsoever, please do not hesitate to contact the author.
+4. If any problems not mentioned here occur or if you have any confusion or issues with installation
+or compilation whatsoever, please do not hesitate to contact the author.
