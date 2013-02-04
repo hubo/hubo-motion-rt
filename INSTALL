@@ -1,6 +1,7 @@
 Installation Instructions
 *************************
 
+Prerequisite: hubo-ach (https://github.com/hubo/hubo-ach)
 
 0. This package uses autotools. If you're not sure whether you have autotools, put the following
 into the terminal:
