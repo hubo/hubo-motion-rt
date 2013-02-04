@@ -1,0 +1,31 @@
+Source: hubo-motion-rt
+Priority: extra
+Maintainer: M.X. Grey <mxgrey@gatech.edu>
+Build-Depends: debhelper (>= 9.20120909), autotools-dev, libach-dev, hubo-ach-dev
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://github.com/hubo/Hubo-Motion-RT
+Vcs-Git: git://github.com/hubo/Hubo-Motion-RT
+Vcs-Browser: https://github.com/hubo/Hubo-Motion-RT
+
+Package: hubo-motion-rt-utils
+Section: bins
+Architecture: any
+Depends: libach1, ${shlibs:Depends}, ${misc:Depends}
+Description: Programs for the Hubo-Motion-RT control architecture
+ Daemons for Hubo-Motion-RT.
+
+package: libhubo-motion-rt
+Section: libs
+Architecture: any
+Depends: libach1, ${shlibs:Depends}, ${misc:Depends}
+Description: Libraries for interfacing with the Hubo-Motion-RT control architecture
+  Hubo_Tech allows control commands to be sent to Hubo-Motion-RT's control daemon
+  and provides a convenient interface with the daemonizer library.
+
+Package: hubo-motion-rt-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}
+Description: Headers for the Hubo-Motion-RT control architecture
+ Header files for Hubo-Motion-RT.
