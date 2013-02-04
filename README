@@ -5,5 +5,5 @@ See INSTALL for installation instructions.
 See USAGE for instructions on using this software.
 
 For examples of applications which use and link to the Hubo-Motion-RT, please see
-http://github.com/hubo/examples-Hubo-Motion-RT. There you will also find instructions
+http://github.com/hubo/examples-hubo-motion-rt. There you will also find instructions
 on how to use the API to make your own daemons and controllers.

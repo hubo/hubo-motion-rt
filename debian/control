@@ -1,12 +1,12 @@
 Source: hubo-motion-rt
 Priority: extra
 Maintainer: M.X. Grey <mxgrey@gatech.edu>
-Build-Depends: debhelper (>= 9.20120909), autotools-dev, libach-dev, hubo-ach-dev
+Build-Depends: debhelper, autotools-dev, libach-dev
 Standards-Version: 3.9.4
 Section: libs
-Homepage: http://github.com/hubo/Hubo-Motion-RT
-Vcs-Git: git://github.com/hubo/Hubo-Motion-RT
-Vcs-Browser: https://github.com/hubo/Hubo-Motion-RT
+Homepage: http://github.com/hubo/hubo-motion-rt
+Vcs-Git: git://github.com/hubo/hubo-motion-rt
+Vcs-Browser: https://github.com/hubo/hubo-motion-rt
 
 Package: hubo-motion-rt-utils
 Section: bins

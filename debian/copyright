@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Hubo-Motion-RT
-Source: http://github.com/hubo/Hubo-Motion-RT
+Upstream-Name: hubo-motion-rt
+Source: http://github.com/hubo/hubo-motion-rt
 Upstream-Contact: M.X. Grey <mxgrey@gatech.edu>
 
 Files: *
