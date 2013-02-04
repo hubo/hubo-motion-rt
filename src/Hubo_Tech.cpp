@@ -932,10 +932,10 @@ double Hubo_Tech::getJointAngleCtrl(int joint)
 }
 
 double Hubo_Tech::getJointNominalSpeed(int joint)
-{ return getJointVelocity(joint); }
+{ return getJointVelocityCtrl(joint); }
 
 // Velocity control
-double Hubo_Tech::getJointVelocity(int joint)
+double Hubo_Tech::getJointVelocityCtrl(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -1018,14 +1018,14 @@ void Hubo_Tech::getRightArmAngles(Vector6d &angles)
 { getArmAngles(RIGHT, angles); }
 
 tech_flag_t Hubo_Tech::getArmNomSpeeds(int side, Vector6d &speeds)
-{ return getArmVels(side, speeds); }
+{ return getArmVelCtrls(side, speeds); }
 void Hubo_Tech::getLeftArmNomSpeeds(Vector6d &speeds)
-{ getArmVels(LEFT, speeds); }
+{ getArmVelCtrls(LEFT, speeds); }
 void Hubo_Tech::getRightArmNomSpeeds(Vector6d &speeds)
-{ getArmVels(RIGHT, speeds); }
+{ getArmVelCtrls(RIGHT, speeds); }
 
 // Velocity control
-tech_flag_t Hubo_Tech::getArmVels(int side, Vector6d &vels)
+tech_flag_t Hubo_Tech::getArmVelCtrls(int side, Vector6d &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1033,17 +1033,17 @@ tech_flag_t Hubo_Tech::getArmVels(int side, Vector6d &vels)
             vels.resize(ARM_JOINT_COUNT);
 
         for(int i=0; i<ARM_JOINT_COUNT; i++)
-            vels[i] = getJointVelocity(armjoints[side][i]);
+            vels[i] = getJointVelocityCtrl(armjoints[side][i]);
     }
     else
         return BAD_SIDE;
 
     return SUCCESS;
 }
-void Hubo_Tech::getLeftArmVels(Vector6d &vels)
-{ getArmVels(LEFT, vels); }
-void Hubo_Tech::getRightArmVels(Vector6d &vels)
-{ getArmVels(RIGHT, vels); }
+void Hubo_Tech::getLeftArmVelCtrls(Vector6d &vels)
+{ getArmVelCtrls(LEFT, vels); }
+void Hubo_Tech::getRightArmVelCtrls(Vector6d &vels)
+{ getArmVelCtrls(RIGHT, vels); }
 
 // Acceleration settings
 tech_flag_t Hubo_Tech::getArmNomAcc(int side, Vector6d &acc)
@@ -1087,14 +1087,14 @@ void Hubo_Tech::getRightLegAngles(Vector6d &angles)
 { getLegAngles(RIGHT, angles); }
 
 tech_flag_t Hubo_Tech::getLegNomSpeeds(int side, Vector6d &speeds)
-{ return getLegVels(side, speeds); }
+{ return getLegVelCtrls(side, speeds); }
 void Hubo_Tech::getLeftLegNomSpeeds(Vector6d &speeds)
-{ getLegVels(LEFT, speeds); }
+{ getLegVelCtrls(LEFT, speeds); }
 void Hubo_Tech::getRightLegNomSpeeds(Vector6d &speeds)
-{ getLegVels(RIGHT, speeds); }
+{ getLegVelCtrls(RIGHT, speeds); }
 
 // Velocity control
-tech_flag_t Hubo_Tech::getLegVels(int side, Vector6d &vels)
+tech_flag_t Hubo_Tech::getLegVelCtrls(int side, Vector6d &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
@@ -1102,17 +1102,17 @@ tech_flag_t Hubo_Tech::getLegVels(int side, Vector6d &vels)
             vels.resize(LEG_JOINT_COUNT);
 
         for(int i=0; i<LEG_JOINT_COUNT; i++)
-            vels[i] = getJointVelocity(legjoints[side][i]);
+            vels[i] = getJointVelocityCtrl(legjoints[side][i]);
     }
     else
         return BAD_SIDE;
 
     return SUCCESS;
 }
-void Hubo_Tech::getLeftLegVels(Vector6d &vels)
-{ getLegVels(LEFT, vels); }
-void Hubo_Tech::getRightLegVels(Vector6d &vels)
-{ getLegVels(RIGHT, vels); }
+void Hubo_Tech::getLeftLegVelCtrls(Vector6d &vels)
+{ getLegVelCtrls(LEFT, vels); }
+void Hubo_Tech::getRightLegVelCtrls(Vector6d &vels)
+{ getLegVelCtrls(RIGHT, vels); }
 
 // Acceleration settings
 tech_flag_t Hubo_Tech::getLegNomAcc(int side, Vector6d &acc)
