@@ -5,13 +5,18 @@ Prerequisite: hubo-ach (https://github.com/hubo/hubo-ach)
 
 0. This package uses autotools. If you're not sure whether you have autotools, put the following
 into the terminal:
-$ sudo apt-get install autotools-dev
+$ sudo apt-get update
+$ sudo apt-get upgrade
+$ sudo apt-get install autoconf
+
+It also depends on the Eigen C++ Library 3.0. Get it with the following command on Ubuntu:
+$ sudo apt-get install libeigen3-dev
 
 ____________________________________________________________
 
 1. Now to use autotools:
 
--- In the directory which contains Makefile.am and configure.ac, run the following commands into
+In the directory which contains Makefile.am and configure.ac, run the following commands into
 the terminal:
 
 $ mkdir m4

@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.67])
 AC_INIT([Hubo_Tech],[0.0.0],[mxgrey@gatech.edu])
 AM_INIT_AUTOMAKE([-Wall])
 AC_CONFIG_SRCDIR([include/Hubo_Tech.h])
