@@ -1,4 +1,4 @@
-Hubo-Motion-RT
+hubo-motion-rt
 ==============
 
 Pre-Requisite: hubo-ach (https://github.com/hubo/hubo-ach)
