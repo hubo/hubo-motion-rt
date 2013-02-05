@@ -157,8 +157,8 @@ StartHubo()
 		echo 'This will switch all the CAN'
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
-		echo 'hubo-daemon, and start up'
-		echo 'the tech-console.'
+		echo 'hubo-daemon, control-daemon,'
+        echo ' and start up the tech-console.'
 		echo
 		echo 'You can pass in arguments to the'
 		echo 'hubo-daemon by appending them to'

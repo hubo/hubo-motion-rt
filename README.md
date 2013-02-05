@@ -1,6 +1,8 @@
 hubo-motion-rt
 ==============
 
+(See README [without a ".md"] for a list of stuff to look over)
+
 Pre-Requisite: hubo-ach (https://github.com/hubo/hubo-ach)
 
 This is a software control system meant to allow a stable, modular, and easy-to-use software architecture for safely performing real-time control on Hubo.

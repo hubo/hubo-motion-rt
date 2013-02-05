@@ -22,8 +22,8 @@ will print the following help message:
 > This will switch all the CAN
 > devices to up mode, open all
 > ach channels, boot up the
-> hubo-daemon, and start up
-> the tech-console.
+> hubo-daemon, control-daemon,
+> and start up the tech-console.
 > 
 > You can pass in arguments to the
 > hubo-daemon by appending them to
@@ -32,7 +32,7 @@ will print the following help message:
 > will run the daemon while passing
 > in the arguments -v and -d
 
-If you want to use the Hubo-Motion-RT, please do NOT run the "hubo-ach" script which comes with
+If you want to use Hubo-Motion-RT, please do NOT run the "hubo-ach" script which comes with
 the hubo-ach package. Technically, it shouldn't hurt to use both at the same time, but I haven't
 verified this thoroughly yet.
 
@@ -44,3 +44,8 @@ guarantees. Eventually tech-console will be replaced with a GUI which will run o
 
 If you have any questions or run into any problems whatsoever, please do not hesitate to contact
 mxgrey@gatech.edu
+
+
+For examples of applications which use and link to the Hubo-Motion-RT, please see
+http://github.com/hubo/examples-hubo-motion-rt. There you will also find instructions
+on how to use the API to make your own daemons and controllers.
