@@ -47,6 +47,7 @@ int daemon_sig_usr1 = 0;
 int daemon_sig_usr2 = 0;
 
 #define LOCKDIR "/var/lock/hubo"
+#define LOGDIR "/var/log/hubo"
 char lockfile[100] = "/var/lock/hubo/default-daemon";
 char gdaemon_name[100] = "default-daemon";
 
@@ -228,6 +229,9 @@ void daemonize(const char *daemon_name, int priority)
         exit( EXIT_FAILURE );
     }
 
+    st = {0};
+    if( stat(LOGDIR, &st) == -1 )
+        mkdir(LOGDIR, 0700);
 
     // Create files for logging, in case they don't exist already
     char outfile[100];
