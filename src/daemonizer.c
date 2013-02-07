@@ -229,8 +229,8 @@ void daemonize(const char *daemon_name, int priority)
         exit( EXIT_FAILURE );
     }
 
-    st = {0};
-    if( stat(LOGDIR, &st) == -1 )
+    struct stat logst = {0};
+    if( stat(LOGDIR, &logst) == -1 )
         mkdir(LOGDIR, 0700);
 
     // Create files for logging, in case they don't exist already
