@@ -1,3 +1,11 @@
+################
+## Binaries
+################
+control-daemon
+proto-manip-daemon
+tech-console
+
+
 #################
 ## Hubo Specific
 #################
