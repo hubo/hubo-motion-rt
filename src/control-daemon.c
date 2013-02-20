@@ -136,6 +136,9 @@ void controlLoop()
         return;
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        ctrl.joint[i].mode = CTRL_HOME;
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
         H_ref.mode[i] = 1; // Make sure that the values are not put through Dan's buffer/filter
 
     size_t fs;
@@ -179,6 +182,7 @@ void controlLoop()
 
     double t0 = H_state.time;
     double t, dt, err;
+
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
 
@@ -259,6 +263,7 @@ void controlLoop()
         if( 0 < dt && dt < dtMax && H_state.refWait==0 )
         {
             iter++; if(iter>maxi) iter=0;
+
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
@@ -365,7 +370,8 @@ void controlLoop()
                     reset[jnt]=1;
                     C_state.status[jnt] = 0;
                 }
-            }
+            } // end: for loop
+
 
             if(ctrl.active == 1 && C_state.paused==0) 
             {
@@ -376,7 +382,7 @@ void controlLoop()
                 ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
             }
             
-        }
+        }// end: time test
         else if( dt >= 0.1 )
             fprintf(stderr, "Experiencing Delay of %f seconds\n", dt);
         else if( dt < 0 )
