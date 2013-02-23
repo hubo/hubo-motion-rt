@@ -238,8 +238,8 @@ void controlLoop()
         else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
 
         t = H_state.time;
-        dt = t - t0;
-
+        if( t - t0 > 0 )
+            dt = t - t0;
         
         if((ctrl.active == 2 || H_state.refWait==1) && C_state.paused==0)
         {
@@ -269,11 +269,18 @@ void controlLoop()
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
-                if( ctrl.joint[jnt].mode == CTRL_PASS)
+                if( H_ref.ref[jnt] != H_ref.ref[jnt] && fail[jnt]==0 )
+                {
+                    fprintf( stderr, "JOINT FROZEN! You have requested a NaN for joint #%d!\n", jnt );
+                    fail[jnt] = 1;
+                    C_state.status[jnt] = 1;
+                }                    
+
+                if( ctrl.joint[jnt].mode == CTRL_PASS )
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
 
-                if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].speed_limit*dtMax) // TODO: Validate this condition
-                    && fail[jnt]==0 )
+                if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
+                    && fail[jnt]==0  )
                 {
                     if( ctrl.joint[jnt].mode != CTRL_OFF && ctrl.joint[jnt].mode != CTRL_RESET )
                     {
@@ -305,7 +312,7 @@ void controlLoop()
                         {
                             dr[jnt] = ctrl.joint[jnt].position - H_ref.ref[jnt]; // Check how far we are from desired position
 
-                            ctrl.joint[jnt].velocity = sign(dr[jnt])*fabs(ctrl.joint[jnt].velocity); // Set velocity into the correct direction
+                            ctrl.joint[jnt].velocity = sign(dr[jnt])*fabs(ctrl.joint[jnt].speed); // Set velocity into the correct direction
 
 
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
@@ -355,7 +362,7 @@ void controlLoop()
                 else if(fail[jnt]==0 && ctrl.joint[jnt].mode != CTRL_HOME)
                 {
                     fprintf(stderr, "JOINT %d FROZEN! Exceeded error limit(%g):%g, Ref:%f, State:%f\n", jnt,
-                        fabs(errorFactor*ctrl.joint[jnt].speed_limit*dtMax), err, H_ref.ref[jnt], H_state.joint[jnt].pos );
+                        fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax), err, H_ref.ref[jnt], H_state.joint[jnt].pos );
                     V[jnt]=0; V0[jnt]=0;
                     H_ref.ref[jnt] = H_state.joint[jnt].pos;
                     fail[jnt]=1;
@@ -405,7 +412,7 @@ int main(int argc, char **argv)
     // TODO: Parse runtime arguments
 
 
-    daemonize( "control-daemon", 49 );
+    daemonize( "control-daemon", 45 );
    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
@@ -528,9 +535,9 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 		// to get all the parameters for the joint on this line.
 		if (7 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf",
 			name,
-			&tempJC.velocity,
+			&tempJC.speed,
 			&tempJC.acceleration,
-			&tempJC.speed_limit,
+			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
             &tempJC.timeOut ) ) // check that all values are found

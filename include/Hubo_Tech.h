@@ -39,7 +39,7 @@
  * \file Hubo_Tech.h
  * \brief Programming interface for passing joint control and CAN commands to Hubo daemons.
  * 
- * \author MX Grey
+ * \author M.X. Grey
  */
 
 #ifndef HUBO_PLUS_H
@@ -91,6 +91,8 @@ typedef enum {
     STATE_STALE,    ///< The state values were not able to update for some reason
     ALL_STALE,      ///< Nothing was able to update for some reason
     CHAN_OPEN_FAIL, ///< A channel failed to open
+    IK_EDGE,        ///< You're trying to push something out of bounds with an IK
+    IK_DANGER       ///< The IK is on a singularity and is resorting to a safety feature
 
 } tech_flag_t;
 
@@ -229,7 +231,6 @@ public:
     */
     tech_flag_t setRightArmNomSpeeds( Vector6d speeds );
     /**
-    /*
      * Extension of setVelocityControl() which acts on all joint in an arm designated by "side" (LEFT or RIGHT)
     */
     tech_flag_t setArmVelCtrl( int side );
@@ -377,7 +378,7 @@ public:
      * state). If this error is ever exceeded, the control-daemon will freeze that joint
      * until a reset command is sent.
     */
-    tech_flag_t setJointSpeedMax( int joint, double speed );
+    tech_flag_t setJointErrorMax( int joint, double speed );
 
     // ~~** Send Off Latest Control Commands
     /**
@@ -564,7 +565,7 @@ public:
     /**
      * Returns the control-daemon's joint speed limit for a particular joint
     */
-    double getJointSpeedMax( int joint );
+    double getJointErrorMax( int joint );
 
     // Passthrough Mode: Reference values will not be touched by
     // the control-daemon. Use of this mode is strongly discouraged.
@@ -833,6 +834,15 @@ public:
     void huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side);
 
     /**
+     * A specialized differential IK (solved analytically) for moving the hip
+     * position. NOT THOROUGHLY TESTED -- USE WITH EXTREME CAUTION.
+    */
+    tech_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate );
+    /**
+     * Calibration for Ankle Pitch and Roll
+    */
+    void calibrateAnkle( int side );
+    /**
      * A specialized Forward Kinematics calculation which accounts for the end effector
      * transformation of our experimental drill.
     */
@@ -875,6 +885,13 @@ public:
 protected:
 
     void techInit();
+
+    double kneeSingularityThreshold;
+    double kneeSingularityDanger;
+    double kneeSingularitySpeed;
+
+    double apc[2]; // Ankle Pitch Calibration
+    double arc[2]; // Ankle Roll Calibration
 
     ach_channel_t chan_hubo_ref;
     ach_channel_t chan_hubo_board_cmd;

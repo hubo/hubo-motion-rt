@@ -66,6 +66,10 @@ Hubo_Tech::~Hubo_Tech()
 
 void Hubo_Tech::techInit()
 {
+    kneeSingularityThreshold = 0.2;
+    kneeSingularityDanger = 0.15;
+    kneeSingularitySpeed = 0.1;
+
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
@@ -328,43 +332,43 @@ tech_flag_t Hubo_Tech::setJointNominalSpeed(int joint, double speed)
         {
             case CtrlRA: // Right Arm
                 if( H_Arm_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Arm_Ctrl[RIGHT].joint[localMap[joint]].velocity = speed;
+                    H_Arm_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlLA: // Left Arm
                 if( H_Arm_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Arm_Ctrl[LEFT].joint[localMap[joint]].velocity = speed;
+                    H_Arm_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlRL: // Right Leg
                 if( H_Leg_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Leg_Ctrl[RIGHT].joint[localMap[joint]].velocity = speed;
+                    H_Leg_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlLL: // Left Leg
                 if( H_Leg_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Leg_Ctrl[LEFT].joint[localMap[joint]].velocity = speed;
+                    H_Leg_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlRF: // Right Fingers
                 if( H_Fin_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Fin_Ctrl[RIGHT].joint[localMap[joint]].velocity = speed;
+                    H_Fin_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlLF: // Left Fingers
                 if( H_Fin_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
-                    H_Fin_Ctrl[LEFT].joint[localMap[joint]].velocity = speed;
+                    H_Fin_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
             case CtrlAX: // Aux
                 if( H_Aux_Ctrl.joint[localMap[joint]].mode == CTRL_POS )
-                    H_Aux_Ctrl.joint[localMap[joint]].velocity = speed;
+                    H_Aux_Ctrl.joint[localMap[joint]].speed = speed;
                 else
                     return WRONG_MODE;
                 break;
@@ -838,26 +842,26 @@ tech_flag_t Hubo_Tech::setJointAngleMax(int joint, double radians)
     return SUCCESS;
 }
 
-tech_flag_t Hubo_Tech::setJointSpeedMax(int joint, double speed)
+tech_flag_t Hubo_Tech::setJointErrorMax(int joint, double speed)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
         switch( ctrlMap[joint] )
         {
             case CtrlRA:
-                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlLA:
-                H_Arm_Ctrl[LEFT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlRL:
-                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlLL:
-                H_Leg_Ctrl[LEFT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlRF:
-                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlLF:
-                H_Fin_Ctrl[LEFT].joint[localMap[joint]].speed_limit = speed; break;
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].error_limit = speed; break;
             case CtrlAX:
-                H_Aux_Ctrl.joint[localMap[joint]].speed_limit = speed; break;
+                H_Aux_Ctrl.joint[localMap[joint]].error_limit = speed; break;
         }
     }
     else
@@ -1188,26 +1192,26 @@ double Hubo_Tech::getJointAngleMax(int joint)
         return 0;
 }
 
-double Hubo_Tech::getJointSpeedMax(int joint)
+double Hubo_Tech::getJointErrorMax(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
         switch( ctrlMap[joint] )
         {
             case CtrlRA:
-                return H_Arm_Ctrl[RIGHT].joint[localMap[joint]].speed_limit; break;
+                return H_Arm_Ctrl[RIGHT].joint[localMap[joint]].error_limit; break;
             case CtrlLA:
-                return H_Arm_Ctrl[LEFT].joint[localMap[joint]].speed_limit; break;
+                return H_Arm_Ctrl[LEFT].joint[localMap[joint]].error_limit; break;
             case CtrlRL:
-                return H_Leg_Ctrl[RIGHT].joint[localMap[joint]].speed_limit; break;
+                return H_Leg_Ctrl[RIGHT].joint[localMap[joint]].error_limit; break;
             case CtrlLL:
-                return H_Leg_Ctrl[LEFT].joint[localMap[joint]].speed_limit; break;
+                return H_Leg_Ctrl[LEFT].joint[localMap[joint]].error_limit; break;
             case CtrlRF:
-                return H_Fin_Ctrl[RIGHT].joint[localMap[joint]].speed_limit; break;
+                return H_Fin_Ctrl[RIGHT].joint[localMap[joint]].error_limit; break;
             case CtrlLF:
-                return H_Fin_Ctrl[LEFT].joint[localMap[joint]].speed_limit; break;
+                return H_Fin_Ctrl[LEFT].joint[localMap[joint]].error_limit; break;
             case CtrlAX:
-                return H_Aux_Ctrl.joint[localMap[joint]].speed_limit; break;
+                return H_Aux_Ctrl.joint[localMap[joint]].error_limit; break;
         }
     }
     else
@@ -1685,6 +1689,15 @@ void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
     f <<  M_PI/2,  M_PI/2, -M_PI/2,  M_PI/2, -M_PI/2,       0;
     r <<       0,       0,       0,       0,       0,      l4;
     d <<       0,       0,     -l2,       0,     -l3,       0;
+
+    limits <<
+        H_Arm_Ctrl[side].joint[0].pos_min, H_Arm_Ctrl[side].joint[0].pos_max,
+        H_Arm_Ctrl[side].joint[1].pos_min, H_Arm_Ctrl[side].joint[1].pos_max,
+        H_Arm_Ctrl[side].joint[2].pos_min, H_Arm_Ctrl[side].joint[2].pos_max,
+        H_Arm_Ctrl[side].joint[3].pos_min, H_Arm_Ctrl[side].joint[3].pos_max,
+        H_Arm_Ctrl[side].joint[4].pos_min, H_Arm_Ctrl[side].joint[4].pos_max,
+        H_Arm_Ctrl[side].joint[5].pos_min, H_Arm_Ctrl[side].joint[5].pos_max;
+
     
     if (side == RIGHT) {
         neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
@@ -1692,6 +1705,7 @@ void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
         neck(2,0) = 0; neck(2,1) = -1; neck(2,2) = 0; neck(2,3) =   0;
         neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
         
+/*
         limits <<
         -2,   2,
         -2,  .3,
@@ -1699,7 +1713,7 @@ void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
         -2,   0.01,
         -2,   2,
         -1.4, 1.2;
-        
+*/        
         // Set offsets
         offset(1) = limits(1,1); // Note: I think this might be backwards
 //        offset(1) = -limits(1,1);
@@ -1709,7 +1723,7 @@ void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
         neck(1,0) = 0; neck(1,1) =  0; neck(1,2) = 1; neck(1,3) =  l1;
         neck(2,0) = 0; neck(2,1) = -1; neck(2,2) = 0; neck(2,3) =   0;
         neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
-        
+/*        
         limits <<
         -2,   2,
         -.3,   2,
@@ -1717,7 +1731,7 @@ void Hubo_Tech::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const Ei
         -2,   0.01,
         -2,   2,
         -1.4, 1.2;
-        
+*/        
         // Set offsets
         offset(1) = limits(1,0); // Note: I think this might be backwards
 //        offset(1) = -limits(1,0);
@@ -1770,12 +1784,21 @@ void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
     double l3 = 181.59/1000.0;
     double l4 = 4.75*25.4/1000.0;
     
+
+    limits <<
+        H_Arm_Ctrl[side].joint[0].pos_min, H_Arm_Ctrl[side].joint[0].pos_max,
+        H_Arm_Ctrl[side].joint[1].pos_min, H_Arm_Ctrl[side].joint[1].pos_max,
+        H_Arm_Ctrl[side].joint[2].pos_min, H_Arm_Ctrl[side].joint[2].pos_max,
+        H_Arm_Ctrl[side].joint[3].pos_min, H_Arm_Ctrl[side].joint[3].pos_max,
+        H_Arm_Ctrl[side].joint[4].pos_min, H_Arm_Ctrl[side].joint[4].pos_max,
+        H_Arm_Ctrl[side].joint[5].pos_min, H_Arm_Ctrl[side].joint[5].pos_max;
+
     if (side == RIGHT) {
         neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
         neck(1,0) = 0; neck(1,1) =  0; neck(1,2) = 1; neck(1,3) = -l1;
         neck(2,0) = 0; neck(2,1) = -1; neck(2,2) = 0; neck(2,3) =   0;
         neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
-        
+/*
         limits <<
         -2,   2,
         -2,  .3,
@@ -1783,7 +1806,7 @@ void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
         -2,   0.01,
         -2,   2,
         -1.4, 1.2;
-        
+*/
         // Set offsets
         offset(1) = limits(1,1); 
         
@@ -1792,7 +1815,7 @@ void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
         neck(1,0) = 0; neck(1,1) =  0; neck(1,2) = 1; neck(1,3) =  l1;
         neck(2,0) = 0; neck(2,1) = -1; neck(2,2) = 0; neck(2,3) =   0;
         neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
-        
+/*        
         limits <<
         -2,   2,
         -.3,   2,
@@ -1800,7 +1823,7 @@ void Hubo_Tech::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
         -2,   0.01,
         -2,   2,
         -1.4, 1.2;
-        
+*/        
         // Set offsets
         offset(1) = limits(1,0); 
     }
@@ -2069,12 +2092,20 @@ void Hubo_Tech::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     neck(2,0) = 0; neck(2,1) =  0; neck(2,2) = 1; neck(2,3) = -l1;
     neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
     
+    limits <<
+        H_Leg_Ctrl[side].joint[0].pos_min, H_Leg_Ctrl[side].joint[0].pos_max,
+        H_Leg_Ctrl[side].joint[1].pos_min, H_Leg_Ctrl[side].joint[1].pos_max,
+        H_Leg_Ctrl[side].joint[2].pos_min, H_Leg_Ctrl[side].joint[2].pos_max,
+        H_Leg_Ctrl[side].joint[3].pos_min, H_Leg_Ctrl[side].joint[3].pos_max,
+        H_Leg_Ctrl[side].joint[4].pos_min, H_Leg_Ctrl[side].joint[4].pos_max,
+        H_Leg_Ctrl[side].joint[5].pos_min, H_Leg_Ctrl[side].joint[5].pos_max;
+
     if (side == RIGHT) {
         waist(0,0) = 0; waist(0,1) = -1; waist(0,2) = 0; waist(0,3) =   0;
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) = -l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-        
+/*        
                 limits <<
                 -1.30,   1.30,
                 -0.58,   0.0,
@@ -2082,7 +2113,7 @@ void Hubo_Tech::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
                 0.0,     2.50,
                 -1.26,   1.80,
                 -0.23,   0.31;
-        
+*/        
         // Set offsets
         //        offset(1) = limits(1,1);
         
@@ -2091,7 +2122,7 @@ void Hubo_Tech::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) =  l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-        
+/*        
                 limits <<
                 -1.30,   1.30,
                 0.0,     0.58,
@@ -2099,7 +2130,7 @@ void Hubo_Tech::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
                 0.0,     2.50,
                 -1.26,   1.80,
                 -0.31,   0.23;
-        
+*/        
         // Set offsets
         //        offset(1) = limits(1,0);
     }
@@ -2141,21 +2172,29 @@ void Hubo_Tech::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
     neck(1,0) = 0; neck(1,1) =  1; neck(1,2) = 0; neck(1,3) =   0;
     neck(2,0) = 0; neck(2,1) =  0; neck(2,2) = 1; neck(2,3) = -l1;
     neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
+
+    limits <<
+        H_Leg_Ctrl[side].joint[0].pos_min, H_Leg_Ctrl[side].joint[0].pos_max,
+        H_Leg_Ctrl[side].joint[1].pos_min, H_Leg_Ctrl[side].joint[1].pos_max,
+        H_Leg_Ctrl[side].joint[2].pos_min, H_Leg_Ctrl[side].joint[2].pos_max,
+        H_Leg_Ctrl[side].joint[3].pos_min, H_Leg_Ctrl[side].joint[3].pos_max,
+        H_Leg_Ctrl[side].joint[4].pos_min, H_Leg_Ctrl[side].joint[4].pos_max,
+        H_Leg_Ctrl[side].joint[5].pos_min, H_Leg_Ctrl[side].joint[5].pos_max;
     
     if (side == RIGHT) {
         waist(0,0) = 0; waist(0,1) = -1; waist(0,2) = 0; waist(0,3) =   0;
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) = -l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-        
+/*        
                 limits <<
-                -1.30,   1.30,
-                -0.58,   0.0,
                 -1.80,   0.0,
+                -0.58,   0.0,
+                -1.30,   1.30,
                 0.0,     2.50,
                 -1.26,   1.80,
                 -0.23,   0.31;
-        
+*/        
         // Set offsets
         //        offset(1) = limits(1,1);
         
@@ -2164,15 +2203,15 @@ void Hubo_Tech::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) =  l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-        
+/*        
                 limits <<
-                -1.30,   1.30,
-                0.0,     0.58,
                 0.0,     1.80,
+                0.0,     0.58,
+                -1.30,   1.30,
                 0.0,     2.50,
                 -1.26,   1.80,
                 -0.31,   0.23;
-        // Set offsets
+*/        // Set offsets
         //        offset(1) = limits(1,0);
     }
     neckInv = neck.inverse();
@@ -2259,6 +2298,97 @@ void Hubo_Tech::huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int 
     
     //    q = q.cwiseMin(limits.col(1));
     //    q = q.cwiseMax(limits.col(0));
+}
+
+tech_flag_t Hubo_Tech::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate ) 
+{
+    tech_flag_t flag = SUCCESS;
+
+    Eigen::Vector3d vel;
+    vel(0) = -velocity(0);
+    vel(1) = -velocity(1);
+    vel(2) =  velocity(2);
+
+    qdot.setZero();
+    if( side!=RIGHT && side!=LEFT )
+        side = RIGHT;
+
+    double hp, ap, ar, kn;
+    
+    if(side==RIGHT)
+    {
+        hp = getJointAngleState(RHP);
+        ap = getJointAngleState(RAP) - apc[RIGHT];
+        ar = getJointAngleState(RAR) - arc[RIGHT];
+        kn = getJointAngleState(RKN);
+    }
+    else
+    {
+        hp = getJointAngleState(LHP);
+        ap = getJointAngleState(LAP) - apc[LEFT];
+        ar = getJointAngleState(LAR) - arc[LEFT];
+        kn = getJointAngleState(LKN);
+    }
+
+/*
+    hp = qstate(2);
+    ap = qstate(4);
+    ar = qstate(5);
+    kn = qstate(3);
+*/    
+
+    double L = 2*0.3002;
+
+
+    if( kn <= kneeSingularityDanger || fabs(-hp-ap) <= kneeSingularityDanger )
+    {
+        qdot(2) = -fabs(kneeSingularitySpeed/2);
+        qdot(3) =  fabs(kneeSingularitySpeed);
+        qdot(4) = -fabs(kneeSingularitySpeed/2);
+        return IK_DANGER;
+    }
+
+
+    if( kn <= kneeSingularityThreshold || fabs(-hp-ap) <= kneeSingularityThreshold )
+    {
+        
+        Eigen::Vector3d lhat;
+
+        lhat <<  sin(ap)-sin(hp), -(cos(ap)+cos(hp))*sin(ar), (cos(ap)+cos(hp))*cos(ar);
+        lhat.normalize();
+
+        double lv = vel.dot(lhat);
+
+        if( lv > 0 )
+        {
+            vel = vel - lv*lhat;
+            flag = IK_DANGER;
+        }
+        
+    }
+
+    qdot(2) = -2.0/(L*sin(hp+ap))*( vel(0)*sin(ap) - vel(1)*sin(ar)*cos(ap) + vel(2)*cos(ar)*cos(ap) );
+    qdot(5) = -2.0*( vel(1)*cos(ar) + vel(2)*sin(ar) )/( L*( cos(ap) + cos(hp) ) );
+    qdot(4) =  2.0*vel(0)/(L*cos(ap)) + qdot(2)*cos(hp)/cos(ap);
+    qdot(1) =  -qdot(5);
+    qdot(3) = -qdot(2) - qdot(4);
+
+    return flag;
+
+}
+
+void Hubo_Tech::calibrateAnkle( int side )
+{
+    if( side == RIGHT )
+    {
+        apc[side] = getJointAngleState( RAP );
+        arc[side] = getJointAngleState( RAR );
+    }
+    else
+    {
+        apc[LEFT] = getJointAngleState( LAP );
+        arc[LEFT] = getJointAngleState( LAR );
+    }
 }
 
 void Hubo_Tech::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {

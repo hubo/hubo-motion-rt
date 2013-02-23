@@ -82,10 +82,11 @@ typedef enum {
 
 struct hubo_joint_control {
     double position;
+    double speed;
     double velocity;
     double acceleration;
 
-    double speed_limit;
+    double error_limit;
 
     double pos_min;
     double pos_max;
