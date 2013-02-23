@@ -238,8 +238,7 @@ void controlLoop()
         else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
 
         t = H_state.time;
-        if( t - t0 > 0 )
-            dt = t - t0;
+        dt = t - t0;
         
         if((ctrl.active == 2 || H_state.refWait==1) && C_state.paused==0)
         {
@@ -412,7 +411,7 @@ int main(int argc, char **argv)
     // TODO: Parse runtime arguments
 
 
-    daemonize( "control-daemon", 45 );
+    daemonize( "control-daemon", 49 );
    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
