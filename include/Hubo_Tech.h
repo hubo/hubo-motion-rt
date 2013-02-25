@@ -78,6 +78,22 @@ typedef Eigen::Vector3d Vector3d;
 #define CtrlAX  7
 
 
+#define SP      0
+#define SR      1
+#define SY      2
+#define EB      3
+#define WY      4
+#define WP      5
+
+#define HY      0
+#define HR      1
+#define HP      2
+#define KN      3
+#define AP      4
+#define AR      5
+
+
+
 typedef enum {
     SUCCESS = 0,    ///< The function completed with no errors
     JOINT_OOB,      ///< The joint you tried to specify is out of bounds
