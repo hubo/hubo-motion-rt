@@ -1,2 +1,4 @@
 usr/bin
 etc/hubo-ach
+etc/init.d
+etc/hubo-ach

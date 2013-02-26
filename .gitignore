@@ -201,3 +201,10 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+
+/debian/hubo-motion-rt-utils.substvars
+/debian/hubo-motion-rt-utils
+/debian/hubo-motion-rt-dev.substvars
+/debian/hubo-motion-rt-dev
+/debian/files

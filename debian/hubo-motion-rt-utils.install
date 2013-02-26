@@ -1,3 +1,5 @@
 usr/bin/control-daemon
 usr/bin/proto-manip-daemon
 usr/bin/tech-console
+etc/init.d/tech
+etc/hubo-ach/control.table
