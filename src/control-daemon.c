@@ -189,6 +189,14 @@ void controlLoop()
     // Main control loop
     while( !daemon_sig_quit )
     {
+        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_WAIT );
+        if( ACH_OK != sresult )
+        {
+            // TODO: Print a debug message
+        }
+        else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
+
+
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<ARM_JOINT_COUNT; j++)
@@ -227,15 +235,6 @@ void controlLoop()
         sortJointControls( &ctrl, &ractrl, &lactrl,
                                   &rlctrl, &llctrl,
                                   &rfctrl, &lfctrl, &auxctrl );
-
-
-
-        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
-        if( ACH_OK != sresult )
-        {
-            // TODO: Print a debug message
-        }
-        else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
 
         t = H_state.time;
         dt = t - t0;
