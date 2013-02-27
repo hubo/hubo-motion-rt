@@ -113,8 +113,6 @@ typedef enum {
 } tech_flag_t;
 
 
-
-
 class Hubo_Tech
 {
 public:
@@ -146,10 +144,7 @@ public:
      * \li Joint reference (encoder value);
     */
     /// Retrieves the latest data from the state and ref channels
-    tech_flag_t update(bool printError=false);   
-                    // Returns true if successful
-                    // Returns false if both channels are not ACH_OK
-    // TODO: Consider making the update return more meaningful
+    tech_flag_t update(bool stateWait=false, bool printError=false);   
 
 
     // ~~~*** Sending Control Commands ***~~~ //
