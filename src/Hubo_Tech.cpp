@@ -1310,8 +1310,20 @@ double Hubo_Tech::getFz(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Tech::getRightFootFz() { getFz(HUBO_FT_R_FOOT); }
-double Hubo_Tech::getLeftFootFz()  { getFz(HUBO_FT_L_FOOT); }
+double Hubo_Tech::getRightFootFz( bool calibrated )
+{
+    if( calibrated )    
+        return getFz(HUBO_FT_R_FOOT) + afc[RIGHT];
+    else
+        return getFz(HUBO_FT_R_FOOT);
+}
+double Hubo_Tech::getLeftFootFz( bool calibrated )
+{
+    if( calibrated )
+        return getFz(HUBO_FT_L_FOOT) + afc[LEFT];
+    else
+        return getFz(HUBO_FT_L_FOOT);
+}
 
 
 // ~* Accelerometers
@@ -2400,6 +2412,12 @@ void Hubo_Tech::calibrateAnkle( int side )
         apc[LEFT] = getJointAngleState( LAP );
         arc[LEFT] = getJointAngleState( LAR );
     }
+}
+
+void Hubo_Tech::calibrateAnkleForces()
+{
+    afc[RIGHT] = (getRightFootFz()+getLeftFootFz())/2.0 - getRightFootFz();
+    afc[LEFT]  = (getRightFootFz()+getLeftFootFz())/2.0 - getLeftFootFz();
 }
 
 void Hubo_Tech::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {
