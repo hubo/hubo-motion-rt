@@ -810,7 +810,7 @@ public:
      *
      * side specifies which arm (LEFT or RIGHT)
     */
-    void huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side);
+    void huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
     /**
      * Same as huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side), but it will
      * also apply a final end effector transformation at the end, specified by the fifth argument.
@@ -830,7 +830,7 @@ public:
      *
      * Similar to huboArmIK() but applied to the leg
     */
-    void huboLegIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side);
+    void huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
 
     /**
      * A specialized Forward Kinematics calculation which accounts for the end effector
