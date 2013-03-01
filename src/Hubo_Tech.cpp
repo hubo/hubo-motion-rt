@@ -125,13 +125,13 @@ void Hubo_Tech::techInit()
 
     ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
     ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]), &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),  &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]), &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),  &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]), &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),  &fs, NULL, ACH_O_COPY );
-    ach_get( &chan_hubo_aux_ctrl, &H_Aux_Ctrl, sizeof(H_Aux_Ctrl), &fs, NULL, ACH_O_COPY );
+    ach_get( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_aux_ctrl, &H_Aux_Ctrl, sizeof(H_Aux_Ctrl), &fs, NULL, ACH_O_LAST );
 
 
     for(int i=0; i<ARM_JOINT_COUNT; i++)
@@ -947,7 +947,30 @@ double Hubo_Tech::getJointAngleCtrl(int joint)
 }
 
 double Hubo_Tech::getJointNominalSpeed(int joint)
-{ return getJointVelocityCtrl(joint); }
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                return H_Arm_Ctrl[RIGHT].joint[localMap[joint]].speed; break;
+            case CtrlLA:
+                return H_Arm_Ctrl[LEFT].joint[localMap[joint]].speed; break;
+            case CtrlRL:
+                return H_Leg_Ctrl[RIGHT].joint[localMap[joint]].speed; break;
+            case CtrlLL:
+                return H_Leg_Ctrl[LEFT].joint[localMap[joint]].speed; break;
+            case CtrlRF:
+                return H_Fin_Ctrl[RIGHT].joint[localMap[joint]].speed; break;
+            case CtrlLF:
+                return H_Fin_Ctrl[LEFT].joint[localMap[joint]].speed; break;
+            case CtrlAX:
+                return H_Aux_Ctrl.joint[localMap[joint]].speed; break;
+        }
+    }
+    else
+        return 0;
+}
 
 // Velocity control
 double Hubo_Tech::getJointVelocityCtrl(int joint)
@@ -1033,11 +1056,24 @@ void Hubo_Tech::getRightArmAngles(Vector6d &angles)
 { getArmAngles(RIGHT, angles); }
 
 tech_flag_t Hubo_Tech::getArmNomSpeeds(int side, Vector6d &speeds)
-{ return getArmVelCtrls(side, speeds); }
+{
+    if( side==LEFT || side==RIGHT )
+    {
+        if(speeds.size() != ARM_JOINT_COUNT)
+            speeds.resize(ARM_JOINT_COUNT);
+
+        for(int i=0; i<ARM_JOINT_COUNT; i++)
+            speeds[i] = getJointNominalSpeed(armjoints[side][i]);
+    }
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
 void Hubo_Tech::getLeftArmNomSpeeds(Vector6d &speeds)
-{ getArmVelCtrls(LEFT, speeds); }
+{ getArmNomSpeeds(LEFT, speeds); }
 void Hubo_Tech::getRightArmNomSpeeds(Vector6d &speeds)
-{ getArmVelCtrls(RIGHT, speeds); }
+{ getArmNomSpeeds(RIGHT, speeds); }
 
 // Velocity control
 tech_flag_t Hubo_Tech::getArmVelCtrls(int side, Vector6d &vels)
