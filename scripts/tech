@@ -47,9 +47,11 @@ DAEMON_DIR='/etc/hubo-daemon'
 DAEMON_LOG_DIR='/var/log/hubo'
 LOCK_DIR='/var/lock/hubo'
 
-sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
-sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
-
+if [ -e /dev/pcan0 ]
+then
+    sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
+    sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
+fi
 
 Ach()
 {
