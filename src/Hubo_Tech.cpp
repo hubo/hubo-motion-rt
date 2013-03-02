@@ -83,6 +83,8 @@ void Hubo_Tech::techInit()
     memset( ctrlMap, 0, sizeof(ctrlMap[0])*HUBO_JOINT_COUNT );
     memset( localMap, 0, sizeof(localMap[0])*HUBO_JOINT_COUNT );
 
+    memset( jointAngleCalibration, 0, sizeof(jointAngleCalibration[0])*HUBO_JOINT_COUNT );
+
     setJointParams( &H_Param, &H_State );
 
     for(int i=0; i<8; i++)
@@ -915,7 +917,7 @@ hubo_ctrl_mode_t Hubo_Tech::getCtrlMode(int joint)
 double Hubo_Tech::getJointAngle(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_Ref.ref[joint];
+        return H_Ref.ref[joint] - jointAngleCalibration[joint];
     else
         return 0;
 }
@@ -1273,7 +1275,7 @@ double Hubo_Tech::getJointErrorMax(int joint)
 double Hubo_Tech::getJointAngleState(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_State.joint[joint].pos;
+        return H_State.joint[joint].pos - jointAngleCalibration[joint];
     else
         return 0;
 }
@@ -2377,15 +2379,15 @@ tech_flag_t Hubo_Tech::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
     if(side==RIGHT)
     {
         hp = getJointAngleState(RHP);
-        ap = getJointAngleState(RAP) - apc[RIGHT];
-        ar = getJointAngleState(RAR) - arc[RIGHT];
+        ap = getJointAngleState(RAP);
+        ar = getJointAngleState(RAR);
         kn = getJointAngleState(RKN);
     }
     else
     {
         hp = getJointAngleState(LHP);
-        ap = getJointAngleState(LAP) - apc[LEFT];
-        ar = getJointAngleState(LAR) - arc[LEFT];
+        ap = getJointAngleState(LAP);
+        ar = getJointAngleState(LAR);
         kn = getJointAngleState(LKN);
     }
 
@@ -2436,18 +2438,14 @@ tech_flag_t Hubo_Tech::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
 
 }
 
-void Hubo_Tech::calibrateAnkle( int side )
+tech_flag_t Hubo_Tech::calibrateJoint( int joint, double offset )
 {
-    if( side == RIGHT )
-    {
-        apc[side] = getJointAngleState( RAP );
-        arc[side] = getJointAngleState( RAR );
-    }
+    if( joint < HUBO_JOINT_COUNT )
+        jointAngleCalibration[joint] = getJointAngleState(joint) + offset;
     else
-    {
-        apc[LEFT] = getJointAngleState( LAP );
-        arc[LEFT] = getJointAngleState( LAR );
-    }
+        return JOINT_OOB;
+
+    return SUCCESS;
 }
 
 void Hubo_Tech::calibrateAnkleForces()

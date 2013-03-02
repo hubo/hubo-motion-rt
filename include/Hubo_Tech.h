@@ -850,9 +850,9 @@ public:
     */
     tech_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate );
     /**
-     * Calibration for Ankle Pitch and Roll
+     * Calibration for arbitrary joints
     */
-    void calibrateAnkle( int side );
+    tech_flag_t calibrateJoint( int joint, double offset=0.0 );
     /**
      * Calibration to get consistent force readings between the ankle FT sensors
     */
@@ -907,6 +907,7 @@ protected:
 
     double apc[2]; // Ankle Pitch Calibration
     double arc[2]; // Ankle Roll Calibration
+    double jointAngleCalibration[HUBO_JOINT_COUNT];
     double afc[2]; // Ankle Force Calibration
 
     ach_channel_t chan_hubo_ref;
