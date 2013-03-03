@@ -47,9 +47,11 @@ DAEMON_DIR='/etc/hubo-daemon'
 DAEMON_LOG_DIR='/var/log/hubo'
 LOCK_DIR='/var/lock/hubo'
 
-sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
-sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
-
+if [ -e /dev/pcan0 ]
+then
+    sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
+    sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
+fi
 
 Ach()
 {
@@ -220,16 +222,21 @@ VirtualHubo()
 	;;
 	
 	*)
-		sudo ifconfig vcan0 up
-		sudo ifconfig vcan1 up
-		sudo ifconfig vcan2 up
-		sudo ifconfig vcan3 up
-		
 		Ach
-	
-		sudo hubo-daemon -v
-		sudo control-daemon
-		sudo tech-console
+                # if you run anything with full real-time priority it
+                # will completely take over whatever CPU it decides to
+                # run on, effectively murdering any other processes
+                # that are scheduled on that CPU. if that cpu happens
+                # ot be your desktop enviroinment, your terminal
+                # emulator, or your shell, this can make it extremely
+                # difficult to shut down the control-daemon. So we use
+                # chrt to run it with significantly lower
+                # priority. Nice, eh? :P
+		sudo chrt 1 control-daemon
+                echo 'Ach has been started and the'
+                echo 'control daemon is running.'
+                echo 'Run HuboAchTab to begin'
+                echo 'emulation.'
 	;;
 	esac
 }
