@@ -8,14 +8,14 @@ for you.
 
 To use it, simply type the following into a terminal:
 
-$ sudo service tech
+$ sudo service hubo-motion
 (The "sudo" is not always necessary, but I find it's better to be safe and include it rather than
 confused about why things aren't working as expected)
 
 This will print out a list of commands which it accepts. All of these commands accept a "help"
 argument which will tell you what they do in finer detail. For example, typing
 
-$ sudo service tech start help
+$ sudo service hubo-motion start help
 
 will print the following help message:
 
@@ -24,19 +24,12 @@ will print the following help message:
 > ach channels, boot up the
 > hubo-daemon, control-daemon,
 > and start up the tech-console.
-> 
-> You can pass in arguments to the
-> hubo-daemon by appending them to
-> your run.sh start command. Example:
->    sudo ./run.sh start -v -d
-> will run the daemon while passing
-> in the arguments -v and -d
 
 If you want to use Hubo-Motion-RT, please do NOT run the "hubo-ach" script which comes with
 the hubo-ach package. Technically, it shouldn't hurt to use both at the same time, but I haven't
 verified this thoroughly yet.
 
-Running "$ sudo service tech start" will open up an instance of "tech-console" which is derived
+Running "$ sudo service hubo-motion start" will open up an instance of "tech-console" which is derived
 from the "hubo-console" of hubo-ach. The only difference between the two is that tech-console is
 verified to work well with the control-daemon whereas hubo-console does not have the same
 guarantees. Eventually tech-console will be replaced with a GUI which will run on a remote computer

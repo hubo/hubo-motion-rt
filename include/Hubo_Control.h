@@ -36,7 +36,7 @@
 
 
 /**
- * \file Hubo_Tech.h
+ * \file Hubo_Control.h
  * \brief Programming interface for passing joint control and CAN commands to Hubo daemons.
  * 
  * \author M.X. Grey
@@ -110,24 +110,24 @@ typedef enum {
     IK_EDGE,        ///< You're trying to push something out of bounds with an IK
     IK_DANGER       ///< The IK is on a singularity and is resorting to a safety feature
 
-} tech_flag_t;
+} ctrl_flag_t;
 
 
-class Hubo_Tech
+class Hubo_Control
 {
 public:
     /**
-     * Constructor for the Hubo_Tech class.
+     * Constructor for the Hubo_Control class.
     */
-    Hubo_Tech(); /// Use daemonize(const char *daemon_name) after calling this constructor
+    Hubo_Control(); /// Use daemonize(const char *daemon_name) after calling this constructor
     /**
-     * Constructor for the Hubo_Tech class that daemonizes with the name specificied by the parameter.
+     * Constructor for the Hubo_Control class that daemonizes with the name specificied by the parameter.
     */
-    Hubo_Tech(const char *daemon_name, int priority=-1);
+    Hubo_Control(const char *daemon_name, int priority=-1);
     /**
      * Gets the current time in seconds from Hubo's 'hubo_state' struct member 'time' over the state ach channel
     */
-    ~Hubo_Tech();
+    ~Hubo_Control();
     double getTime();
 
     /**
@@ -144,7 +144,7 @@ public:
      * \li Joint reference (encoder value);
     */
     /// Retrieves the latest data from the state and ref channels
-    tech_flag_t update(bool stateWait=false, bool printError=false);   
+    ctrl_flag_t update(bool stateWait=false, bool printError=false);   
 
 
     // ~~~*** Sending Control Commands ***~~~ //
@@ -156,44 +156,44 @@ public:
      * \param joint joint name
      * \param send  Whether or not to send command immediately to the control daemon.
     */
-    tech_flag_t resetJointStatus( int joint, bool send=false );
+    ctrl_flag_t resetJointStatus( int joint, bool send=false );
     // Position control
     /**
      * Safely switches joint to position control. Using this is encouraged if you
      * want to switch between control modes during runtime. Otherwise it is not necessary.
     */
-    tech_flag_t setPositionControl( int joint );
+    ctrl_flag_t setPositionControl( int joint );
     /**
      * Sets joint angle for the joint to specified radian value. If send is true then 
      * the command will be sent to the motor board immediately, otherwise it won't.
     */
-    tech_flag_t setJointAngle( int joint, double radians, bool send=false );
+    ctrl_flag_t setJointAngle( int joint, double radians, bool send=false );
     /**
      * Sets the nominal speed for the joint to speed in radians/sec.
     */
-    tech_flag_t setJointNominalSpeed( int joint, double speed );
+    ctrl_flag_t setJointNominalSpeed( int joint, double speed );
     // Velocity control
     /**
      * Safely switches the joint to velocity control. Using this is encouraged if you
      * want to switch between control modes during runtime. Otherwise it is not necessary.
     */
-    tech_flag_t setVelocityControl( int joint );
+    ctrl_flag_t setVelocityControl( int joint );
     /**
      * Sets the joint velocity in rad/s.
     */
-    tech_flag_t setJointVelocity( int joint, double vel, bool send=false );
+    ctrl_flag_t setJointVelocity( int joint, double vel, bool send=false );
     // Acceleration setting
     /**
      * Sets the nomical acceleration for the joint in rad/s^2.
     */
-    tech_flag_t setJointNominalAcceleration( int joint, double acc );
+    ctrl_flag_t setJointNominalAcceleration( int joint, double acc );
 
     // ~* Arm control sets
     // Position control
     /**
      * Extension of setPositionControl() which acts on all joints in an arm.
     */
-    tech_flag_t setArmPosCtrl( int side );
+    ctrl_flag_t setArmPosCtrl( int side );
     /**
      * Moves the joint angles for all the arm angles of the arm specified by the "side" argument
      * to the values specified by the angles argument. The send argument specifies whether or
@@ -211,7 +211,7 @@ public:
      * HOWEVER, that request will not be sent until you run the command sendControls(). This is
      * because "send" defaults to false if it is not specified.
     */
-    tech_flag_t setArmAngles( int side, Vector6d angles, bool send=false );
+    ctrl_flag_t setArmAngles( int side, Vector6d angles, bool send=false );
     /**
      * Extension of setArmPosCtrl(int side) where side = LEFT
     */
@@ -219,7 +219,7 @@ public:
     /**
      * Extension of setArmAngles() where side = LEFT
     */
-    tech_flag_t setLeftArmAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setLeftArmAngles( Vector6d angles, bool send=false );
     /**
      * Extension of setArmPosCtrl(int side) where side = RIGHT
     */
@@ -227,24 +227,24 @@ public:
     /**
      * Extension of setArmAngles() where side = RIGHT
     */
-    tech_flag_t setRightArmAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setRightArmAngles( Vector6d angles, bool send=false );
     /**
      * Extension of setJointNominalSpeed() which sets all joints in an arm according to the values
      * in "speeds".
     */
-    tech_flag_t setArmNomSpeeds( int side, Vector6d speeds );
+    ctrl_flag_t setArmNomSpeeds( int side, Vector6d speeds );
     /**
      * Extension of setArmNomSpeeds() where side = LEFT
     */
-    tech_flag_t setLeftArmNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setLeftArmNomSpeeds( Vector6d speeds );
     /**
      * Extension of setArmNomSpeeds() where side = RIGHT
     */
-    tech_flag_t setRightArmNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setRightArmNomSpeeds( Vector6d speeds );
     /**
      * Extension of setVelocityControl() which acts on all joint in an arm designated by "side" (LEFT or RIGHT)
     */
-    tech_flag_t setArmVelCtrl( int side );
+    ctrl_flag_t setArmVelCtrl( int side );
     /**
      * Moves the joint angles for all the arm angles of the arm specified by the "side" argument
      * at a rate of radians/sec, according to the six values in the "vels" Vector6d. The "send"
@@ -266,7 +266,7 @@ public:
      * HOWEVER, that request will not be sent until you run the command sendControls(). This is
      * because "send" defaults to false if it is not specified.
     */
-    tech_flag_t setArmVels( int side, Vector6d vels, bool send=false );
+    ctrl_flag_t setArmVels( int side, Vector6d vels, bool send=false );
     /**
      * Extension of setArmVelCtrl() where side = LEFT
     */
@@ -274,7 +274,7 @@ public:
     /**
      * Extension of setArmVelCtrl() where side = LEFT
     */
-    tech_flag_t setLeftArmVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setLeftArmVels( Vector6d vels, bool send=false );
     /**
      * Extension of setArmVelCtrl() where side = RIGHT
     */
@@ -282,31 +282,31 @@ public:
     /**
      * Extension of setArmVelCtrl() where side = RIGHT
     */
-    tech_flag_t setRightArmVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setRightArmVels( Vector6d vels, bool send=false );
     /**
      * Extension of setJointNominalAcceleration() which applies the six values in "acc" to the six
      * joints in the arm corresponding to "side" (LEFT or RIGHT)
     */
-    tech_flag_t setArmNomAcc(int side, Vector6d acc );
+    ctrl_flag_t setArmNomAcc(int side, Vector6d acc );
     /**
      * Extension of setArmNomAcc() where side = LEFT
     */
-    tech_flag_t setLeftArmNomAcc( Vector6d acc );
+    ctrl_flag_t setLeftArmNomAcc( Vector6d acc );
     /**
      * Extension of setArmNomAcc() where side = RIGHT
     */
-    tech_flag_t setRightArmNomAcc( Vector6d acc );
+    ctrl_flag_t setRightArmNomAcc( Vector6d acc );
 
     // ~* Leg control sets
     // Position control
     /**
      * Same as setArmPosCtrl() but applied to the leg
     */
-    tech_flag_t setLegPosCtrl( int side );
+    ctrl_flag_t setLegPosCtrl( int side );
     /**
      * Same as setArmAngles() but applied to the leg
     */
-    tech_flag_t setLegAngles( int side, Vector6d angles, bool send=false );
+    ctrl_flag_t setLegAngles( int side, Vector6d angles, bool send=false );
     /**
      * Same as setLeftArmPosCtrl() but applied to the leg
     */
@@ -314,7 +314,7 @@ public:
     /**
      * Same as setLeftArmAngles() but applied to the leg
     */
-    tech_flag_t setLeftLegAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setLeftLegAngles( Vector6d angles, bool send=false );
     /**
      * Same as setRightArmPosCtrl() but applied to the leg
     */
@@ -322,27 +322,27 @@ public:
     /**
      * Same as setRightArmAngles() but applied to the leg
     */
-    tech_flag_t setRightLegAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setRightLegAngles( Vector6d angles, bool send=false );
     /**
      * Same as setArmNomSpeeds() but applied to the leg
     */
-    tech_flag_t setLegNomSpeeds( int side, Vector6d speeds );
+    ctrl_flag_t setLegNomSpeeds( int side, Vector6d speeds );
     /**
      * Same as setLeftArmNomSpeeds() but applied to the leg
     */
-    tech_flag_t setLeftLegNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setLeftLegNomSpeeds( Vector6d speeds );
     /**
      * Same as setRightArmNomSpeeds() but applied to the leg
     */
-    tech_flag_t setRightLegNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setRightLegNomSpeeds( Vector6d speeds );
     /**
      * Same as setArmVelCtrl() but applied to the leg
     */
-    tech_flag_t setLegVelCtrl( int side );
+    ctrl_flag_t setLegVelCtrl( int side );
     /**
      * Same as setArmVels() but applied to the leg
     */
-    tech_flag_t setLegVels( int side, Vector6d vels, bool send=false );
+    ctrl_flag_t setLegVels( int side, Vector6d vels, bool send=false );
     /**
      * Same as setLeftArmVelCtrl() but applied to the leg
     */
@@ -350,7 +350,7 @@ public:
     /**
      * Same as setLeftArmVels() but applied to the leg
     */
-    tech_flag_t setLeftLegVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setLeftLegVels( Vector6d vels, bool send=false );
     /**
      * Same as setRightArmVelCtrl() but applied to the leg
     */
@@ -358,30 +358,30 @@ public:
     /**
      * Same as setRightArmVels() but applied to the leg
     */
-    tech_flag_t setRightLegVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setRightLegVels( Vector6d vels, bool send=false );
     /**
      * Same as setArmNomAcc() but applied to the leg
     */
-    tech_flag_t setLegNomAcc(int side, Vector6d acc );
+    ctrl_flag_t setLegNomAcc(int side, Vector6d acc );
     /**
      * Same as setLeftArmNomAcc() but applied to the leg
     */
-    tech_flag_t setLeftLegNomAcc( Vector6d acc );
+    ctrl_flag_t setLeftLegNomAcc( Vector6d acc );
     /**
      * Same as setRightArmNomAcc() but applied to the leg
     */
-    tech_flag_t setRightLegNomAcc( Vector6d acc );
+    ctrl_flag_t setRightLegNomAcc( Vector6d acc );
 
     // ~~** Setting limit values
     // ~* General sets
     /**
      * Sets the lowest angle permitted by the control-daemon for a particular joint.
     */
-    tech_flag_t setJointAngleMin( int joint, double radians );
+    ctrl_flag_t setJointAngleMin( int joint, double radians );
     /**
      * Sets the highest angle permitted by the control-daemon for a particular joint.
     */
-    tech_flag_t setJointAngleMax( int joint, double radians );
+    ctrl_flag_t setJointAngleMax( int joint, double radians );
     /**
      * Adjusts the error tolerance of the control-daemon. A higher speed will make the 
      * control-daemon increase the error tolerance, and a lower speed will decrease the
@@ -389,7 +389,7 @@ public:
      * state). If this error is ever exceeded, the control-daemon will freeze that joint
      * until a reset command is sent.
     */
-    tech_flag_t setJointErrorMax( int joint, double speed );
+    ctrl_flag_t setJointErrorMax( int joint, double speed );
 
     // ~~** Send Off Latest Control Commands
     /**
@@ -416,7 +416,7 @@ public:
     /**
      * Returns the current \b command position value of the joint specified by "joint".
      * In other words, this is the latest position control command currently being held
-     * in your instance of Hubo_Tech. If you run sendControls(), then this is the position
+     * in your instance of Hubo_Control. If you run sendControls(), then this is the position
      * control value which will be requested.
      *
      * To read the current \b reference value, look at getJointAngle()
@@ -456,7 +456,7 @@ public:
      * Example: getArmAngles( RIGHT, angles ) will take a "Vector6d angles" and fill it with the
      * current reference values of the right arm.
     */
-    tech_flag_t getArmAngles( int side, Vector6d &angles );
+    ctrl_flag_t getArmAngles( int side, Vector6d &angles );
     /**
      * Extension of getArmAngles() where side = LEFT
     */
@@ -470,7 +470,7 @@ public:
      *
      * Operates similarly to getArmAngles()
     */
-    tech_flag_t getArmNomSpeeds( int side, Vector6d &speeds );
+    ctrl_flag_t getArmNomSpeeds( int side, Vector6d &speeds );
     /**
      * Extension of getArmNomSpeeds() where side = LEFT
     */
@@ -485,7 +485,7 @@ public:
      *
      * Operates similarly to getArmAngles()
     */
-    tech_flag_t getArmVelCtrls( int side, Vector6d &vels );
+    ctrl_flag_t getArmVelCtrls( int side, Vector6d &vels );
     /**
      * Extension of getArmVelCtrls() where side = LEFT
     */
@@ -500,7 +500,7 @@ public:
      *
      * Operates similarly to getArmAngles()
     */
-    tech_flag_t getArmNomAcc(int side, Vector6d &acc );
+    ctrl_flag_t getArmNomAcc(int side, Vector6d &acc );
     /**
      * Extension of getArmNomAcc() where side = LEFT
     */
@@ -515,7 +515,7 @@ public:
     /**
      * Similar to getArmAngles() but applied to the leg
     */
-    tech_flag_t getLegAngles( int side, Vector6d &angles );
+    ctrl_flag_t getLegAngles( int side, Vector6d &angles );
     /**
      * Similar to getLeftArmAngles() but applied to the leg
     */
@@ -527,7 +527,7 @@ public:
     /**
      * Similar to getArmNomSpeeds() but applied to the leg
     */
-    tech_flag_t getLegNomSpeeds( int side, Vector6d &speeds );
+    ctrl_flag_t getLegNomSpeeds( int side, Vector6d &speeds );
     /**
      * Similar to getLeftArmNomSpeeds() but applied to the leg
     */
@@ -540,7 +540,7 @@ public:
     /**
      * Similar to getArmVelCtrls() but applied to the leg
     */
-    tech_flag_t getLegVelCtrls( int side, Vector6d &vels );
+    ctrl_flag_t getLegVelCtrls( int side, Vector6d &vels );
     /**
      * Similar to getLeftArmVelCtrls() but applied to the leg
     */
@@ -553,7 +553,7 @@ public:
     /**
      * Similar to getArmNomAcc() but applied to the leg
     */
-    tech_flag_t getLegNomAcc(int side, Vector6d &acc );
+    ctrl_flag_t getLegNomAcc(int side, Vector6d &acc );
     /**
      * Similar to getLeftArmNomAcc() but applied to the leg
     */
@@ -586,7 +586,7 @@ public:
      * 
      * \b NOTE: Use of this mode is \em strongly discouraged.
     */
-    tech_flag_t passJointAngle( int joint, double radians, bool send=false );
+    ctrl_flag_t passJointAngle( int joint, double radians, bool send=false );
 
     // ~~~*** State Readings ***~~~ //
 
@@ -609,7 +609,7 @@ public:
      * 
      * Operates similarly to getArmAngles()
     */
-    tech_flag_t getArmAngleStates( int side, Vector6d &angles );
+    ctrl_flag_t getArmAngleStates( int side, Vector6d &angles );
     /**
      * Extension of getJointAngleState() where side = RIGHT
     */
@@ -621,7 +621,7 @@ public:
     /**
      * Similar to getArmAngleStates() but applied to the leg
     */
-    tech_flag_t getLegAngleStates( int side, Vector6d &angles );
+    ctrl_flag_t getLegAngleStates( int side, Vector6d &angles );
     /**
      * Similar to getRightArmAngleStates() but applied to the leg
     */
@@ -762,21 +762,21 @@ public:
     // TODO: All of these
     void sendCommands();
 
-    tech_flag_t homeJoint( int joint, bool send=true );
+    ctrl_flag_t homeJoint( int joint, bool send=true );
     void homeAllJoints( bool send=true );
-    tech_flag_t jointBeep( int joint, double elapseTime, bool send=true );
-    tech_flag_t resetJoint( int joint, bool send=true );
-    tech_flag_t startSensor( hubo_sensor_index_t sensor, bool send=true );
-    tech_flag_t zeroTilt( hubo_sensor_index_t sensor, bool send=true );
+    ctrl_flag_t jointBeep( int joint, double elapseTime, bool send=true );
+    ctrl_flag_t resetJoint( int joint, bool send=true );
+    ctrl_flag_t startSensor( hubo_sensor_index_t sensor, bool send=true );
+    ctrl_flag_t zeroTilt( hubo_sensor_index_t sensor, bool send=true );
     void startAllSensors( bool send=true );
-    tech_flag_t initializeBoard( int joint, bool send=true );
+    ctrl_flag_t initializeBoard( int joint, bool send=true );
     void initializeAll( bool send=true );
-    tech_flag_t motorCtrlOn( int joint, bool send=true );
-    tech_flag_t motorCtrlOff( int joint, bool send=true );
-    tech_flag_t motorCtrlSwitch( int joint, bool on, bool send=true );
-    tech_flag_t fetOn( int joint, bool send=true );
-    tech_flag_t fetOff( int joint, bool send=true );
-    tech_flag_t fetSwitch( int joint, bool on, bool send=true );
+    ctrl_flag_t motorCtrlOn( int joint, bool send=true );
+    ctrl_flag_t motorCtrlOff( int joint, bool send=true );
+    ctrl_flag_t motorCtrlSwitch( int joint, bool on, bool send=true );
+    ctrl_flag_t fetOn( int joint, bool send=true );
+    ctrl_flag_t fetOff( int joint, bool send=true );
+    ctrl_flag_t fetSwitch( int joint, bool on, bool send=true );
 
     // ~~~*** Kinematics ***~~~ //
     inline double wrapToPi(double fAng)
@@ -848,11 +848,11 @@ public:
      * A specialized differential IK (solved analytically) for moving the hip
      * position. NOT THOROUGHLY TESTED -- USE WITH EXTREME CAUTION.
     */
-    tech_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate );
+    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate );
     /**
      * Calibration for arbitrary joints
     */
-    tech_flag_t calibrateJoint( int joint, double offset=0.0 );
+    ctrl_flag_t calibrateJoint( int joint, double offset=0.0 );
     /**
      * Calibration to get consistent force readings between the ankle FT sensors
     */
@@ -899,7 +899,7 @@ public:
 
 protected:
 
-    void techInit();
+    void controlInit();
 
     double kneeSingularityThreshold;
     double kneeSingularityDanger;

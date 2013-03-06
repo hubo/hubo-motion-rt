@@ -16,18 +16,9 @@
 
 
 # M.X. Grey ( mxgrey@gatech.edu )
-# Last updated: 01/27/2013
+# Last updated: 03/06/2013
 # Contact the author for support or questions regarding operation.
 
-HUBO_BITRATE=0x0014 # 1 Mbit/s
-#HUBO_BITRATE=0x001C #  500 kbit/s
-#HUBO_BITRATE=0x011C #  250 kbit/s
-#HUBO_BITRATE=0x031C #  125 kbit/s
-#HUBO_BITRATE=0x432F #  100 kbit/s
-#HUBO_BITRATE=0x472F #  50 kbit/s
-#HUBO_BITRATE=0x532F #  20 kbit/s
-#HUBO_BITRATE=0x672F #  10 kbit/s
-#HUBO_BITRATE=0x7F7F #  5 kbit/s
 
 HUBO_REF_CHAN='hubo-ref'
 HUBO_STATE_CHAN='hubo-state'
@@ -41,17 +32,11 @@ HUBO_LF_CTRL_CHAN='hubo-LF-control'
 HUBO_AUX_CTRL_CHAN='hubo-AUX-control'
 HUBO_CTRL_STATE_CHAN='ctrl-d-state'
 HUBO_MANIP_CMD_CHAN='manip-cmd'
-FASTRAK_CHAN='fastrak'
+LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
 DAEMON_LOG_DIR='/var/log/hubo'
 LOCK_DIR='/var/lock/hubo'
-
-if [ -e /dev/pcan0 ]
-then
-    sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
-    sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
-fi
 
 Ach()
 {
@@ -120,7 +105,7 @@ StopHubo()
 		echo
 		echo 'If this fails to turn off'
 		echo 'or unlock the daemon, try:'
-		echo '   sudo ./run.sh kill'
+		echo '   sudo service hubo-motion kill'
 		echo
 		echo
 	;;
@@ -141,10 +126,7 @@ StopHubo()
 	
 		Ach close
 
-		sudo ifconfig can0 down
-		sudo ifconfig can1 down
-		sudo ifconfig can2 down
-		sudo ifconfig can3 down
+		sudo hubo-ach stop
 
 	;;
 	esac
@@ -155,84 +137,43 @@ StartHubo()
 	case "$2" in
 	'help')
 		echo
-		echo
 		echo 'This will switch all the CAN'
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
 		echo 'hubo-daemon, control-daemon,'
         echo ' and start up the tech-console.'
 		echo
-		echo 'You can pass in arguments to the'
-		echo 'hubo-daemon by appending them to'
-		echo 'your run.sh start command. Example:'
-		echo "   sudo ./run.sh start -v -d"
-		echo 'will run the daemon while passing'
-		echo 'in the arguments -v and -d'
-		echo
-		echo
 	;;
 
 	*)
-		sudo ifconfig can0 up
-		sudo ifconfig can1 up
-		sudo ifconfig can2 up
-		sudo ifconfig can3 up
 	
 		Ach
+        
+        sudo hubo-ach run
 
-		DAEMON_ARGS=''
-		for IN_ARG in $@
-		do
-			if [ $IN_ARG != 'start'  ]
-			then
-				DAEMON_ARGS+=" $IN_ARG"
-			fi
-		done	
-		
-		sudo hubo-daemon $DAEMON_ARGS
 		sudo control-daemon
 		sudo tech-console
 	;;
 	esac
 }
 
-VirtualHubo()
+DartHubo()
 {
 	case "$1" in
 	'help')
 		echo
-		echo
-		echo 'This is the same as running'
-		echo '   sudo ./run.sh start -v'
-		echo 'which runs the daemon in'
-		echo 'virtual mode.'
-		echo
-		echo 'Virtual mode allows you to'
-		echo 'run the daemon without sending'
-		echo 'actual CAN commands. This way'
-		echo 'the processes can be run on a'
-		echo 'computer without a CAN card.'
-		echo
-		echo 'While running virtual mode,'
-		echo 'the computer will not'
-		echo 'communicate in any way with'
-		echo "Hubo's hardware."
-		echo
+		echo 'dart mode does not turn on the'
+		echo 'hardware daemon or attempt to use'
+		echo 'actual CAN commands. This allows'
+		echo 'the DART emulator to run outside'
+		echo 'of Hubo.'
 		echo	
 	;;
 	
 	*)
 		Ach
-                # if you run anything with full real-time priority it
-                # will completely take over whatever CPU it decides to
-                # run on, effectively murdering any other processes
-                # that are scheduled on that CPU. if that cpu happens
-                # ot be your desktop enviroinment, your terminal
-                # emulator, or your shell, this can make it extremely
-                # difficult to shut down the control-daemon. So we use
-                # chrt to run it with significantly lower
-                # priority. Nice, eh? :P
-		sudo chrt 1 control-daemon
+
+		sudo control-daemon
                 echo 'Ach has been started and the'
                 echo 'control daemon is running.'
                 echo 'Run HuboAchTab to begin'
@@ -241,42 +182,6 @@ VirtualHubo()
 	esac
 }
 
-DebugHubo()
-{
-	case "$1" in
-	'help')
-		echo
-		echo
-		echo 'This is the same as running'
-		echo '   sudo ./run.sh start -d'
-		echo 'which runs the daemon in'
-		echo 'debug mode.'
-		echo
-		echo 'This mode produces a lot of'
-		echo 'output which can flood memory'
-		echo 'space. You should only run this'
-		echo 'mode when investigating problems'
-		echo 'and do not leave it running for'
-		echo 'more than a short time.'
-		echo
-		echo
-	;;
-
-	*)
-
-		sudo ifconfig can0 up
-		sudo ifconfig can1 up
-		sudo ifconfig can2 up
-		sudo ifconfig can3 up
-
-		Ach
-	
-		sudo hubo-daemon -d $1
-		sudo control-daemon
-		sudo tech-console
-	;;
-	esac
-}
 
 KillHubo()
 {
@@ -287,7 +192,7 @@ KillHubo()
 		echo 'This forces the daemon to turn off'
 		echo 'with no regard for safety or grace.'
 		echo 'This should only be used if'
-		echo '   sudo ./run.sh stop'
+		echo '   sudo service hubo-motion stop'
 		echo 'is not working for some reason.'
 		echo
 		echo 'You can also use this to unlock'
@@ -485,66 +390,6 @@ ConfigHubo()
 		sudo mkdir $DAEMON_DIR
 		sudo mkdir $DAEMON_LOG_DIR
         sudo mkdir $LOCK_DIR
-		sudo cp joint.table $DAEMON_DIR/joint.table
-		sudo cp joint.table $DAEMON_DIR/default-joint.table
-		sudo chmod a-w $DAEMON_DIR/default-joint.table
-	;;
-	esac
-}
-
-ParamHubo()
-{
-	case "$1" in
-	'help')
-		echo
-		echo
-		echo 'Type the following into the terminal:'
-		echo '   sudo ./run.sh filename.table'
-		echo 'to use the values given in filename.table'
-		echo "as Hubo's joint motor controller"
-		echo 'parameters.'
-		echo
-		echo 'Type the following:'
-		echo '   sudo ./run.sh default'
-		echo 'to have the parameters return to their'
-		echo 'default values.'
-		echo
-		echo
-	;;
-
-	'')
-		echo
-		echo
-		echo 'You need to specify a file name!'
-		echo
-		echo
-	;;
-	*)
-		cp -f $1 $DAEMON_DIR/joint.table
-	;;
-	esac
-
-}
-
-DefaultHubo()
-{
-	case "$1" in
-	'help')
-		echo
-		echo
-		echo 'Use this to overwrite the current'
-		echo 'joint motor controller parameters'
-		echo 'with their default values.'
-		echo
-		echo 'This can be used to restore functionality'
-		echo 'if you have modified the JMC parameter'
-		echo 'file in a bad way.'
-		echo
-		echo
-	;;
-	
-	*)
-		cp -f $DAEMON_DIR/default-joint.table $DAEMON_DIR/joint.table
 	;;
 	esac
 }
@@ -560,9 +405,9 @@ RestartHelp()
 	echo
 	echo
 	echo 'This is exactly the same as running'
-	echo '   sudo ./run stop'
+	echo '   sudo service hubo-motion stop'
 	echo 'immediately followed by'
-	echo '   sudo ./run start'
+	echo '   sudo service hubo-motion start'
 	echo
 	echo
 
@@ -579,10 +424,7 @@ ShowUsage()
 	echo "log     : Print out Hubo's latest log"
 	echo 'ach     : Manage ach channels'
 	echo 'savelog : Save latest log to specified file'
-	echo "param   : Sets Hubo's params from given file"
-	echo "default : Sets Hubo's params to default values"
-	echo 'debug   : Run the daemon in debug mode'
-	echo 'virtual : Run the daemon without using CAN'
+	echo 'dart    : Set things up for DART emulation'
 	echo 'config  : Do a first-time setup'
 	echo
 	echo 'Type help after any of the above commands for'
@@ -619,24 +461,14 @@ case "$1" in
 	;;
 
 # Run the main daemon in virtual mode (does not require actual CAN communication)
-	'virtual' )
-		VirtualHubo $2
+	'dart' )
+		DartHubo $2
 	;;
 
 # Emergency kill
 	'kill' )
 		KillHubo $2
 	;;
-
-# Set joint motor parameters
-	'param' )
-		ParamHubo $2
-	;;
-
-# Set joint motor parameters to default values
-	'default' )
-		DefaultHubo $2
-	;;	
 
 # Print out Hubo's logs
 	'log' )
@@ -646,11 +478,6 @@ case "$1" in
 # Save the latest log
 	'save' )
 		SaveLog $2 $3
-	;;
-
-# Debug
-	'debug' )
-		DebugHubo $2
 	;;
 
 # Check the status of Hubo
