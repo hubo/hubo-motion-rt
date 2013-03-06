@@ -4,7 +4,7 @@
 AC_PREREQ([2.67])
 AC_INIT([Hubo_Tech],[0.0.0],[mxgrey@gatech.edu])
 AM_INIT_AUTOMAKE([-Wall])
-AC_CONFIG_SRCDIR([include/Hubo_Tech.h])
+AC_CONFIG_SRCDIR([include/Hubo_Control.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 

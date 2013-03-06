@@ -488,7 +488,7 @@ public:
      *
      * Operates similarly to getArmAngles()
     */
-    tech_flag_t getArmVels( int side, Vector6d &vels );
+    ctrl_flag_t getArmVels( int side, Vector6d &vels );
     /**
      * Extension of getArmVels() where side = LEFT
     */
@@ -557,7 +557,7 @@ public:
     /**
      * Similar to getArmVels() but applied to the leg
     */
-    tech_flag_t getLegVels( int side, Vector6d &vels );
+    ctrl_flag_t getLegVels( int side, Vector6d &vels );
     /**
      * Similar to getLeftArmVels() but applied to the leg
     */

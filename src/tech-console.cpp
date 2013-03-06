@@ -62,7 +62,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Hubo_Tech.h>
+#include <Hubo_Control.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,7 +103,7 @@ int main() {
            " hubo-console. It will be replaced in the near\n"
            " future with a GUI." ); fflush(stdout);
     
-    Hubo_Tech hubo; printf(" -- Hubo ready!\n"); fflush(stdout);
+    Hubo_Control hubo; printf(" -- Hubo ready!\n"); fflush(stdout);
 
     hubo_param H_param;
     hubo_state H_state;

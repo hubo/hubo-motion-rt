@@ -51,7 +51,7 @@
 
 int main( int argc, char **argv )
 {
-    Hubo_Tech hubo("proto-manip-daemon");
+    Hubo_Control hubo("proto-manip-daemon");
 
     ach_channel_t chan_manip_cmd;
 

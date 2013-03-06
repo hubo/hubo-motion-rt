@@ -35,7 +35,7 @@
  */
 
 
-#include <Hubo_Tech.h>
+#include <Hubo_Control.h>
 
 
 #define CHAN_HUBO_MANIP "manip-cmd"
