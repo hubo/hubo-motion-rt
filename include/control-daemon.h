@@ -122,6 +122,7 @@ struct hubo_aux_control {
 };
 
 struct hubo_ctrl_state {
+    double velocity[HUBO_JOINT_COUNT];
     int status[HUBO_JOINT_COUNT];
     int paused;
 };

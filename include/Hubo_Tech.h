@@ -426,6 +426,10 @@ public:
      * Returns the current nominal speed value of the joint specified by "joint".
     */
     double getJointNominalSpeed( int joint );
+    /**
+     * Returns the current velocity of the joint specified by "joint"
+    */
+    double getJointVelocity( int joint );
     // Velocity control
     /**
      * Returns the current velocity command value of the joint specified by "joint".
@@ -479,6 +483,20 @@ public:
      * Extension of getArmNomSpeeds() where side = RIGHT
     */
     void getRightArmNomSpeeds( Vector6d &speeds );
+    /**
+     * Extension of getJointVelocity() for the arm corresponding to "side" (LEFT or RIGHT).
+     *
+     * Operates similarly to getArmAngles()
+    */
+    tech_flag_t getArmVels( int side, Vector6d &vels );
+    /**
+     * Extension of getArmVels() where side = LEFT
+    */
+    void getLeftArmVels( Vector6d &vels );
+    /**
+     * Extension of getArmVels() where side = RIGHT
+    */
+    void getRightArmVels( Vector6d &vels );
     // Velocity control
     /**
      * Extension of getJointVelocityCtrl() for the arm corresponding to "side" (LEFT or RIGHT).
@@ -536,6 +554,18 @@ public:
      * Similar to getRightArmNomSpeeds() but applied to the leg
     */
     void getRightLegNomSpeeds( Vector6d &speeds );
+    /**
+     * Similar to getArmVels() but applied to the leg
+    */
+    tech_flag_t getLegVels( int side, Vector6d &vels );
+    /**
+     * Similar to getLeftArmVels() but applied to the leg
+    */
+    void getLeftLegVels( Vector6d &vels );
+    /**
+     * Similar to getRightArmVels() but applied to the leg
+    */
+    void getRightLegVels( Vector6d &vels );
     // Velocity control
     /**
      * Similar to getArmVelCtrls() but applied to the leg

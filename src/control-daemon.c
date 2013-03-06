@@ -353,6 +353,7 @@ void controlLoop()
 
                         timeElapse[jnt] += dt;
                         V0[jnt] = V[jnt];
+                        C_state.velocity[jnt] = V[jnt];
                         reset[jnt]=0;
                     }
 

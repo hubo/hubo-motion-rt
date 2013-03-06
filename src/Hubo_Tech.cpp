@@ -974,6 +974,14 @@ double Hubo_Tech::getJointNominalSpeed(int joint)
         return 0;
 }
 
+double Hubo_Tech::getJointVelocity(int joint)
+{
+    if( joint < HUBO_JOINT_COUNT )
+        return C_State.velocity[joint];
+    else
+        return 0;
+}
+
 // Velocity control
 double Hubo_Tech::getJointVelocityCtrl(int joint)
 {
@@ -1077,6 +1085,26 @@ void Hubo_Tech::getLeftArmNomSpeeds(Vector6d &speeds)
 void Hubo_Tech::getRightArmNomSpeeds(Vector6d &speeds)
 { getArmNomSpeeds(RIGHT, speeds); }
 
+tech_flag_t Hubo_Tech::getArmVels(int side, Vector6d &vels)
+{
+    if( side==LEFT || side==RIGHT )
+    {
+        if(vels.size() != ARM_JOINT_COUNT)
+            vels.resize(ARM_JOINT_COUNT);
+        for(int i=0; i<ARM_JOINT_COUNT; i++)
+            vels[i] = getJointVelocity(armjoints[side][i]);
+    } // TODO: make getArmAngleCtrls
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+void Hubo_Tech::getLeftArmVels(Vector6d &vels)
+{ getArmVels(LEFT, vels); }
+void Hubo_Tech::getRightArmVels(Vector6d &vels)
+{ getArmVels(RIGHT, vels); }
+
+
 // Velocity control
 tech_flag_t Hubo_Tech::getArmVelCtrls(int side, Vector6d &vels)
 {
@@ -1140,11 +1168,43 @@ void Hubo_Tech::getRightLegAngles(Vector6d &angles)
 { getLegAngles(RIGHT, angles); }
 
 tech_flag_t Hubo_Tech::getLegNomSpeeds(int side, Vector6d &speeds)
-{ return getLegVelCtrls(side, speeds); }
+{
+    if( side==LEFT || side==RIGHT )
+    {
+        if(speeds.size() != LEG_JOINT_COUNT)
+            speeds.resize(LEG_JOINT_COUNT);
+
+        for(int i=0; i<LEG_JOINT_COUNT; i++)
+            speeds[i] = getJointNominalSpeed(legjoints[side][i]);
+    }
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
 void Hubo_Tech::getLeftLegNomSpeeds(Vector6d &speeds)
-{ getLegVelCtrls(LEFT, speeds); }
+{ getLegNomSpeeds(LEFT, speeds); }
 void Hubo_Tech::getRightLegNomSpeeds(Vector6d &speeds)
-{ getLegVelCtrls(RIGHT, speeds); }
+{ getLegNomSpeeds(RIGHT, speeds); }
+
+tech_flag_t Hubo_Tech::getLegVels(int side, Vector6d &vels)
+{
+    if( side==LEFT || side==RIGHT )
+    {
+        if(vels.size() != LEG_JOINT_COUNT)
+            vels.resize(LEG_JOINT_COUNT);
+        for(int i=0; i<LEG_JOINT_COUNT; i++)
+            vels[i] = getJointVelocity(legjoints[side][i]);
+    } // TODO: make getLegAngleCtrls
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+void Hubo_Tech::getLeftLegVels(Vector6d &vels)
+{ getLegVels(LEFT, vels); }
+void Hubo_Tech::getRightLegVels(Vector6d &vels)
+{ getLegVels(RIGHT, vels); }
 
 // Velocity control
 tech_flag_t Hubo_Tech::getLegVelCtrls(int side, Vector6d &vels)
@@ -2464,6 +2524,103 @@ void Hubo_Tech::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev
     for( int i=0; i<6; i++)
         q(i) = max( min( q(i), limits(i,1)), limits(i,0) ); 
 }
+
+tech_flag_t Hubo_Tech::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate ) 
+{
+    tech_flag_t flag = SUCCESS;
+
+    Eigen::Vector3d vel;
+    vel(0) = -velocity(0);
+    vel(1) = -velocity(1);
+    vel(2) =  velocity(2);
+
+    qdot.setZero();
+    if( side!=RIGHT && side!=LEFT )
+        side = RIGHT;
+
+    double hp, ap, ar, kn;
+    
+    if(side==RIGHT)
+    {
+        hp = getJointAngleState(RHP);
+        ap = getJointAngleState(RAP);
+        ar = getJointAngleState(RAR);
+        kn = getJointAngleState(RKN);
+    }
+    else
+    {
+        hp = getJointAngleState(LHP);
+        ap = getJointAngleState(LAP);
+        ar = getJointAngleState(LAR);
+        kn = getJointAngleState(LKN);
+    }
+
+/*
+    hp = qstate(2);
+    ap = qstate(4);
+    ar = qstate(5);
+    kn = qstate(3);
+*/    
+
+    double L = 2*0.3002;
+
+
+    if( kn <= kneeSingularityDanger || fabs(-hp-ap) <= kneeSingularityDanger )
+    {
+        qdot(2) = -fabs(kneeSingularitySpeed/2);
+        qdot(3) =  fabs(kneeSingularitySpeed);
+        qdot(4) = -fabs(kneeSingularitySpeed/2);
+        return IK_DANGER;
+    }
+
+
+    if( kn <= kneeSingularityThreshold || fabs(-hp-ap) <= kneeSingularityThreshold )
+    {
+        
+        Eigen::Vector3d lhat;
+
+        lhat <<  sin(ap)-sin(hp), -(cos(ap)+cos(hp))*sin(ar), (cos(ap)+cos(hp))*cos(ar);
+        lhat.normalize();
+
+        double lv = vel.dot(lhat);
+
+        if( lv > 0 )
+        {
+            vel = vel - lv*lhat;
+            flag = IK_DANGER;
+        }
+        
+    }
+
+    qdot(2) = -2.0/(L*sin(hp+ap))*( vel(0)*sin(ap) - vel(1)*sin(ar)*cos(ap) + vel(2)*cos(ar)*cos(ap) );
+    qdot(5) = -2.0*( vel(1)*cos(ar) + vel(2)*sin(ar) )/( L*( cos(ap) + cos(hp) ) );
+    qdot(4) =  2.0*vel(0)/(L*cos(ap)) + qdot(2)*cos(hp)/cos(ap);
+    qdot(1) =  -qdot(5);
+    qdot(3) = -qdot(2) - qdot(4);
+
+    return flag;
+
+}
+
+tech_flag_t Hubo_Tech::calibrateJoint( int joint, double offset )
+{
+    if( joint < HUBO_JOINT_COUNT )
+        jointAngleCalibration[joint] = getJointAngleState(joint) + offset;
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+void Hubo_Tech::calibrateAnkleForces()
+{
+    afc[RIGHT] = (getRightFootFz()+getLeftFootFz())/2.0 - getRightFootFz();
+    afc[LEFT]  = (getRightFootFz()+getLeftFootFz())/2.0 - getLeftFootFz();
+}
+
+
+
+
 
 void Hubo_Tech::HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q) {
     Eigen::Isometry3d drill;
