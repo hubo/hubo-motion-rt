@@ -32,6 +32,7 @@ HUBO_LF_CTRL_CHAN='hubo-LF-control'
 HUBO_AUX_CTRL_CHAN='hubo-AUX-control'
 HUBO_CTRL_STATE_CHAN='ctrl-d-state'
 HUBO_MANIP_CMD_CHAN='manip-cmd'
+HUBO_ZMP_CHAN='hubo-zmp-traj'
 LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
@@ -67,6 +68,7 @@ Ach()
 		sudo ach -U $HUBO_LF_CTRL_CHAN
 		sudo ach -U $HUBO_AUX_CTRL_CHAN
         sudo ach -U $HUBO_CTRL_STATE_CHAN
+        sudo ach -U $HUBO_ZMP_CHAN
 
 	;;	
 
@@ -84,6 +86,7 @@ Ach()
 		sudo ach -1 -C $HUBO_AUX_CTRL_CHAN      -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_ZMP_CHAN           -m 3  -n 1000000 -o 666
 
 	;;
 	esac

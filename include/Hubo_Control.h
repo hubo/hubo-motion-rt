@@ -860,7 +860,7 @@ public:
      * This is useful if a different tool has been attached to a hand, thereby producing a
      * different end-effector offset/orientation than usual.
     */
-    void huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector);
+    void huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector);
     /**
      * \b NOTE: This is \em not thoroughly tested. Use with extreme caution.
      *
@@ -878,7 +878,10 @@ public:
      * A specialized differential IK (solved analytically) for moving the hip
      * position. NOT THOROUGHLY TESTED -- USE WITH EXTREME CAUTION.
     */
-    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate );
+    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
+    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
+    ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
+    ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
     /**
      * Calibration for arbitrary joints
     */
@@ -931,15 +934,6 @@ protected:
 
     void controlInit();
 
-    double kneeSingularityThreshold;
-    double kneeSingularityDanger;
-    double kneeSingularitySpeed;
-
-    double apc[2]; // Ankle Pitch Calibration
-    double arc[2]; // Ankle Roll Calibration
-    double jointAngleCalibration[HUBO_JOINT_COUNT];
-    double afc[2]; // Ankle Force Calibration
-
     ach_channel_t chan_hubo_ref;
     ach_channel_t chan_hubo_board_cmd;
     ach_channel_t chan_hubo_state;
@@ -978,21 +972,16 @@ protected:
 
 
 
-    /** Constant values */
-    static const int mNumDofs_Arm = 6;
-    static const int mNumDofs_Leg = 6;
-    static const int mNumDofs_Torso = 2;
+    double kneeSingularityThreshold;
+    double kneeSingularityDanger;
+    double kneeSingularitySpeed;
 
-    double mMass_Total_Arm;
-    double mMass_Total_Leg;
-    std::vector<Eigen::Vector3d> mLocalCOMs_Leg;
-    std::vector<double> mMasses_Leg;
+    double apc[2]; // Ankle Pitch Calibration
+    double arc[2]; // Ankle Roll Calibration
+    double jointAngleCalibration[HUBO_JOINT_COUNT];
+    double afc[2]; // Ankle Force Calibration
 
-    std::vector<Eigen::Vector3d> mLocalCOMs_Arm;
-    std::vector<double> mMasses_Arm;
-
-    std::vector<Eigen::Vector3d> mLocalCOMs_Torso;
-    std::vector<double> mMasses_Torso;
+    double shinLength;
 
 private:
     

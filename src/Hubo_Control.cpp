@@ -70,6 +70,8 @@ void Hubo_Control::controlInit()
     kneeSingularityDanger = 0.15;
     kneeSingularitySpeed = 0.1;
 
+    shinLength = 0.3002;
+
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
@@ -1870,7 +1872,7 @@ void Hubo_Control::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const
 }
 
 
-void Hubo_Control::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side) {
+void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side) {
     // Hand	
     Eigen::Isometry3d hand;
     hand(0,0) =  1; hand(0,1) =  0; hand(0,2) = 0; hand(0,3) =   0;
@@ -1881,7 +1883,7 @@ void Hubo_Control::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, i
     huboArmIK(q, B, qPrev, side, hand);
 }
   
-void Hubo_Control::huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
+void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
 {
     Eigen::ArrayXXd qAll(6,8);
     
@@ -2525,14 +2527,59 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
         q(i) = max( min( q(i), limits(i,1)), limits(i,0) ); 
 }
 
-ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side, Vector6d qstate ) 
+ctrl_flag_t Hubo_Control::footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side )
+{
+    Eigen::Vector3d rotVel; rotVel.setZero();
+    return footVelocityIK( qdot, velocity, rotVel, side );
+}
+
+ctrl_flag_t Hubo_Control::footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
+        Eigen::Vector3d &angularVel, int side )
+{
+    Eigen::Vector3d hipVelocity, hipRotVel, r;
+
+    double hp, ap, ar, kn, yaw;
+    
+    if( side == RIGHT)
+    {
+        hp = getJointAngleState(RHP);
+        ap = getJointAngleState(RAP);
+        ar = getJointAngleState(RAR);
+        kn = getJointAngleState(RKN);
+        yaw = getJointAngleState(RHY);
+    }
+    else
+    {
+        hp = getJointAngleState(LHP);
+        ap = getJointAngleState(LAP);
+        ar = getJointAngleState(LAR);
+        kn = getJointAngleState(LKN);
+        yaw = getJointAngleState(LHY);
+    }
+    r << shinLength*(sin(hp)-sin(ap)), shinLength*(cos(hp)+cos(ap))*sin(ar), shinLength*(cos(hp)+cos(ap))*cos(ar);
+
+    Eigen::AngleAxisd T(yaw, Vector3d(0,0,1));
+    r = T*r;
+
+    hipRotVel = -angularVel;
+    hipVelocity = -velocity - angularVel.cross(r);
+
+    return hipVelocityIK( qdot, hipVelocity, hipRotVel, side );
+    
+}
+
+ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side ) 
+{
+    Eigen::Vector3d rotVel; rotVel.setZero();
+    return hipVelocityIK( qdot, velocity, rotVel, side );
+}
+
+ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
+        Eigen::Vector3d &angularVel, int side )
 {
     ctrl_flag_t flag = SUCCESS;
 
     Eigen::Vector3d vel;
-    vel(0) = -velocity(0);
-    vel(1) = -velocity(1);
-    vel(2) =  velocity(2);
 
     qdot.setZero();
     if( side!=RIGHT && side!=LEFT )
@@ -2542,6 +2589,10 @@ ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &veloci
     
     if(side==RIGHT)
     {
+        vel(0) = -(  velocity(0)*cos(getJointAngleState(RHY)) + velocity(1)*sin(getJointAngleState(RHY)) );
+        vel(1) = -( -velocity(0)*sin(getJointAngleState(RHY)) + velocity(1)*cos(getJointAngleState(RHY)) );
+        vel(2) =  velocity(2);
+
         hp = getJointAngleState(RHP);
         ap = getJointAngleState(RAP);
         ar = getJointAngleState(RAR);
@@ -2549,27 +2600,25 @@ ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &veloci
     }
     else
     {
+        vel(0) = -(  velocity(0)*cos(getJointAngleState(LHY)) + velocity(1)*sin(getJointAngleState(LHY)) );
+        vel(1) = -( -velocity(0)*sin(getJointAngleState(LHY)) + velocity(1)*cos(getJointAngleState(LHY)) );
+        vel(2) =  velocity(2);
+
         hp = getJointAngleState(LHP);
         ap = getJointAngleState(LAP);
         ar = getJointAngleState(LAR);
         kn = getJointAngleState(LKN);
     }
 
-/*
-    hp = qstate(2);
-    ap = qstate(4);
-    ar = qstate(5);
-    kn = qstate(3);
-*/    
 
-    double L = 2*0.3002;
+    double L = 2*shinLength;
 
 
     if( kn <= kneeSingularityDanger || fabs(-hp-ap) <= kneeSingularityDanger )
     {
-        qdot(2) = -fabs(kneeSingularitySpeed/2);
-        qdot(3) =  fabs(kneeSingularitySpeed);
-        qdot(4) = -fabs(kneeSingularitySpeed/2);
+        qdot(HP) = -fabs(kneeSingularitySpeed/2);
+        qdot(KN) =  fabs(kneeSingularitySpeed);
+        qdot(AP) = -fabs(kneeSingularitySpeed/2);
         return IK_DANGER;
     }
 
@@ -2592,11 +2641,15 @@ ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &veloci
         
     }
 
-    qdot(2) = -2.0/(L*sin(hp+ap))*( vel(0)*sin(ap) - vel(1)*sin(ar)*cos(ap) + vel(2)*cos(ar)*cos(ap) );
-    qdot(5) = -2.0*( vel(1)*cos(ar) + vel(2)*sin(ar) )/( L*( cos(ap) + cos(hp) ) );
-    qdot(4) =  2.0*vel(0)/(L*cos(ap)) + qdot(2)*cos(hp)/cos(ap);
-    qdot(1) =  -qdot(5);
-    qdot(3) = -qdot(2) - qdot(4);
+    qdot(HP) = -2.0/(L*sin(hp+ap))*( vel(0)*sin(ap) - vel(1)*sin(ar)*cos(ap) + vel(2)*cos(ar)*cos(ap) );
+    qdot(AR) = -2.0*( vel(1)*cos(ar) + vel(2)*sin(ar) )/( L*( cos(ap) + cos(hp) ) );
+    qdot(AP) =  2.0*vel(0)/(L*cos(ap)) + qdot(HP)*cos(hp)/cos(ap);
+    qdot(HR) =  -qdot(AR);
+    qdot(KN) = -qdot(HP) - qdot(AP);
+
+    qdot(HR) -= angularVel(0);
+    qdot(HP) -= angularVel(1);
+    qdot(HY) -= angularVel(2);
 
     return flag;
 
