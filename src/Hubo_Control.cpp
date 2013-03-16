@@ -70,7 +70,7 @@ void Hubo_Control::controlInit()
     kneeSingularityDanger = 0.15;
     kneeSingularitySpeed = 0.1;
 
-    shinLength = 0.3002;
+    shinLength = 0.26;
 
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
@@ -2574,42 +2574,41 @@ ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &veloci
     return hipVelocityIK( qdot, velocity, rotVel, side );
 }
 
+ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, const Vector6d &q ) 
+{
+    Eigen::Vector3d rotVel; rotVel.setZero();
+    return hipVelocityIK( qdot, velocity, rotVel, q );
+}
+
 ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
         Eigen::Vector3d &angularVel, int side )
+{
+    Vector6d q;
+    if( side!=RIGHT && side!=LEFT )
+        side = RIGHT;
+    getLegAngleStates( side, q );
+    hipVelocityIK( qdot, velocity, angularVel, q );
+}
+
+ctrl_flag_t Hubo_Control::hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity,
+        Eigen::Vector3d &angularVel, const Vector6d &q )
 {
     ctrl_flag_t flag = SUCCESS;
 
     Eigen::Vector3d vel;
 
     qdot.setZero();
-    if( side!=RIGHT && side!=LEFT )
-        side = RIGHT;
 
     double hp, ap, ar, kn;
     
-    if(side==RIGHT)
-    {
-        vel(0) = -(  velocity(0)*cos(getJointAngleState(RHY)) + velocity(1)*sin(getJointAngleState(RHY)) );
-        vel(1) = -( -velocity(0)*sin(getJointAngleState(RHY)) + velocity(1)*cos(getJointAngleState(RHY)) );
-        vel(2) =  velocity(2);
+    vel(0) = -(  velocity(0)*cos(q(HY)) + velocity(1)*sin(q(HY)) );
+    vel(1) = -( -velocity(0)*sin(q(HY)) + velocity(1)*cos(q(HY)) );
+    vel(2) =  velocity(2);
 
-        hp = getJointAngleState(RHP);
-        ap = getJointAngleState(RAP);
-        ar = getJointAngleState(RAR);
-        kn = getJointAngleState(RKN);
-    }
-    else
-    {
-        vel(0) = -(  velocity(0)*cos(getJointAngleState(LHY)) + velocity(1)*sin(getJointAngleState(LHY)) );
-        vel(1) = -( -velocity(0)*sin(getJointAngleState(LHY)) + velocity(1)*cos(getJointAngleState(LHY)) );
-        vel(2) =  velocity(2);
-
-        hp = getJointAngleState(LHP);
-        ap = getJointAngleState(LAP);
-        ar = getJointAngleState(LAR);
-        kn = getJointAngleState(LKN);
-    }
-
+    hp = q(HP);
+    ap = q(AP);
+    ar = q(AR);
+    kn = q(KN);
 
     double L = 2*shinLength;
 

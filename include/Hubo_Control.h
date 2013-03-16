@@ -879,7 +879,9 @@ public:
      * position. NOT THOROUGHLY TESTED -- USE WITH EXTREME CAUTION.
     */
     ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
+    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, const Vector6d &q ); 
     ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
+    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, const Vector6d &q );
     ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
     ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
     /**
