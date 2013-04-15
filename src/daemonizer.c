@@ -78,10 +78,16 @@ static void fork_sig_handler(int signum)
 }
 
 
+void redirectSigs()
+{
+    signal( SIGINT,  daemon_sig_handler );
+    signal( SIGQUIT, daemon_sig_handler );
+    signal( SIGTERM, daemon_sig_handler );
+}
+
 void daemonize(const char *daemon_name, int priority)
 {
     char pbuff[100];
-
     sprintf(gdaemon_name, "%s", daemon_name);
 //    sprintf(pbuff, "Starting daemonization for %s", daemon_name);
     syslog( LOG_NOTICE, "Starting daemonization for %s", daemon_name );
@@ -136,9 +142,7 @@ void daemonize(const char *daemon_name, int priority)
 //	signal( SIGUSR1, daemon_sig_handler );
     signal( SIGUSR2, daemon_sig_handler );
     signal( SIGALRM, daemon_sig_handler );
-    signal( SIGINT,  daemon_sig_handler );
-    signal( SIGQUIT, daemon_sig_handler );
-    signal( SIGTERM, daemon_sig_handler );
+    redirectSigs();
 
 
     // Specific to the fork

@@ -57,7 +57,7 @@ int setCtrlDefaults( struct hubo_control *ctrl );
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
                                                    struct hubo_fin_control *rfctrl, struct hubo_fin_control *lfctrl,
-                        struct hubo_aux_control *auxctrl )
+                        struct hubo_aux_control *auxctrl, int paused )
 {
     for(int i=0; i<ARM_JOINT_COUNT; i++)
     {
@@ -81,19 +81,25 @@ void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ract
     {
         memcpy( &(ctrl->joint[auxjoints[i]]), &(auxctrl->joint[i]), sizeof(struct hubo_joint_control) );
     }
+
     
-    if( ractrl->active==2 && lactrl->active==2 && rlctrl->active==2 && llctrl->active==2
-        || rfctrl->active==2 && lfctrl->active==2 && auxctrl->active==2 )
+  
+     
+/*
+    if( (ractrl->active==2 || lactrl->active==2 || rlctrl->active==2 || llctrl->active==2
+        || rfctrl->active==2 || lfctrl->active==2 || auxctrl->active==2) && paused==0 )
     {
         ctrl->active = 2;
     }
-    else if( ractrl->active==1 || lactrl->active==1 || rlctrl->active==1 || llctrl->active==1
+*/
+    if( ractrl->active==1 || lactrl->active==1 || rlctrl->active==1 || llctrl->active==1
         || rfctrl->active==1 || lfctrl->active==1 || auxctrl->active==1 )
     {
         ctrl->active = 1;
     }
     else
         ctrl->active = 0;
+
 }
 
 double sign(double x)
@@ -222,10 +228,12 @@ void controlLoop()
             for(int j=0; j<FIN_JOINT_COUNT; j++)
                 timeElapse[rightfinjoints[j]] = 0.0;
 
+
         cresult = ach_get( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<FIN_JOINT_COUNT; j++)
                 timeElapse[leftfinjoints[j]] = 0.0;
+        
 
         cresult = ach_get( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
@@ -234,24 +242,31 @@ void controlLoop()
 
         sortJointControls( &ctrl, &ractrl, &lactrl,
                                   &rlctrl, &llctrl,
-                                  &rfctrl, &lfctrl, &auxctrl );
+                                  &rfctrl, &lfctrl, &auxctrl, C_state.paused );
 
         t = H_state.time;
         dt = t - t0;
         
-        if((ctrl.active == 2 || H_state.refWait==1) && C_state.paused==0)
+        if( ctrl.active == 2 || H_state.refWait==1 )
         {
+            if(C_state.paused==0)
+                fprintf(stdout, "Pausing control\n");
             C_state.paused=1;
+
             ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
-            fprintf(stdout, "Pausing control\n");
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
+                H_ref.ref[jnt] = H_state.joint[jnt].ref;
+                V[jnt] = 0; V0[jnt] = 0; dV[jnt] = 0;
+                dr[jnt]=0;
+/*
                 if( ctrl.joint[jnt].mode == CTRL_HOME )
                 {
                     H_ref.ref[jnt] = 0; 
                     V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
                     dr[jnt]=0;
                 }
+*/
             }
         }
         else if(ctrl.active==1 && H_state.refWait==0)
@@ -265,19 +280,14 @@ void controlLoop()
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
+
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
-                if( H_ref.ref[jnt] != H_ref.ref[jnt] && fail[jnt]==0 )
-                {
-                    fprintf( stderr, "JOINT FROZEN! You have requested a NaN for joint #%d!\n", jnt );
-                    fail[jnt] = 1;
-                    C_state.status[jnt] = 1;
-                }                    
-
                 if( ctrl.joint[jnt].mode == CTRL_PASS )
+                {
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
-
-                if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
+                }
+                else if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
                     && fail[jnt]==0  )
                 {
                     if( ctrl.joint[jnt].mode != CTRL_OFF && ctrl.joint[jnt].mode != CTRL_RESET )
@@ -340,10 +350,10 @@ void controlLoop()
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_HOME )
                         {
-                            H_ref.ref[jnt] = 0; 
+//                            H_ref.ref[jnt] = 0; 
                             V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
                             //r[jnt]=0; r0[jnt]=0;
-                            dr[jnt]=0;
+//                            dr[jnt]=0;
                         }
                         else
                         {
@@ -376,11 +386,20 @@ void controlLoop()
                     reset[jnt]=1;
                     C_state.status[jnt] = 0;
                 }
+
+                if( H_ref.ref[jnt] != H_ref.ref[jnt] && fail[jnt]==0 )
+                {
+                    fprintf( stderr, "JOINT FROZEN! You have requested a NaN for joint #%d!\n", jnt );
+                    fail[jnt] = 1;
+                    C_state.status[jnt] = 1;
+                }                    
+
             } // end: for loop
 
 
             if(ctrl.active == 1 && C_state.paused==0) 
             {
+
                 presult = ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",

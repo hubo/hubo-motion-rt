@@ -116,7 +116,7 @@ void Hubo_Control::controlInit()
     r = ach_open( &chan_hubo_fin_ctrl_right, HUBO_CHAN_RF_CTRL_NAME, NULL );
     assert( ACH_OK == r );
     
-    r = ach_open( &chan_hubo_fin_ctrl_left,  HUBO_CHAN_RF_CTRL_NAME, NULL );
+    r = ach_open( &chan_hubo_fin_ctrl_left,  HUBO_CHAN_LF_CTRL_NAME, NULL );
     assert( ACH_OK == r );
     
     r = ach_open( &chan_hubo_aux_ctrl, HUBO_CHAN_AUX_CTRL_NAME, NULL );
@@ -346,46 +346,46 @@ ctrl_flag_t Hubo_Control::setJointNominalSpeed(int joint, double speed)
         switch( ctrlMap[joint] )
         {
             case CtrlRA: // Right Arm
-                if( H_Arm_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Arm_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Arm_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlLA: // Left Arm
-                if( H_Arm_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Arm_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Arm_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlRL: // Right Leg
-                if( H_Leg_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Leg_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Leg_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlLL: // Left Leg
-                if( H_Leg_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Leg_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Leg_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlRF: // Right Fingers
-                if( H_Fin_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Fin_Ctrl[RIGHT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Fin_Ctrl[RIGHT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlLF: // Left Fingers
-                if( H_Fin_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Fin_Ctrl[LEFT].joint[localMap[joint]].mode == CTRL_POS )
                     H_Fin_Ctrl[LEFT].joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
             case CtrlAX: // Aux
-                if( H_Aux_Ctrl.joint[localMap[joint]].mode == CTRL_POS )
+//                if( H_Aux_Ctrl.joint[localMap[joint]].mode == CTRL_POS )
                     H_Aux_Ctrl.joint[localMap[joint]].speed = speed;
-                else
-                    return WRONG_MODE;
+//                else
+//                    return WRONG_MODE;
                 break;
         }
     }
@@ -568,9 +568,9 @@ ctrl_flag_t Hubo_Control::setArmNomSpeeds(int side, Vector6d speeds)
 
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<ARM_JOINT_COUNT; i++)
-            if( H_Arm_Ctrl[side].joint[armjoints[side][i]].mode != CTRL_POS )
-                return WRONG_MODE;
+//        for(int i=0; i<ARM_JOINT_COUNT; i++)
+//            if( H_Arm_Ctrl[side].joint[armjoints[side][i]].mode != CTRL_POS )
+//                return WRONG_MODE;
 
         for(int i=0; i<ARM_JOINT_COUNT; i++)
             setJointNominalSpeed( armjoints[side][i], speeds(i) );
@@ -711,9 +711,9 @@ ctrl_flag_t Hubo_Control::setLegNomSpeeds(int side, Vector6d speeds)
 
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<LEG_JOINT_COUNT; i++)
-            if( H_Leg_Ctrl[side].joint[legjoints[side][i]].mode != CTRL_POS )
-                return WRONG_MODE;
+//        for(int i=0; i<LEG_JOINT_COUNT; i++)
+//            if( H_Leg_Ctrl[side].joint[legjoints[side][i]].mode != CTRL_POS )
+//                return WRONG_MODE;
 
         for(int i=0; i<LEG_JOINT_COUNT; i++)
             setJointNominalSpeed( legjoints[side][i], speeds(i) );
@@ -1565,8 +1565,8 @@ ctrl_flag_t Hubo_Control::homeJoint( int joint, bool send )
     if(send)
     {
         sendControls();
-        while( C_State.paused==0 )
-            update();
+//        while( C_State.paused==0 )
+//            update();
         sendCommands();
         
         for(int i=0; i<8; i++)
@@ -1585,8 +1585,8 @@ void Hubo_Control::homeAllJoints( bool send )
     if(send)
     {
         sendControls();
-        while( C_State.paused==0 )
-            update();
+//        while( C_State.paused==0 )
+//            update();
         sendCommands();
         
         for(int i=0; i<8; i++)
@@ -2220,7 +2220,7 @@ void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
 
 void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     // Declarations
-    Eigen::Isometry3d neck, waist, T;
+    Eigen::Isometry3d neck, waist, T, foot;
     Eigen::MatrixXd limits(6,2);
     Vector6d offset; offset.setZero();
     
@@ -2289,12 +2289,18 @@ void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
         // Set offsets
         //        offset(1) = limits(1,0);
     }
-    
+
+    // Rotation of -90 about y to make x forward, y left, z up
+//    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =1; foot(0,3) = 0;
+ //   foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
+  //  foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
+   // foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
+
     // Calculate forward kinematics
     B = waist*neck;
     for (int i = 0; i < 6; i++) {
         DH2HG(T, t(i)+q(i)+offset(i), f(i), r(i), d(i));
-        B = B*T;
+        B = B*T;//*foot;
     }
 }
 
@@ -2302,7 +2308,7 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     Eigen::ArrayXXd qAll(6,8);
     
     // Declarations
-    Eigen::Isometry3d neck, neckInv, waist, waistInv, BInv;
+    Eigen::Isometry3d neck, neckInv, waist, waistInv, BInv, foot, footInv;
     Eigen::MatrixXd limits(6,2);
     Vector6d offset; offset.setZero();
     double nx, sx, ax, px;
@@ -2372,8 +2378,16 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
 */        // Set offsets
         //        offset(1) = limits(1,0);
     }
+
+    // Rotation of -90 about y to make x forward, y left, z up
+//    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =1; foot(0,3) = 0;
+//    foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
+//    foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
+//    foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
+
     neckInv = neck.inverse();
     waistInv = waist.inverse();
+//    footInv = foot.inverse();
     
     // Variables
     BInv = (neckInv*waistInv*B).inverse();
