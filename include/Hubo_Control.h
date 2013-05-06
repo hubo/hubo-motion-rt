@@ -448,6 +448,16 @@ public:
     */
     int getJointStatus( int joint ); // 0:Good 1:Frozen
 
+    /**
+     * Returns whether or not the joint is homed
+    */
+    bool isHomed( int joint );
+
+    /**
+     * Returns whether or not there are errors on the joint's JMC
+    */
+    bool errorsExist( int joint);
+
     // ~* Arm control gets
     // Position control
     /**

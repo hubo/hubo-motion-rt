@@ -154,10 +154,26 @@ int main() {
         }
         else if (strcmp(buf0,"home")==0) {
             hubo.homeJoint( hubo_set(buf, &H_param), true );
+            int jnt = name2mot(getArg(buf, 1), &H_param);
             printf("%s - Home \n",getArg(buf,1));
+            sleep(5);
+            hubo.update();
+            if(H_state.joint[jnt].active == true && (hubo.isHomed(jnt) == false
+                                                 || hubo.errorsExist(jnt) == true))
+                printf("\t%s is still not homed!\n", jointNames[jnt]);
+            else
+                printf("\t%s home successfully\n", jointNames[jnt]);
         }
         else if (strcmp(buf0,"homeAll")==0) {
             hubo.homeAllJoints( true );
+            sleep(5);
+            hubo.update();
+            for(int jnt=0; jnt < HUBO_JOINT_COUNT; jnt++) {
+                if(H_state.joint[jnt].active == true && (hubo.isHomed(jnt) == false 
+                                                     || hubo.errorsExist(jnt) == true)) {
+                    printf("\t%s is not homed!\n", jointNames[jnt]);
+                }
+            }
         }
         else if (strcmp(buf0,"reset")==0) {
             int jnt = name2mot(getArg(buf, 1), &H_param);
