@@ -1046,6 +1046,28 @@ int Hubo_Control::getJointStatus( int joint )
         return 0;
 }
 
+bool Hubo_Control::isHomed( int joint )
+{
+    if(H_State.status[joint].homeFlag != HUBO_HOME_OK)
+        return false;
+    else
+        return true;
+}
+
+bool Hubo_Control::errorsExist( int joint )
+{
+    if(H_State.status[joint].jam == true ||
+       H_State.status[joint].pwmSaturated == true ||
+       H_State.status[joint].bigError == true ||
+       H_State.status[joint].encError == true ||
+       H_State.status[joint].driverFault == true ||
+       H_State.status[joint].motorFail0 == true ||
+       H_State.status[joint].motorFail1 == true)
+        return true;
+    else
+        return false;
+}
+
 // ~* Arm control gets
 // Position control
 ctrl_flag_t Hubo_Control::getArmAngles(int side, Vector6d &angles)
