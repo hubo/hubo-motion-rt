@@ -1894,7 +1894,7 @@ void Hubo_Control::huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side,  const
 }
 
 
-void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side) {
+bool Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side) {
     // Hand	
     Eigen::Isometry3d hand;
     hand(0,0) =  1; hand(0,1) =  0; hand(0,2) = 0; hand(0,3) =   0;
@@ -1902,10 +1902,10 @@ void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     hand(2,0) =  0; hand(2,1) =  1; hand(2,2) = 0; hand(2,3) =   0;
     hand(3,0) =  0; hand(3,1) =  0; hand(3,2) = 0; hand(3,3) =   1;
     
-    huboArmIK(q, B, qPrev, side, hand);
+    return huboArmIK(q, B, qPrev, side, hand);
 }
   
-void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
+bool Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector)
 {
     Eigen::ArrayXXd qAll(6,8);
     
@@ -2188,6 +2188,7 @@ void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // If any solution has all joints within the limits...
     if(anyWithin)
     {
+        outOfWorkspace = false;
         // for each solution...
         for (int i = 0; i < 8; i++) {
             // if all the joints of solution i are within the limits...
@@ -2211,6 +2212,7 @@ void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // if no solution has all the joints within the limits...
     else
     {
+        outOfWorkspace = true;
         // then for each solution...
         for( int i=0; i<8; i++)
         {
@@ -2237,6 +2239,7 @@ void Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     
     //q = q.cwiseMin(limits.col(1)); //TODO: Put these back
     //q = q.cwiseMax(limits.col(0));
+    return outOfWorkspace;
 }
 
 
@@ -2326,7 +2329,7 @@ void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     }
 }
 
-void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side) {
+bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side) {
     Eigen::ArrayXXd qAll(6,8);
     
     // Declarations
@@ -2511,6 +2514,7 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // If any solution has all joints within the limits...
     if(anyWithin)
     {
+        outOfWorkspace = false;
         // for each solution...
         for (int i = 0; i < 8; i++)
         {
@@ -2538,6 +2542,7 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // if no solution has all the joints within the limits...
     else
     {
+        outOfWorkspace = true;
         // then for each solution...
         for(int i=0; i<8; i++)
         {
@@ -2561,6 +2566,8 @@ void Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // set the final joint angles to the solution closest to the previous solution
     for( int i=0; i<6; i++)
         q(i) = max( min( q(i), limits(i,1)), limits(i,0) ); 
+
+    return outOfWorkspace;
 }
 
 ctrl_flag_t Hubo_Control::footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side )
