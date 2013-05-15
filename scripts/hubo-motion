@@ -471,6 +471,10 @@ case "$1" in
 		DartHubo $2
 	;;
 
+	'virtual' )
+		DartHubo $2
+	;;
+
 # Emergency kill
 	'kill' )
 		KillHubo $2
