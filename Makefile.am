@@ -18,9 +18,6 @@ huboctrlconf_DATA = tables/control.table
 control_daemon_SOURCES = src/control-daemon.c
 control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
 
-tech_console_SOURCES = src/tech-console.cpp
-tech_console_LDADD = -lm -lach -lreadline libhuboctrl.la libdaemonizer.la -lhuboparams
-
 proto_manip_daemon_SOURCES = src/proto-manip-daemon.cpp
 proto_manip_daemon_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
