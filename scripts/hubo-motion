@@ -16,9 +16,18 @@
 
 
 # M.X. Grey ( mxgrey@gatech.edu )
-# Last updated: 03/06/2013
+# Last updated: 04/26/2013
 # Contact the author for support or questions regarding operation.
 
+HUBO_BITRATE=0x0014 # 1 Mbit/s
+#HUBO_BITRATE=0x001C #	500 kbit/s
+#HUBO_BITRATE=0x011C #	250 kbit/s
+#HUBO_BITRATE=0x031C #	125 kbit/s
+#HUBO_BITRATE=0x432F #	100 kbit/s
+#HUBO_BITRATE=0x472F #	50 kbit/s
+#HUBO_BITRATE=0x532F #	20 kbit/s
+#HUBO_BITRATE=0x672F #	10 kbit/s
+#HUBO_BITRATE=0x7F7F #	5 kbit/s
 
 HUBO_REF_CHAN='hubo-ref'
 HUBO_STATE_CHAN='hubo-state'
@@ -154,9 +163,16 @@ StartHubo()
 	*)
 	
 		Ach
-        
-        sudo hubo-ach run
 
+        sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
+        sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
+
+        sudo ifconfig can0 up
+        sudo ifconfig can1 up
+        sudo ifconfig can2 up
+        sudo ifconfig can3 up
+
+        sudo hubo-daemon
 		sudo control-daemon
 		sudo tech-console
 	;;
