@@ -108,7 +108,7 @@ typedef enum {
     ALL_STALE,      ///< Nothing was able to update for some reason
     CHAN_OPEN_FAIL, ///< A channel failed to open
     IK_EDGE,        ///< You're trying to push something out of bounds with an IK
-    IK_DANGER       ///< The IK is on a singularity and is resorting to a safety feature
+    IK_DANGER,      ///< The IK is on a singularity and is resorting to a safety feature
 
 } ctrl_flag_t;
 
@@ -447,6 +447,16 @@ public:
      * Returns whether the control-daemon has frozen a joint: 0-Active 1-Frozen
     */
     int getJointStatus( int joint ); // 0:Good 1:Frozen
+
+    /**
+     * Returns whether or not the joint is homed
+    */
+    bool isHomed( int joint );
+
+    /**
+     * Returns whether or not there are errors on the joint's JMC
+    */
+    bool errorsExist( int joint);
 
     // ~* Arm control gets
     // Position control
@@ -852,27 +862,30 @@ public:
      *
      * side specifies which arm (LEFT or RIGHT)
     */
-    void huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
+    bool huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
     /**
      * Same as huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side), but it will
      * also apply a final end effector transformation at the end, specified by the fifth argument.
      *
      * This is useful if a different tool has been attached to a hand, thereby producing a
      * different end-effector offset/orientation than usual.
+     * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
-    void huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector);
+    bool huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector);
     /**
      * \b NOTE: This is \em not thoroughly tested. Use with extreme caution.
      *
      * Similar to huboArmFK() but applied to the leg
+     * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
     void huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side);
     /**
      * \b NOTE: This is \em not thoroughly tested. Use with extreme caution.
      *
      * Similar to huboArmIK() but applied to the leg
+     * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
-    void huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
+    bool huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
 
     /**
      * A specialized differential IK (solved analytically) for moving the hip
@@ -984,6 +997,7 @@ protected:
     double afc[2]; // Ankle Force Calibration
 
     double shinLength;
+    bool outOfWorkspace; ///< Goal pose is outside workspace
 
 private:
     
