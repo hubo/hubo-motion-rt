@@ -8,66 +8,66 @@
 
 
 # BODY JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-WST     BD      0.75        0.4         3.0             -1.571      1.571       0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+WST     0.75        0.4         3.0             -1.571      1.571       0.5     BD      
 
 # NECK JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-NKY     NK      0.75        0.4         3.0             -1.571      1.571       0.5
-NK1     NK      0.75        0.4         3.0             -1.571      1.571       0.5
-NK2     NK      0.75        0.4         3.0             -1.571      1.571       0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+NKY     0.75        0.4         3.0             -1.571      1.571       0.5     NK      
+NK1     0.75        0.4         3.0             -1.571      1.571       0.5     NK      
+NK2     0.75        0.4         3.0             -1.571      1.571       0.5     NK      
 
 # LEFT ARM JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-LSP     LA      0.75        0.4         3.0             -2.0        2.0         0.5
-LSR     LA      0.75        0.4         3.0             -0.3        2.0         0.5
-LSY     LA      0.75        0.4         3.0             -2.25       2.0         0.5
-LEB     LA      0.75        0.4         3.0             -2.5        0.0         0.5
-LWY     LA      0.75        0.4         3.0             -2.0        2.0         0.5
-LWP     LA      0.75        0.4         3.0             -1.25       1.0         0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+LSP     0.75        0.4         3.0             -2.0        2.0         0.5     LA      
+LSR     0.75        0.4         3.0             -0.3        2.0         0.5     LA      
+LSY     0.75        0.4         3.0             -2.25       2.0         0.5     LA      
+LEB     0.75        0.4         3.0             -2.5        0.0         0.5     LA      
+LWY     0.75        0.4         3.0             -2.0        2.0         0.5     LA      
+LWP     0.75        0.4         3.0             -1.25       1.0         0.5     LA      
 
 # RIGHT ARM JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-RSP     RA      0.75        0.4         3.0             -2.0        2.0         0.5
-RSR     RA      0.75        0.4         3.0             -2.0        0.3         0.5
-RSY     RA      0.75        0.4         3.0             -2.0        2.0         0.5
-REB     RA      0.75        0.4         3.0             -2.5        0.0         0.5
-RWY     RA      0.75        0.4         3.0             -2.0        2.0         0.5
-RWP     RA      0.75        0.4         3.0             -1.4        1.2         0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+RSP     0.75        0.4         3.0             -2.0        2.0         0.5     RA      
+RSR     0.75        0.4         3.0             -2.0        0.3         0.5     RA      
+RSY     0.75        0.4         3.0             -2.0        2.0         0.5     RA      
+REB     0.75        0.4         3.0             -2.5        0.0         0.5     RA      
+RWY     0.75        0.4         3.0             -2.0        2.0         0.5     RA      
+RWP     0.75        0.4         3.0             -1.4        1.2         0.5     RA      
 
 # LEFT LEG JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-LHP     LL      0.8         0.6         6.0             -1.30       1.30        0.5
-LHR     LL      0.8         0.6         6.0             0.00        0.58        0.5
-LHY     LL      0.8         0.6         6.0             0.00        1.80        0.5
-LKN     LL      0.8         0.6         6.0             0.00        2.50        0.5
-LAP     LL      0.8         0.6         6.0             -1.26       1.80        0.5
-LAR     LL      0.8         0.6         6.0             -0.31       0.23        0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+LHP     0.8         0.6         6.0             -1.30       1.30        0.5     LL      
+LHR     0.8         0.6         6.0             0.00        0.58        0.5     LL      
+LHY     0.8         0.6         6.0             0.00        1.80        0.5     LL      
+LKN     0.8         0.6         6.0             0.00        2.50        0.5     LL      
+LAP     0.8         0.6         6.0             -1.26       1.80        0.5     LL      
+LAR     0.8         0.6         6.0             -0.31       0.23        0.5     LL      
 
 # RIGHT LEG JOINTS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-RHP     RL      0.8         0.6         6.0             -1.30       1.30        0.5
-RHR     RL      0.8         0.6         6.0             -0.58       0.00        0.5
-RHY     RL      0.8         0.6         6.0             -1.80       0.00        0.5
-RKN     RL      0.8         0.6         6.0             0.00        2.50        0.5
-RAP     RL      0.8         0.6         6.0             -1.26       1.80        0.5
-RAR     RL      0.8         0.6         6.0             -0.23       0.31        0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+RHP     0.8         0.6         6.0             -1.30       1.30        0.5     RL      
+RHR     0.8         0.6         6.0             -0.58       0.00        0.5     RL      
+RHY     0.8         0.6         6.0             -1.80       0.00        0.5     RL      
+RKN     0.8         0.6         6.0             0.00        2.50        0.5     RL      
+RAP     0.8         0.6         6.0             -1.26       1.80        0.5     RL      
+RAR     0.8         0.6         6.0             -0.23       0.31        0.5     RL      
 
 # RIGHT FINGERS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-RF1     RF      0.75        0.4         1.0             -1.0        1.0         0.5
-RF2     RF      0.75        0.4         1.0             -1.0        1.0         0.5
-RF3     RF      0.75        0.4         1.0             -1.0        1.0         0.5
-RF4     RF      0.75        0.4         1.0             -1.0        1.0         0.5
-RF5     RF      0.75        0.4         1.0             -1.0        1.0         0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+RF1     0.75        0.4         1.0             -1.0        1.0         0.5     RF      
+RF2     0.75        0.4         1.0             -1.0        1.0         0.5     RF      
+RF3     0.75        0.4         1.0             -1.0        1.0         0.5     RF      
+RF4     0.75        0.4         1.0             -1.0        1.0         0.5     RF      
+RF5     0.75        0.4         1.0             -1.0        1.0         0.5     RF      
 
 # LEFT FINGERS
-#name   type    NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut
-LF1     LF      0.75        0.4         1.0             -1.0        1.0         0.5
-LF2     LF      0.75        0.4         1.0             -1.0        1.0         0.5
-LF3     LF      0.75        0.4         1.0             -1.0        1.0         0.5
-LF4     LF      0.75        0.4         1.0             -1.0        1.0         0.5
-LF5     LF      0.75        0.4         1.0             -1.0        1.0         0.5
+#name   NomSpeed    NomAccel    SpeedLimit      PosMin      PosMax      TimeOut type    
+LF1     0.75        0.4         1.0             -1.0        1.0         0.5     LF      
+LF2     0.75        0.4         1.0             -1.0        1.0         0.5     LF      
+LF3     0.75        0.4         1.0             -1.0        1.0         0.5     LF      
+LF4     0.75        0.4         1.0             -1.0        1.0         0.5     LF      
+LF5     0.75        0.4         1.0             -1.0        1.0         0.5     LF      
 
 
 

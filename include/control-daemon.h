@@ -63,8 +63,8 @@
 #define     HUBO_CHAN_LA_CTRL_NAME      "hubo-LA-control" // Left Arm control channel
 #define     HUBO_CHAN_RF_CTRL_NAME      "hubo-RF-control" // Right Finger control channel
 #define     HUBO_CHAN_LF_CTRL_NAME      "hubo-LF-control" // Left Finger control channel
+#define     HUBO_CHAN_BOD_CTRL_NAME     "hubo-BOD-control"// Body (waist) control channel
 #define     HUBO_CHAN_NCK_CTRL_NAME     "hubo-NCK-control"// Neck control channel
-#define     HUBO_CHAN_BOD_CTRL_NAME     "hubo-bod-control"// Body (waist) control channel
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
 
