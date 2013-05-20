@@ -44,7 +44,7 @@
 
 typedef enum {
     
-    MC_PAUSE = 0,
+    MC_READY = 0,
     MC_TRANS_EULER,
     MC_TRANS_QUAT,
     MC_TRAJ
@@ -53,6 +53,7 @@ typedef enum {
 
 typedef enum {
     
+    MC_GRASP_LIMP = 0,
     MC_GRASP_STATIC,
     MC_GRASP_NOW,
     MC_GRASP_AT_END,
@@ -71,14 +72,6 @@ typedef enum {
 
 typedef enum {
     
-    MC_LEFT,
-    MC_RIGHT,
-    MC_BOTH
-    
-} manip_side_t;
-
-typedef enum {
-    
     MC_SOLE,
     MC_START,
     MC_MID,
@@ -86,13 +79,33 @@ typedef enum {
     
 } manip_traj_chain_t;
 
+typedef enum {
+    
+    MC_NO_ERROR = 0,
+    MC_INVALID_POSE,
+    MC_INVALID_TRANSITION,
+    MC_BROKEN_CHAIN
+    
+} manip_error_t;
+
+
+typedef struct hubo_manip_state {
+    
+    manip_cmd_t cmd_state[2];      // Current state of the operational command
+    manip_grasp_t grasp_state[2];  // Current state of the grasp command
+    
+    manip_error_t error[2];
+    
+} hubo_manip_state_t;
+
 
 typedef struct hubo_manip_cmd {
     
-    manip_cmd_t m_cmd;
-    manip_ctrl_t m_ctrl;
+    manip_cmd_t m_cmd[side];
+    manip_ctrl_t m_ctrl[side];
     manip_side_t m_side;
-    manip_grasp_t m_grasp;
+    manip_grasp_t m_grasp[2];
+    bool interrupt[2];
     
     double translation[2][3];   // Use translation[RIGHT][0] to specify x for the right-side end effector
                                 // translation[LEFT][0] -> left arm's x
@@ -107,11 +120,10 @@ typedef struct hubo_manip_cmd {
                                 // eulerAngles[RIGHT][2] -> right arm's yaw
     // Euler Angles are applied in the following order: X1, Y2, Z3
     
+    double convergeNorm;
+    
 } hubo_manip_cmd_t;
 
-typedef struct hubo_manip_state {
-    
-} hubo_manip_state_t;
 
 typedef struct hubo_manip_param {
     

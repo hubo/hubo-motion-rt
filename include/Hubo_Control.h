@@ -66,6 +66,8 @@ extern "C" {
 #include <complex.h>
 
 typedef Eigen::Matrix< double, 6, 1 > Vector6d;
+typedef Eigen::Matrix< double, ARM_JOINT_COUNT, 1 > ArmVector;
+typedef Eigen::Matrix< double, LEG_JOINT_COUNT, 1 > LegVector;
 typedef Eigen::Vector3d Vector3d;
 
 #define CtrlRA  0
@@ -211,7 +213,7 @@ public:
      * HOWEVER, that request will not be sent until you run the command sendControls(). This is
      * because "send" defaults to false if it is not specified.
     */
-    ctrl_flag_t setArmAngles( int side, Vector6d angles, bool send=false );
+    ctrl_flag_t setArmAngles( int side, ArmVector angles, bool send=false );
     /**
      * Extension of setArmPosCtrl(int side) where side = LEFT
     */
@@ -219,7 +221,7 @@ public:
     /**
      * Extension of setArmAngles() where side = LEFT
     */
-    ctrl_flag_t setLeftArmAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setLeftArmAngles( ArmVector angles, bool send=false );
     /**
      * Extension of setArmPosCtrl(int side) where side = RIGHT
     */
@@ -227,35 +229,35 @@ public:
     /**
      * Extension of setArmAngles() where side = RIGHT
     */
-    ctrl_flag_t setRightArmAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setRightArmAngles( ArmVector angles, bool send=false );
     /**
      * Extension of setJointNominalSpeed() which sets all joints in an arm according to the values
      * in "speeds".
     */
-    ctrl_flag_t setArmNomSpeeds( int side, Vector6d speeds );
+    ctrl_flag_t setArmNomSpeeds( int side, ArmVector speeds );
     /**
      * Extension of setArmNomSpeeds() where side = LEFT
     */
-    ctrl_flag_t setLeftArmNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setLeftArmNomSpeeds( ArmVector speeds );
     /**
      * Extension of setArmNomSpeeds() where side = RIGHT
     */
-    ctrl_flag_t setRightArmNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setRightArmNomSpeeds( ArmVector speeds );
     /**
      * Extension of setVelocityControl() which acts on all joint in an arm designated by "side" (LEFT or RIGHT)
     */
     ctrl_flag_t setArmVelCtrl( int side );
     /**
      * Moves the joint angles for all the arm angles of the arm specified by the "side" argument
-     * at a rate of radians/sec, according to the six values in the "vels" Vector6d. The "send"
+     * at a rate of radians/sec, according to the six values in the "vels" ArmVector. The "send"
      * argument specifies whether or not to send the commands immediately.
      *
      * NOTE: If the control-daemon does not receive a velocity control command within a certain
      * elapsed time, it will bring the velocity back down to zero. This is to make sure the joints
      * stop if the program requestion their movement crashes.
      *
-     * Example: Say "leftVels" is a Vector6d containing the six desired velocities for the left
-     * arm joints, and "rightVels" is a Vector6d containing the six desired valocities for the
+     * Example: Say "leftVels" is a ArmVector containing the six desired velocities for the left
+     * arm joints, and "rightVels" is a ArmVector containing the six desired valocities for the
      * right arm joints
      * 
      * setArmVels( LEFT, leftVels, true ) will immediately send a request to the control-daemon
@@ -266,7 +268,7 @@ public:
      * HOWEVER, that request will not be sent until you run the command sendControls(). This is
      * because "send" defaults to false if it is not specified.
     */
-    ctrl_flag_t setArmVels( int side, Vector6d vels, bool send=false );
+    ctrl_flag_t setArmVels( int side, ArmVector vels, bool send=false );
     /**
      * Extension of setArmVelCtrl() where side = LEFT
     */
@@ -274,7 +276,7 @@ public:
     /**
      * Extension of setArmVelCtrl() where side = LEFT
     */
-    ctrl_flag_t setLeftArmVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setLeftArmVels( ArmVector vels, bool send=false );
     /**
      * Extension of setArmVelCtrl() where side = RIGHT
     */
@@ -282,20 +284,20 @@ public:
     /**
      * Extension of setArmVelCtrl() where side = RIGHT
     */
-    ctrl_flag_t setRightArmVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setRightArmVels( ArmVector vels, bool send=false );
     /**
      * Extension of setJointNominalAcceleration() which applies the six values in "acc" to the six
      * joints in the arm corresponding to "side" (LEFT or RIGHT)
     */
-    ctrl_flag_t setArmNomAcc(int side, Vector6d acc );
+    ctrl_flag_t setArmNomAcc(int side, ArmVector acc );
     /**
      * Extension of setArmNomAcc() where side = LEFT
     */
-    ctrl_flag_t setLeftArmNomAcc( Vector6d acc );
+    ctrl_flag_t setLeftArmNomAcc( ArmVector acc );
     /**
      * Extension of setArmNomAcc() where side = RIGHT
     */
-    ctrl_flag_t setRightArmNomAcc( Vector6d acc );
+    ctrl_flag_t setRightArmNomAcc( ArmVector acc );
 
     // ~* Leg control sets
     // Position control
@@ -306,7 +308,7 @@ public:
     /**
      * Same as setArmAngles() but applied to the leg
     */
-    ctrl_flag_t setLegAngles( int side, Vector6d angles, bool send=false );
+    ctrl_flag_t setLegAngles( int side, LegVector angles, bool send=false );
     /**
      * Same as setLeftArmPosCtrl() but applied to the leg
     */
@@ -314,7 +316,7 @@ public:
     /**
      * Same as setLeftArmAngles() but applied to the leg
     */
-    ctrl_flag_t setLeftLegAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setLeftLegAngles( LegVector angles, bool send=false );
     /**
      * Same as setRightArmPosCtrl() but applied to the leg
     */
@@ -322,19 +324,19 @@ public:
     /**
      * Same as setRightArmAngles() but applied to the leg
     */
-    ctrl_flag_t setRightLegAngles( Vector6d angles, bool send=false );
+    ctrl_flag_t setRightLegAngles( LegVector angles, bool send=false );
     /**
      * Same as setArmNomSpeeds() but applied to the leg
     */
-    ctrl_flag_t setLegNomSpeeds( int side, Vector6d speeds );
+    ctrl_flag_t setLegNomSpeeds( int side, LegVector speeds );
     /**
      * Same as setLeftArmNomSpeeds() but applied to the leg
     */
-    ctrl_flag_t setLeftLegNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setLeftLegNomSpeeds( LegVector speeds );
     /**
      * Same as setRightArmNomSpeeds() but applied to the leg
     */
-    ctrl_flag_t setRightLegNomSpeeds( Vector6d speeds );
+    ctrl_flag_t setRightLegNomSpeeds( LegVector speeds );
     /**
      * Same as setArmVelCtrl() but applied to the leg
     */
@@ -342,7 +344,7 @@ public:
     /**
      * Same as setArmVels() but applied to the leg
     */
-    ctrl_flag_t setLegVels( int side, Vector6d vels, bool send=false );
+    ctrl_flag_t setLegVels( int side, LegVector vels, bool send=false );
     /**
      * Same as setLeftArmVelCtrl() but applied to the leg
     */
@@ -350,7 +352,7 @@ public:
     /**
      * Same as setLeftArmVels() but applied to the leg
     */
-    ctrl_flag_t setLeftLegVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setLeftLegVels( LegVector vels, bool send=false );
     /**
      * Same as setRightArmVelCtrl() but applied to the leg
     */
@@ -358,19 +360,19 @@ public:
     /**
      * Same as setRightArmVels() but applied to the leg
     */
-    ctrl_flag_t setRightLegVels( Vector6d vels, bool send=false );
+    ctrl_flag_t setRightLegVels( LegVector vels, bool send=false );
     /**
      * Same as setArmNomAcc() but applied to the leg
     */
-    ctrl_flag_t setLegNomAcc(int side, Vector6d acc );
+    ctrl_flag_t setLegNomAcc(int side, LegVector acc );
     /**
      * Same as setLeftArmNomAcc() but applied to the leg
     */
-    ctrl_flag_t setLeftLegNomAcc( Vector6d acc );
+    ctrl_flag_t setLeftLegNomAcc( LegVector acc );
     /**
      * Same as setRightArmNomAcc() but applied to the leg
     */
-    ctrl_flag_t setRightLegNomAcc( Vector6d acc );
+    ctrl_flag_t setRightLegNomAcc( LegVector acc );
 
     // ~~** Setting limit values
     // ~* General sets
@@ -463,145 +465,145 @@ public:
     /**
      * Extension of getJointAngle() for the arm corresponding to "side" (LEFT or RIGHT).
      *
-     * Declare a Vector6d named "angles" and pass it into the second argument. After the function
+     * Declare a ArmVector named "angles" and pass it into the second argument. After the function
      * is finished, "angles" will be filled with the joint position reference values of the target
      * arm. This is known as "passing by reference".
      *
-     * Example: getArmAngles( RIGHT, angles ) will take a "Vector6d angles" and fill it with the
+     * Example: getArmAngles( RIGHT, angles ) will take a "ArmVector angles" and fill it with the
      * current reference values of the right arm.
     */
-    ctrl_flag_t getArmAngles( int side, Vector6d &angles );
+    ctrl_flag_t getArmAngles( int side, ArmVector &angles );
     /**
      * Extension of getArmAngles() where side = LEFT
     */
-    void getLeftArmAngles( Vector6d &angles );
+    void getLeftArmAngles( ArmVector &angles );
     /**
      * Extension of getArmAngles() where side = RIGHT
     */
-    void getRightArmAngles( Vector6d &angles );
+    void getRightArmAngles( ArmVector &angles );
     /**
      * Extension of getJointNominalSpeed()
      *
      * Operates similarly to getArmAngles()
     */
-    ctrl_flag_t getArmNomSpeeds( int side, Vector6d &speeds );
+    ctrl_flag_t getArmNomSpeeds( int side, ArmVector &speeds );
     /**
      * Extension of getArmNomSpeeds() where side = LEFT
     */
-    void getLeftArmNomSpeeds( Vector6d &speeds );
+    void getLeftArmNomSpeeds( ArmVector &speeds );
     /**
      * Extension of getArmNomSpeeds() where side = RIGHT
     */
-    void getRightArmNomSpeeds( Vector6d &speeds );
+    void getRightArmNomSpeeds( ArmVector &speeds );
     /**
      * Extension of getJointVelocity() for the arm corresponding to "side" (LEFT or RIGHT).
      *
      * Operates similarly to getArmAngles()
     */
-    ctrl_flag_t getArmVels( int side, Vector6d &vels );
+    ctrl_flag_t getArmVels( int side, ArmVector &vels );
     /**
      * Extension of getArmVels() where side = LEFT
     */
-    void getLeftArmVels( Vector6d &vels );
+    void getLeftArmVels( ArmVector &vels );
     /**
      * Extension of getArmVels() where side = RIGHT
     */
-    void getRightArmVels( Vector6d &vels );
+    void getRightArmVels( ArmVector &vels );
     // Velocity control
     /**
      * Extension of getJointVelocityCtrl() for the arm corresponding to "side" (LEFT or RIGHT).
      *
      * Operates similarly to getArmAngles()
     */
-    ctrl_flag_t getArmVelCtrls( int side, Vector6d &vels );
+    ctrl_flag_t getArmVelCtrls( int side, ArmVector &vels );
     /**
      * Extension of getArmVelCtrls() where side = LEFT
     */
-    void getLeftArmVelCtrls( Vector6d &vels );
+    void getLeftArmVelCtrls( ArmVector &vels );
     /**
      * Extension of getArmVelCtrls() where side = RIGHT
     */
-    void getRightArmVelCtrls( Vector6d &vels );
+    void getRightArmVelCtrls( ArmVector &vels );
     // Acceleration settings
     /**
      * Extension of getJointNominalAcceleration() for the arm corresponding to "side" (LEFT or RIGHT).
      *
      * Operates similarly to getArmAngles()
     */
-    ctrl_flag_t getArmNomAcc(int side, Vector6d &acc );
+    ctrl_flag_t getArmNomAcc(int side, ArmVector &acc );
     /**
      * Extension of getArmNomAcc() where side = LEFT
     */
-    void getLeftArmNomAcc( Vector6d &acc );
+    void getLeftArmNomAcc( ArmVector &acc );
     /**
      * Extension of getArmNomAcc() where side = RIGHT
     */
-    void getRightArmNomAcc( Vector6d &acc );
+    void getRightArmNomAcc( ArmVector &acc );
 
     // ~* Leg control gets
     // Position control
     /**
      * Similar to getArmAngles() but applied to the leg
     */
-    ctrl_flag_t getLegAngles( int side, Vector6d &angles );
+    ctrl_flag_t getLegAngles( int side, LegVector &angles );
     /**
      * Similar to getLeftArmAngles() but applied to the leg
     */
-    void getLeftLegAngles( Vector6d &angles );
+    void getLeftLegAngles( LegVector &angles );
     /**
      * Similar to getRightArmAngles() but applied to the leg
     */
-    void getRightLegAngles( Vector6d &angles );
+    void getRightLegAngles( LegVector &angles );
     /**
      * Similar to getArmNomSpeeds() but applied to the leg
     */
-    ctrl_flag_t getLegNomSpeeds( int side, Vector6d &speeds );
+    ctrl_flag_t getLegNomSpeeds( int side, LegVector &speeds );
     /**
      * Similar to getLeftArmNomSpeeds() but applied to the leg
     */
-    void getLeftLegNomSpeeds( Vector6d &speeds );
+    void getLeftLegNomSpeeds( LegVector &speeds );
     /**
      * Similar to getRightArmNomSpeeds() but applied to the leg
     */
-    void getRightLegNomSpeeds( Vector6d &speeds );
+    void getRightLegNomSpeeds( LegVector &speeds );
     /**
      * Similar to getArmVels() but applied to the leg
     */
-    ctrl_flag_t getLegVels( int side, Vector6d &vels );
+    ctrl_flag_t getLegVels( int side, LegVector &vels );
     /**
      * Similar to getLeftArmVels() but applied to the leg
     */
-    void getLeftLegVels( Vector6d &vels );
+    void getLeftLegVels( LegVector &vels );
     /**
      * Similar to getRightArmVels() but applied to the leg
     */
-    void getRightLegVels( Vector6d &vels );
+    void getRightLegVels( LegVector &vels );
     // Velocity control
     /**
      * Similar to getArmVelCtrls() but applied to the leg
     */
-    ctrl_flag_t getLegVelCtrls( int side, Vector6d &vels );
+    ctrl_flag_t getLegVelCtrls( int side, LegVector &vels );
     /**
      * Similar to getLeftArmVelCtrls() but applied to the leg
     */
-    void getLeftLegVelCtrls( Vector6d &vels );
+    void getLeftLegVelCtrls( LegVector &vels );
     /**
      * Similar to getRightArmVelCtrls() but applied to the leg
     */
-    void getRightLegVelCtrls( Vector6d &vels );
+    void getRightLegVelCtrls( LegVector &vels );
     // Acceleration settings
     /**
      * Similar to getArmNomAcc() but applied to the leg
     */
-    ctrl_flag_t getLegNomAcc(int side, Vector6d &acc );
+    ctrl_flag_t getLegNomAcc(int side, LegVector &acc );
     /**
      * Similar to getLeftArmNomAcc() but applied to the leg
     */
-    void getLeftLegNomAcc( Vector6d &acc );
+    void getLeftLegNomAcc( LegVector &acc );
     /**
      * Similar to getRightArmNomAcc() but applied to the leg
     */
-    void getRightLegNomAcc( Vector6d &acc );
+    void getRightLegNomAcc( LegVector &acc );
 
     // ~~** Getting limit values
     // ~* General gets
@@ -649,27 +651,27 @@ public:
      * 
      * Operates similarly to getArmAngles()
     */
-    ctrl_flag_t getArmAngleStates( int side, Vector6d &angles );
+    ctrl_flag_t getArmAngleStates( int side, ArmVector &angles );
     /**
      * Extension of getJointAngleState() where side = RIGHT
     */
-    void getRightArmAngleStates( Vector6d &angles );
+    void getRightArmAngleStates( ArmVector &angles );
     /**
      * Extension of getJointAngleState() where side = LEFT
     */
-    void getLeftArmAngleStates( Vector6d &angles );
+    void getLeftArmAngleStates( ArmVector &angles );
     /**
      * Similar to getArmAngleStates() but applied to the leg
     */
-    ctrl_flag_t getLegAngleStates( int side, Vector6d &angles );
+    ctrl_flag_t getLegAngleStates( int side, LegVector &angles );
     /**
      * Similar to getRightArmAngleStates() but applied to the leg
     */
-    void getRightLegAngleStates( Vector6d &angles );
+    void getRightLegAngleStates( LegVector &angles );
     /**
      * Similar to getLeftArmAngleStates() but applied to the leg
     */
-    void getLeftLegAngleStates( Vector6d &angles );
+    void getLeftLegAngleStates( LegVector &angles );
     // TODO: All of these (state position, velocity, whatever)
 
     // ~~** Sensors
@@ -814,12 +816,15 @@ public:
     
     void DH2HG(Eigen::Isometry3d &B, double t, double f, double r, double d);
     
+    void huboArmFK(Eigen::Isometry3d &B, ArmVector &q, int side);
     /**
      * The first argument (B) is a homogeneous transformation matrix which gets filled in with the
      * end effector transformation produced by the the joint configuration of the second argument
      * (q) for the arm specified by the third argument (side = LEFT or RIGHT)
     */
     void huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side);
+    
+    void huboArmFK(Eigen::Isometry3d &B, ArmVector &q, int side, const Eigen::Isometry3d &endEffector);
     /**
      * Same as huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side), but it will also apply a
      * final end effector transformation at the end, specified by the fourth argument.
@@ -828,7 +833,8 @@ public:
      * different end-effector offset/orientation than usual.
     */
     void huboArmFK(Eigen::Isometry3d &B, Vector6d &q, int side, const Eigen::Isometry3d &endEffector);
-        
+    
+    bool huboArmIK(ArmVector &q, const Eigen::Isometry3d B, ArmVector qPrev, int side);
     /**
      * Performs an Analytical Inverse Kinematics calculation for the arm.
      *
@@ -843,6 +849,8 @@ public:
      * side specifies which arm (LEFT or RIGHT)
     */
     bool huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side);
+    
+    bool huboArmIK(ArmVector &q, const Eigen::Isometry3d B, ArmVector qPrev, int side, const Eigen::Isometry3d &endEffector);
     /**
      * Same as huboArmIK(Vector6d &q, Eigen::Isometry3d B, Vector6d qPrev, int side), but it will
      * also apply a final end effector transformation at the end, specified by the fifth argument.
@@ -852,16 +860,15 @@ public:
      * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
     bool huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qPrev, int side, const Eigen::Isometry3d &endEffector);
+    
+    void huboLegFK(Eigen::Isometry3d &B, LegVector &q, int side);
     /**
-     * \b NOTE: This is \em not thoroughly tested. Use with extreme caution.
-     *
      * Similar to huboArmFK() but applied to the leg
      * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
     void huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side);
+    bool huboLegIK(LegVector &q, const Eigen::Isometry3d B, LegVector qPrev, int side);
     /**
-     * \b NOTE: This is \em not thoroughly tested. Use with extreme caution.
-     *
      * Similar to huboArmIK() but applied to the leg
      * @Return: returns true if the goal was outside the feasible workspace, otherwise false
     */
@@ -871,12 +878,12 @@ public:
      * A specialized differential IK (solved analytically) for moving the hip
      * position. NOT THOROUGHLY TESTED -- USE WITH EXTREME CAUTION.
     */
-    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
-    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, const Vector6d &q ); 
-    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
-    ctrl_flag_t hipVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, const Vector6d &q );
-    ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, int side );
-    ctrl_flag_t footVelocityIK( Vector6d &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
+    ctrl_flag_t hipVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, int side );
+    ctrl_flag_t hipVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, const LegVector &q ); 
+    ctrl_flag_t hipVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
+    ctrl_flag_t hipVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, const LegVector &q );
+    ctrl_flag_t footVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, int side );
+    ctrl_flag_t footVelocityIK( LegVector &qdot, Eigen::Vector3d &velocity, Eigen::Vector3d &angularVel, int side );
     /**
      * Calibration for arbitrary joints
     */
@@ -889,7 +896,7 @@ public:
      * A specialized Forward Kinematics calculation which accounts for the end effector
      * transformation of our experimental drill.
     */
-    void HuboDrillFK(Eigen::Isometry3d &B, Vector6d &q);
+    void HuboDrillFK(Eigen::Isometry3d &B, ArmVector &q);
     /**
      * A specialized Inverse Kinematics Calculation which constrains the end effector to a
      * particular height and forward displacement which maximizes the length of its feasible
@@ -900,7 +907,7 @@ public:
      * q is the joint angle configuration which gets filled in. y is the desired horizontal
      * location.
     */
-    void HuboDrillIK(Vector6d &q, double y);
+    void HuboDrillIK(ArmVector &q, double y);
     
     void storeArmDefaults(int side);
     void storeRightArmDefaults();
