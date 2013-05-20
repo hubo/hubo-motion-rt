@@ -8,9 +8,9 @@ init_ddir = /etc/init.d
 init_d_SCRIPTS = scripts/hubo-motion
 
 # installed under $prefix/include/
-include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h
+include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h include/motion-trajectory.h
 
-bin_PROGRAMS = control-daemon manip-daemon
+bin_PROGRAMS = control-daemon manip-daemon trajectory-run
 
 huboctrlconfdir=/etc/hubo-ach
 huboctrlconf_DATA = tables/control.table
@@ -21,6 +21,8 @@ control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
 manip_daemon_SOURCES = src/manip-daemon.cpp
 manip_daemon_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
+trajectory_run_SOURCES = src/trajectory-run.cpp
+trajectory_run_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 hubo_ctrldir = /usr/lib
 hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la
