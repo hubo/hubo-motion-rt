@@ -601,7 +601,7 @@ ctrl_flag_t Hubo_Control::setJointNominalAcceleration(int joint, double acc)
 ctrl_flag_t Hubo_Control::setArmPosCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setPositionControl(armjoints[side][i]);
     else
         return BAD_SIDE;
@@ -612,7 +612,7 @@ ctrl_flag_t Hubo_Control::setArmPosCtrl(int side)
 ctrl_flag_t Hubo_Control::setArmAngles(int side, ArmVector angles, bool send)
 {
     if( side==LEFT || side==RIGHT )
-       for(int i=0; i<H_Arm_Ctrl[side]; i++)
+       for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setJointAngle(armjoints[side][i], angles[i], false);
 
     else
@@ -639,11 +639,11 @@ ctrl_flag_t Hubo_Control::setArmNomSpeeds(int side, ArmVector speeds)
 {
     if( side==LEFT || side==RIGHT )
     {
-//        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+//        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
 //            if( H_Arm_Ctrl[side].joint[armjoints[side][i]].mode != CTRL_POS )
 //                return WRONG_MODE;
 
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setJointNominalSpeed( armjoints[side][i], speeds(i) );
     }
     else
@@ -664,7 +664,7 @@ ctrl_flag_t Hubo_Control::setRightArmNomSpeeds(ArmVector speeds)
 ctrl_flag_t Hubo_Control::setArmVelCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setVelocityControl( armjoints[side][i] );
     else
         return BAD_SIDE;
@@ -675,7 +675,7 @@ ctrl_flag_t Hubo_Control::setArmVelCtrl(int side)
 ctrl_flag_t Hubo_Control::setArmVels(int side, ArmVector vels, bool send)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setJointVelocity(armjoints[side][i], vels(i), false);
     else
         return BAD_SIDE;
@@ -701,7 +701,7 @@ ctrl_flag_t Hubo_Control::setRightArmVels(ArmVector vels, bool send)
 ctrl_flag_t Hubo_Control::setArmNomAcc(int side, ArmVector acc)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setJointNominalAcceleration( armjoints[side][i], acc(i) );
     else
         return BAD_SIDE;
@@ -721,7 +721,7 @@ ctrl_flag_t Hubo_Control::setRightArmNomAcc(ArmVector acc)
 ctrl_flag_t Hubo_Control::setLegPosCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setPositionControl(legjoints[side][i]);
     else
         return BAD_SIDE;
@@ -732,7 +732,7 @@ ctrl_flag_t Hubo_Control::setLegPosCtrl(int side)
 ctrl_flag_t Hubo_Control::setLegAngles(int side, LegVector angles, bool send)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setJointAngle(legjoints[side][i], angles[i], false);
     else
         return BAD_SIDE;
@@ -759,11 +759,11 @@ ctrl_flag_t Hubo_Control::setLegNomSpeeds(int side, LegVector speeds)
 {
     if( side==LEFT || side==RIGHT )
     {
-//        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+//        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
 //            if( H_Leg_Ctrl[side].joint[legjoints[side][i]].mode != CTRL_POS )
 //                return WRONG_MODE;
 
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setJointNominalSpeed( legjoints[side][i], speeds(i) );
     }
     else
@@ -784,7 +784,7 @@ ctrl_flag_t Hubo_Control::setRightLegNomSpeeds(LegVector speeds)
 ctrl_flag_t Hubo_Control::setLegVelCtrl(int side)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setVelocityControl( legjoints[side][i] );
     else
         return BAD_SIDE;
@@ -795,7 +795,7 @@ ctrl_flag_t Hubo_Control::setLegVelCtrl(int side)
 ctrl_flag_t Hubo_Control::setLegVels(int side, LegVector vels, bool send)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setJointVelocity(legjoints[side][i], vels(i), false);
     else
         return BAD_SIDE;
@@ -821,7 +821,7 @@ ctrl_flag_t Hubo_Control::setRightLegVels(LegVector vels, bool send)
 ctrl_flag_t Hubo_Control::setLegNomAcc(int side, LegVector acc)
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             setJointNominalAcceleration( legjoints[side][i], acc(i) );
     else
         return BAD_SIDE;
@@ -1126,7 +1126,7 @@ ctrl_flag_t Hubo_Control::getArmAngles(int side, ArmVector &angles)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             angles[i] = getJointAngle(armjoints[side][i]);
     } // TODO: make getArmAngleCtrls
     else
@@ -1143,7 +1143,7 @@ ctrl_flag_t Hubo_Control::getArmNomSpeeds(int side, ArmVector &speeds)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             speeds[i] = getJointNominalSpeed(armjoints[side][i]);
     }
     else
@@ -1160,7 +1160,7 @@ ctrl_flag_t Hubo_Control::getArmVels(int side, ArmVector &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             vels[i] = getJointVelocity(armjoints[side][i]);
     } // TODO: make getArmAngleCtrls
     else
@@ -1179,7 +1179,7 @@ ctrl_flag_t Hubo_Control::getArmVelCtrls(int side, ArmVector &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             vels[i] = getJointVelocityCtrl(armjoints[side][i]);
     }
     else
@@ -1197,7 +1197,7 @@ ctrl_flag_t Hubo_Control::getArmNomAcc(int side, ArmVector &acc)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             acc[i] = getJointNominalAcceleration(armjoints[side][i]);
     }
     else
@@ -1215,7 +1215,7 @@ ctrl_flag_t Hubo_Control::getLegAngles(int side, LegVector &angles)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             angles[i] = getJointAngle(legjoints[side][i]);
     } // TODO: getLegAngleCtrls
     else
@@ -1232,7 +1232,7 @@ ctrl_flag_t Hubo_Control::getLegNomSpeeds(int side, LegVector &speeds)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             speeds[i] = getJointNominalSpeed(legjoints[side][i]);
     }
     else
@@ -1249,7 +1249,7 @@ ctrl_flag_t Hubo_Control::getLegVels(int side, LegVector &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             vels[i] = getJointVelocity(legjoints[side][i]);
     } // TODO: make getLegAngleCtrls
     else
@@ -1267,7 +1267,7 @@ ctrl_flag_t Hubo_Control::getLegVelCtrls(int side, LegVector &vels)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             vels[i] = getJointVelocityCtrl(legjoints[side][i]);
     }
     else
@@ -1285,7 +1285,7 @@ ctrl_flag_t Hubo_Control::getLegNomAcc(int side, LegVector &acc)
 {
     if( side==LEFT || side==RIGHT )
     {
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             acc[i] = getJointNominalAcceleration(legjoints[side][i]);
     }
     else
@@ -1399,7 +1399,7 @@ double Hubo_Control::getJointAngleState(int joint)
 ctrl_flag_t Hubo_Control::getArmAngleStates( int side, ArmVector &angles )
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Arm_Ctrl[side]; i++)
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             angles[i] = getJointAngleState( armjoints[side][i] );
     else
         return BAD_SIDE;
@@ -1414,7 +1414,7 @@ void Hubo_Control::getLeftArmAngleStates( ArmVector &angles )
 ctrl_flag_t Hubo_Control::getLegAngleStates( int side, LegVector &angles )
 {
     if( side==LEFT || side==RIGHT )
-        for(int i=0; i<H_Leg_Ctrl[side]; i++)
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
             angles[i] = getJointAngleState( legjoints[side][i] );
     else
         return BAD_SIDE;

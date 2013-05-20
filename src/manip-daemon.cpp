@@ -41,8 +41,8 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
 manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, int side);
 
 void grasp_close( Hubo_Control &hubo, int side );
-void grasp_open( Hubo_Control &hubo );
-void grasp_limp( Hubo_Control &hubo );
+void grasp_open( Hubo_Control &hubo, int side );
+void grasp_limp( Hubo_Control &hubo, int side );
 
 int main( int argc, char **argv )
 {
@@ -53,6 +53,7 @@ int main( int argc, char **argv )
     ach_channel_t chan_manip_param;
     ach_channel_t chan_manip_state;
 
+    size_t fs;
     ach_status_t r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
     
@@ -79,7 +80,6 @@ int main( int argc, char **argv )
     
     hubo.update(true);
     
-    ArmVector zeroAngles; zeroAngles.setZero();
     
     while( !daemon_sig_quit )
     {
@@ -89,34 +89,34 @@ int main( int argc, char **argv )
         
         for(int side=0; side<2; side++)
         {
-            if( req.interrupt[side] || manip_state.cmd_state[side] == MC_READY )
+            if( manip_req.interrupt[side] || manip_state.cmd_state[side] == MC_READY )
                 memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
             
             manip_state.cmd_state[2] = manip_cmd[side].m_cmd[side];
             
             // Handle arm motions
-            switch( manip_cmd.m_cmd[side] )
+            switch( manip_cmd[side].m_cmd[side] )
             {
                 case MC_TRANS_EULER:
-                    handle_trans_euler(hubo, manip_cmd[side], side); break;
+                    handle_trans_euler(hubo, manip_state, manip_cmd[side], side); break;
                 case MC_TRANS_QUAT:
-                    handle_trans_quat(hubo, manip_cmd[side], side); break;
+                    handle_trans_quat(hubo, manip_state, manip_cmd[side], side); break;
                 case MC_TRAJ:
-                    handle_traj(hubo, manip_cmd[side], side); break;
+                    handle_traj(hubo, manip_state, manip_cmd[side], side); break;
             }
             
             // Handle grasping
             if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
                ( manip_cmd[side].m_grasp[side]==MC_GRASP_AT_END && manip_state.cmd_state[side]==MC_READY ) )
-                grasp_close(Hubo_Control &hubo, side);
+                grasp_close(hubo, side);
             else if( manip_cmd[side].m_grasp[side]==MC_RELEASE_NOW ||
                     ( manip_cmd[side].m_grasp[side]==MC_RELEASE_AT_END && manip_state.cmd_state[side]==MC_READY ) )
-                grasp_open(Hubo_Control &hubo, side);
+                grasp_open(hubo, side);
             else if( manip_cmd[side].m_grasp[side]==MC_GRASP_LIMP )
-                grasp_limp(Hubo_Control &hubo, side);
+                grasp_limp(hubo, side);
         }
         
-        sendControls();
+        hubo.sendControls();
     }
     
     ach_close( &chan_manip_cmd );
@@ -145,7 +145,7 @@ void grasp_close( Hubo_Control &hubo, int side )
     }
 }
 
-void grasp_open( Hubo_Control &hubo )
+void grasp_open( Hubo_Control &hubo, int side )
 {
     if( side == RIGHT )
     {
@@ -165,7 +165,7 @@ void grasp_open( Hubo_Control &hubo )
     }
 }
 
-void grasp_limp( Hubo_Control &hubo )
+void grasp_limp( Hubo_Control &hubo, int side )
 {
     if( side == RIGHT )
     {
@@ -188,6 +188,7 @@ void grasp_limp( Hubo_Control &hubo )
 
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, int side)
 {
+    ArmVector zeroAngles; zeroAngles.setZero();
     ArmVector armAngles, armStates;
     Vector3d trans, angles;
     for(int i=0; i<3; i++)
@@ -196,13 +197,13 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
         angles(i) = cmd.eulerAngles[side][i];
     }
     
-    Isometry3d B;
+    Eigen::Isometry3d B;
     B = Eigen::Matrix4d::Identity();
     B.translate(trans);
-    B.rotate( Eigen::AngleAxisd(rangles(0), Vector3d(1,0,0)) );
-    B.rotate( Eigen::AngleAxisd(rangles(1), Vector3d(0,1,0)) );
-    B.rotate( Eigen::AngleAxisd(rangles(2), Vector3d(0,0,1)) );
-    hubo.huboArmIK( armAngles, B, zeros, side );
+    B.rotate( Eigen::AngleAxisd(angles(0), Vector3d(1,0,0)) );
+    B.rotate( Eigen::AngleAxisd(angles(1), Vector3d(0,1,0)) );
+    B.rotate( Eigen::AngleAxisd(angles(2), Vector3d(0,0,1)) );
+    hubo.huboArmIK( armAngles, B, zeroAngles, side );
     bool valid = hubo.setArmAngles( side, armAngles );
     
     if(valid)
@@ -211,7 +212,7 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
         state.error[side] = MC_INVALID_POSE;
     
     hubo.getArmAngleStates( side, armStates );
-    if( (armAngles-armStates).norm() < convergeNorm )
+    if( (armAngles-armStates).norm() < cmd.convergeNorm )
         cmd.m_cmd[side] = MC_READY;
     
     state.cmd_state[side] = cmd.m_cmd[side];
@@ -219,7 +220,8 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
 
 manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, int side)
 {
-    ArmVector armAngles;
+    ArmVector zeroAngles; zeroAngles.setZero();
+    ArmVector armAngles, armStates;
     Vector3d trans, angles;
     for(int i=0; i<3; i++)
     {
@@ -231,14 +233,14 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
     B = Eigen::Matrix4d::Identity();
     B.translate(trans);
     
-    Eigen::Quaternion quat;
+    Eigen::Quaterniond quat;
     quat.w() = cmd.quaternion[side][0];
     quat.x() = cmd.quaternion[side][1];
     quat.y() = cmd.quaternion[side][2];
     quat.z() = cmd.quaternion[side][3];
     B.rotate(quat);
     
-    hubo.huboArmIK( armAngles, B, zeros, side );
+    hubo.huboArmIK( armAngles, B, zeroAngles, side );
     bool valid = hubo.setArmAngles( side, armAngles );
     
     if(valid)
@@ -247,7 +249,7 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
         state.error[side] = MC_INVALID_POSE;
     
     hubo.getArmAngleStates( side, armStates );
-    if( (armAngles-armStates).norm() < convergeNorm )
+    if( (armAngles-armStates).norm() < cmd.convergeNorm )
         cmd.m_cmd[side] = MC_READY;
     
     state.cmd_state[side] = cmd.m_cmd[side];

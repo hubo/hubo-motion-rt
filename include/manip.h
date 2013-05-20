@@ -41,6 +41,7 @@
 #define CHAN_HUBO_MANIP_CMD "manip-cmd"
 #define CHAN_HUBO_MANIP_TRAJ "manip-traj"
 #define CHAN_HUBO_MANIP_PARAM "manip-param"
+#define CHAN_HUBO_MANIP_STATE "manip-state"
 
 typedef enum {
     
@@ -101,9 +102,8 @@ typedef struct hubo_manip_state {
 
 typedef struct hubo_manip_cmd {
     
-    manip_cmd_t m_cmd[side];
-    manip_ctrl_t m_ctrl[side];
-    manip_side_t m_side;
+    manip_cmd_t m_cmd[2];
+    manip_ctrl_t m_ctrl[2];
     manip_grasp_t m_grasp[2];
     bool interrupt[2];
     
@@ -147,7 +147,6 @@ typedef struct hubo_manip_param {
 
 typedef struct hubo_manip_traj {
     
-    manip_side_t m_side;
     unsigned int id;
     manip_traj_chain_t chain;
     unsigned int parent_id;
