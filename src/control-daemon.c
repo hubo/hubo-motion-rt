@@ -200,11 +200,8 @@ void controlLoop()
 
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
-{
             for(int j=0; j<ARM_JOINT_COUNT; j++)
                 timeElapse[ractrl.jointIndices[j]] = 0.0;
-fprintf(stderr, "Got right arm message\n");
-}
 
         cresult = ach_get( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
