@@ -51,25 +51,38 @@
 
 int main( int argc, char **argv )
 {
-    Hubo_Control hubo("proto-manip-daemon");
-
+    Hubo_Control hubo("manip-daemon");
+    
     ach_channel_t chan_manip_cmd;
+    ach_channel_t chan_manip_traj;
+    ach_channel_t chan_manip_param;
 
-    int r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP, NULL );
+    ach_status_t r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
     
-    hubo_manip_cmd manip;
-    memset( &manip, 0, sizeof(manip) );
+    r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
 
-    hubo.update();
+    r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
+    
+    
+    hubo_manip_cmd_t manip_cmd;
+    hubo_manip_traj_t manip_traj;
+    hubo_manip_param_t manip_param;
+    memset( &manip_cmd, 0, sizeof(manip_cmd) );
+    memset( &manip_traj, 0, sizeof(manip_traj) );
+    memset( &manip_param, 0, sizeof(manip_param) );
+
+    hubo.update(true);
 
     Eigen::Isometry3d Br, Bl;
-    Vector6d right, left, zeros; zeros.setZero();
+    Vector6d rightAngles, leftAngles, zeroAngles; zeroAngles.setZero();
     Vector3d rtrans, ltrans, langles, rangles;
     
-
-    hubo.getRightArmAngles(right);
-    hubo.getLeftArmAngles(left);
+    
+    hubo.getRightArmAngleStates(rightAngles);
+    hubo.getLeftArmAngleStates(leftAngles);
 
     hubo.huboArmFK( Br, right, RIGHT );
     hubo.huboArmFK( Bl, left, LEFT );

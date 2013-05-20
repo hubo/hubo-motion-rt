@@ -68,14 +68,14 @@ extern "C" {
 typedef Eigen::Matrix< double, 6, 1 > Vector6d;
 typedef Eigen::Vector3d Vector3d;
 
-#define CtrlNE  0
-#define CtrlRA  1
-#define CtrlLA  2
-#define CtrlRL  3
-#define CtrlLL  4
-#define CtrlRF  5
-#define CtrlLF  6
-#define CtrlAX  7
+#define CtrlRA  0
+#define CtrlLA  1
+#define CtrlRL  2
+#define CtrlLL  3
+#define CtrlRF  4
+#define CtrlLF  5
+#define CtrlBD  6
+#define CtrlNK  7
 
 
 #define SP      0
@@ -108,7 +108,7 @@ typedef enum {
     ALL_STALE,      ///< Nothing was able to update for some reason
     CHAN_OPEN_FAIL, ///< A channel failed to open
     IK_EDGE,        ///< You're trying to push something out of bounds with an IK
-    IK_DANGER,      ///< The IK is on a singularity and is resorting to a safety feature
+    IK_DANGER      ///< The IK is on a singularity and is resorting to a safety feature
 
 } ctrl_flag_t;
 
@@ -798,26 +798,6 @@ public:
     double getRotVelY();
 
 
-    // ~~~*** Board Commands ***~~~ //
-    // TODO: All of these
-    void sendCommands();
-
-    ctrl_flag_t homeJoint( int joint, bool send=true );
-    void homeAllJoints( bool send=true );
-    ctrl_flag_t jointBeep( int joint, double elapseTime, bool send=true );
-    ctrl_flag_t resetJoint( int joint, bool send=true );
-    ctrl_flag_t startSensor( hubo_sensor_index_t sensor, bool send=true );
-    ctrl_flag_t zeroTilt( hubo_sensor_index_t sensor, bool send=true );
-    void startAllSensors( bool send=true );
-    ctrl_flag_t initializeBoard( int joint, bool send=true );
-    void initializeAll( bool send=true );
-    ctrl_flag_t motorCtrlOn( int joint, bool send=true );
-    ctrl_flag_t motorCtrlOff( int joint, bool send=true );
-    ctrl_flag_t motorCtrlSwitch( int joint, bool on, bool send=true );
-    ctrl_flag_t fetOn( int joint, bool send=true );
-    ctrl_flag_t fetOff( int joint, bool send=true );
-    ctrl_flag_t fetSwitch( int joint, bool on, bool send=true );
-
     // ~~~*** Kinematics ***~~~ //
     inline double wrapToPi(double fAng)
     {
@@ -921,29 +901,44 @@ public:
      * location.
     */
     void HuboDrillIK(Vector6d &q, double y);
+    
+    void storeArmDefaults(int side);
+    void storeRightArmDefaults();
+    void storeLeftArmDefaults();
+    
+    void storeLegDefaults(int side);
+    void storeRightLegDefaults();
+    void storeLeftLegDefaults();
+    
+    void storeBodyDefaults();
+    void storeNeckDefaults();
+    
+    void resetArmDefaults(int side, bool send=false);
+    void resetRightArmDefaults(bool send=false);
+    void resetLeftArmDefaults(bool send=false);
+    
+    void resetLegDefaults(int side, bool send=false);
+    void resetRightLegDefaults(bool send=false);
+    void resetLeftLegDefaults(bool send=false);
+    
+    void resetBodDefaults(bool send=false);
+    void resetNckDefaults(bool send=false);
+    
+    void releaseArm(int side);
+    void releaseRightArm();
+    void releaseLeftArm();
+    
+    void releaseLeg(int side);
+    void releaseRightLeg();
+    void releaseLeftLeg();
+    
+    void releaseFingers(int side);
+    void releaseRightFingers();
+    void releaseLeftFingers();
+    
+    void releaseBody();
+    void releaseNeck();
 
-    // ~~~*** Center of Mass ***~~~ //
-
-    /**
-     * Still experimental. PLEASE DO NOT USE.
-    */
-    void initLocalCOMs();
-    /**
-     * Still experimental. PLEASE DO NOT USE.
-    */
-    Eigen::Vector3d getCOM_FullBody();
-    /**
-     * Still experimental. PLEASE DO NOT USE.
-    */
-    Eigen::Vector3d getCOM_Arm( int _side = LEFT );
-    /**
-     * Still experimental. PLEASE DO NOT USE.
-    */
-    Eigen::Vector3d getCOM_Leg( int _side = LEFT );
-    /**
-     * Still experimental. PLEASE DO NOT USE.
-    */
-    Eigen::Vector3d getCOM_Torso();
 
 protected:
 
@@ -959,22 +954,32 @@ protected:
     ach_channel_t chan_hubo_leg_ctrl_left;
     ach_channel_t chan_hubo_fin_ctrl_right;
     ach_channel_t chan_hubo_fin_ctrl_left;
-    ach_channel_t chan_hubo_aux_ctrl;
+    ach_channel_t chan_hubo_bod_ctrl;
+    ach_channel_t chan_hubo_nck_ctrl;
 
-    hubo_ref H_Ref;
-    hubo_board_cmd H_Cmd;
-    hubo_state H_State;
-    hubo_ctrl_state C_State;
-    hubo_arm_control H_Arm_Ctrl[2];
-    hubo_leg_control H_Leg_Ctrl[2];
-    hubo_fin_control H_Fin_Ctrl[2];
-    hubo_aux_control H_Aux_Ctrl;
+    hubo_ref_t H_Ref;
+    hubo_board_cmd_t H_Cmd;
+    hubo_state_t H_State;
+    hubo_ctrl_state_t C_State;
+    hubo_arm_control_t H_Arm_Ctrl[2];
+    hubo_leg_control_t H_Leg_Ctrl[2];
+    hubo_fin_control_t H_Fin_Ctrl[2];
+    hubo_bod_control_t H_Bod_Ctrl;
+    hubo_nck_control_t H_Nck_Ctrl;
     
-    hubo_param H_Param;
+    hubo_arm_control_t H_Arm_Ctrl_Default[2];
+    hubo_leg_control_t H_Leg_Ctrl_Default[2];
+    hubo_fin_control_t H_Fin_Ctrl_Default[2];
+    hubo_bod_control_t H_Bod_Ctrl_Default;
+    hubo_nck_control_t H_Nck_Ctrl_Default;
+    
+    hubo_param_t H_Param;
 
     int armjoints[2][ARM_JOINT_COUNT];
     int legjoints[2][LEG_JOINT_COUNT];
     int finjoints[2][FIN_JOINT_COUNT];
+    int bodjoints[BOD_JOINT_COUNT];
+    int nckjoints[NCK_JOINT_COUNT];
 
     bool ctrlOn[8];
     // 0) Right Arm
@@ -983,7 +988,8 @@ protected:
     // 3) Left Leg
     // 4) Right Fingers
     // 5) Left Fingers
-    // 6) Auxiliary ( Neck & Waist )
+    // 6) Body
+    // 7) Neck
 
 
 

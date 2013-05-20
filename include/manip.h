@@ -38,19 +38,113 @@
 #include <Hubo_Control.h>
 
 
-#define CHAN_HUBO_MANIP "manip-cmd"
+#define CHAN_HUBO_MANIP_CMD "manip-cmd"
+#define CHAN_HUBO_MANIP_TRAJ "manip-traj"
+#define CHAN_HUBO_MANIP_PARAM "manip-param"
+
+typedef enum {
+    
+    MC_PAUSE = 0,
+    MC_TRANS_EULER,
+    MC_TRANS_QUAT,
+    MC_TRAJ
+    
+} manip_cmd_t;
+
+typedef enum {
+    
+    MC_GRASP_STATIC,
+    MC_GRASP_NOW,
+    MC_GRASP_AT_END,
+    MC_RELEASE_NOW,
+    MC_RELEASE_AT_END
+    
+} manip_grasp_t;
+
+typedef enum {
+    
+    MC_NONE,
+    MC_FORCE,
+    MC_CURRENT
+    
+} manip_ctrl_t;
+
+typedef enum {
+    
+    MC_LEFT,
+    MC_RIGHT,
+    MC_BOTH
+    
+} manip_side_t;
+
+typedef enum {
+    
+    MC_SOLE,
+    MC_START,
+    MC_MID,
+    MC_END
+    
+} manip_traj_chain_t;
 
 
-struct hubo_manip_cmd {
+typedef struct hubo_manip_cmd {
+    
+    manip_cmd_t m_cmd;
+    manip_ctrl_t m_ctrl;
+    manip_side_t m_side;
+    manip_grasp_t m_grasp;
+    
     double translation[2][3];   // Use translation[RIGHT][0] to specify x for the right-side end effector
                                 // translation[LEFT][0] -> left arm's x
                                 // translation[LEFT][1] -> left arm's y
                                 // translation[LEFT][2] -> left arm's z
+    
+    double quaternion[2][4];    // w, x, y, z
+    
     double eulerAngles[2][3];   // Use eulerAngles[LEFT][0] to specify x-axis rotation for left-side end effector
                                 // eulerAngles[RIGHT][0] -> right arm's roll
                                 // eulerAngles[RIGHT][1] -> right arm's pitch
                                 // eulerAngles[RIGHT][2] -> right arm's yaw
-
     // Euler Angles are applied in the following order: X1, Y2, Z3
-};
+    
+} hubo_manip_cmd_t;
 
+typedef struct hubo_manip_state {
+    
+} hubo_manip_state_t;
+
+typedef struct hubo_manip_param {
+    
+    double mx_P[2][6];
+    double mx_D[2][6];
+    double mx_I[2][6];
+    
+    double my_P[2][6];
+    double my_D[2][6];
+    double my_I[2][6];
+    
+    double fz_P[2][6];
+    double fz_D[2][6];
+    double fz_I[2][6];
+    
+    double current_P[2][ARM_JOINT_COUNT];
+    double current_D[2][ARM_JOINT_COUNT];
+    double current_I[2][ARM_JOINT_COUNT];
+    
+} hubo_manip_param_t;
+
+typedef struct hubo_manip_traj {
+    
+    manip_side_t m_side;
+    unsigned int id;
+    manip_traj_chain_t chain;
+    unsigned int parent_id;
+    bool interrupt;
+    
+    double arm_angles[2][ARM_JOINT_COUNT][MAX_TRAJ_SIZE];
+    double arm_speeds[2][ARM_JOINT_COUNT][MAX_TRAJ_SIZE];
+    double arm_accels[2][ARM_JOINT_COUNT][MAX_TRAJ_SIZE];
+    
+    unsigned int count;
+    
+} hubo_manip_traj_t;

@@ -10,7 +10,7 @@ init_d_SCRIPTS = scripts/hubo-motion
 # installed under $prefix/include/
 include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h
 
-bin_PROGRAMS = control-daemon proto-manip-daemon
+bin_PROGRAMS = control-daemon # manip-daemon
 
 huboctrlconfdir=/etc/hubo-ach
 huboctrlconf_DATA = tables/control.table
@@ -18,8 +18,8 @@ huboctrlconf_DATA = tables/control.table
 control_daemon_SOURCES = src/control-daemon.c
 control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
 
-proto_manip_daemon_SOURCES = src/proto-manip-daemon.cpp
-proto_manip_daemon_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
+manip_daemon_SOURCES = src/manip-daemon.cpp
+manip_daemon_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 
 hubo_ctrldir = /usr/lib

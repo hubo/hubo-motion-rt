@@ -45,7 +45,8 @@ ach_channel_t chan_hubo_rl_ctrl;
 ach_channel_t chan_hubo_ll_ctrl;
 ach_channel_t chan_hubo_rf_ctrl;
 ach_channel_t chan_hubo_lf_ctrl;
-ach_channel_t chan_hubo_aux_ctrl;
+ach_channel_t chan_hubo_bod_ctrl;
+ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
 static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
@@ -57,43 +58,35 @@ int setCtrlDefaults( struct hubo_control *ctrl );
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
                                                    struct hubo_fin_control *rfctrl, struct hubo_fin_control *lfctrl,
-                        struct hubo_aux_control *auxctrl, int paused )
+                        struct hubo_bod_control *bodctrl, struct hubo_nck_control *nckctrl)
 {
-    for(int i=0; i<ARM_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightarmjoints[i]]), &(ractrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftarmjoints[i]]),  &(lactrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < ractrl->count; i++)
+        memcpy( &(ctrl->joint[ractrl->jointIndices[i]]), &(ractrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < lactrl->count; i++)
+        memcpy( &(ctrl->joint[lactrl->jointIndices[i]]),  &(lactrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < rlctrl->count; i++)
+        memcpy( &(ctrl->joint[rlctrl->jointIndices[i]]), &(rlctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < llctrl->count; i++)
+        memcpy( &(ctrl->joint[llctrl->jointIndices[i]]),  &(llctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
-    for(int i=0; i<LEG_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightlegjoints[i]]), &(rlctrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftlegjoints[i]]),  &(llctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < rfctrl->count; i++)
+        memcpy( &(ctrl->joint[rfctrl->jointIndices[i]]), &(rfctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < lfctrl->count; i++)
+        memcpy( &(ctrl->joint[lfctrl->jointIndices[i]]),  &(lfctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < bodctrl->count; i++)
+        memcpy( &(ctrl->joint[bodctrl->jointIndices[i]]), &(bodctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
-    for(int i=0; i<FIN_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightfinjoints[i]]), &(rfctrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftfinjoints[i]]),  &(lfctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
-
-    for(int i=0; i<AUX_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[auxjoints[i]]), &(auxctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < nckctrl->count; i++)
+        memcpy( &(ctrl->joint[nckctrl->jointIndices[i]]), &(nckctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
     
-  
-     
-/*
-    if( (ractrl->active==2 || lactrl->active==2 || rlctrl->active==2 || llctrl->active==2
-        || rfctrl->active==2 || lfctrl->active==2 || auxctrl->active==2) && paused==0 )
-    {
-        ctrl->active = 2;
-    }
-*/
     if( ractrl->active==1 || lactrl->active==1 || rlctrl->active==1 || llctrl->active==1
-        || rfctrl->active==1 || lfctrl->active==1 || auxctrl->active==1 )
+        || rfctrl->active==1 || lfctrl->active==1 || bodctrl->active==1 || nckctrl->active==1 )
     {
         ctrl->active = 1;
     }
@@ -119,7 +112,8 @@ void controlLoop()
     struct hubo_leg_control llctrl;
     struct hubo_fin_control rfctrl;
     struct hubo_fin_control lfctrl;
-    struct hubo_aux_control auxctrl;
+    struct hubo_bod_control bodctrl;
+    struct hubo_nck_control nckctrl;
     struct hubo_param H_param;
     struct hubo_ctrl_state C_state;
 
@@ -133,7 +127,8 @@ void controlLoop()
     memset( &llctrl,  0, sizeof(llctrl)  );
     memset( &rfctrl,  0, sizeof(rfctrl)  );
     memset( &lfctrl,  0, sizeof(lfctrl)  );
-    memset( &auxctrl, 0, sizeof(auxctrl) );
+    memset( &bodctrl, 0, sizeof(bodctrl) );
+    memset( &nckctrl, 0, sizeof(nckctrl) );
     memset( &H_param, 0, sizeof(H_param) );
     memset( &C_state, 0, sizeof(C_state) );
 
@@ -206,43 +201,49 @@ void controlLoop()
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<ARM_JOINT_COUNT; j++)
-                timeElapse[rightarmjoints[j]] = 0.0;
+                timeElapse[ractrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<ARM_JOINT_COUNT; j++)
-                timeElapse[leftarmjoints[j]] = 0.0;
+                timeElapse[lactrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<LEG_JOINT_COUNT; j++)
-                timeElapse[rightlegjoints[j]] = 0.0;
+                timeElapse[rlctrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_ll_ctrl, &llctrl, sizeof(llctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<LEG_JOINT_COUNT; j++)
-                timeElapse[leftlegjoints[j]] = 0.0;
+                timeElapse[llctrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<FIN_JOINT_COUNT; j++)
-                timeElapse[rightfinjoints[j]] = 0.0;
+                timeElapse[rfctrl.jointIndices[j]] = 0.0;
 
 
         cresult = ach_get( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<FIN_JOINT_COUNT; j++)
-                timeElapse[leftfinjoints[j]] = 0.0;
+                timeElapse[lfctrl.jointIndices[j]] = 0.0;
         
 
-        cresult = ach_get( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl), &fs, NULL, ACH_O_LAST );
+        cresult = ach_get( &chan_hubo_bod_ctrl, &bodctrl, sizeof(bodctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
-            for(int j=0; j<AUX_JOINT_COUNT; j++)
-                timeElapse[auxjoints[j]] = 0.0;
+            for(int j=0; j<BOD_JOINT_COUNT; j++)
+                timeElapse[bodctrl.jointIndices[j]] = 0.0;
+        
+        cresult = ach_get( &chan_hubo_nck_ctrl, &nckctrl, sizeof(nckctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<NCK_JOINT_COUNT; j++)
+                timeElapse[nckctrl.jointIndices[j]] = 0.0;
 
         sortJointControls( &ctrl, &ractrl, &lactrl,
                                   &rlctrl, &llctrl,
-                                  &rfctrl, &lfctrl, &auxctrl, C_state.paused );
+                                  &rfctrl, &lfctrl,
+                                  &bodctrl, &nckctrl );
 
         t = H_state.time;
         dt = t - t0;
@@ -456,7 +457,10 @@ int main(int argc, char **argv)
     r = ach_open(&chan_hubo_lf_ctrl, HUBO_CHAN_LF_CTRL_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
-    r = ach_open(&chan_hubo_aux_ctrl, HUBO_CHAN_AUX_CTRL_NAME, NULL);
+    r = ach_open(&chan_hubo_bod_ctrl, HUBO_CHAN_BOD_CTRL_NAME, NULL);
+    daemon_assert( ACH_OK == r, __LINE__ );
+    
+    r = ach_open(&chan_hubo_nck_ctrl, HUBO_CHAN_NCK_CTRL_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
     r = ach_open(&chan_hubo_board_cmd, HUBO_CHAN_BOARD_CMD_NAME, NULL);
@@ -473,15 +477,14 @@ int main(int argc, char **argv)
 
 int setCtrlDefaults( struct hubo_control *ctrl )
 {
-    // TODO: Make this into something that parses default.ctrl table files
-
     struct hubo_arm_control ractrl;
     struct hubo_arm_control lactrl;
     struct hubo_leg_control rlctrl;
     struct hubo_leg_control llctrl;
     struct hubo_fin_control rfctrl;
     struct hubo_fin_control lfctrl;
-    struct hubo_aux_control auxctrl;
+    struct hubo_bod_control bodctrl;
+    struct hubo_nck_control nckctrl;
 
 	memset( ctrl, 0, sizeof(struct hubo_control) );
 	memset( &ractrl, 0, sizeof(struct hubo_arm_control) );
@@ -490,7 +493,8 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	memset( &llctrl, 0, sizeof(struct hubo_leg_control) );
 	memset( &rfctrl, 0, sizeof(struct hubo_fin_control) );
 	memset( &lfctrl, 0, sizeof(struct hubo_fin_control) );
-	memset( &auxctrl, 0, sizeof(struct hubo_aux_control) );
+	memset( &bodctrl, 0, sizeof(struct hubo_bod_control) );
+    memset( &nckctrl, 0, sizeof(struct hubo_nck_control) );
 
 	FILE *ptr_file;
 
@@ -531,7 +535,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	size_t jntNameCheck = 0;
 	char buff[1024];
     char name[4];
-    int jointSort[7];
+    char type[3];
 
 	// read in each non-commented line of the config file corresponding to each joint
 	while (fgets(buff, sizeof(buff), ptr_file) != NULL)
@@ -551,8 +555,9 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (7 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf",
+		if (7 == sscanf(buff, "%s%s%lf%lf%lf%lf%lf%lf",
 			name,
+            type,
 			&tempJC.speed,
 			&tempJC.acceleration,
 			&tempJC.error_limit,
@@ -561,7 +566,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
             &tempJC.timeOut ) ) // check that all values are found
 		{
 			// check to make sure jointName is valid
-			size_t x; int i;
+			size_t x; int i; jntNameCheck = 0;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
 				if (0 == strcmp(name, jointNameStrings[x])) {
 					i = jointNameValues[x];
@@ -572,40 +577,68 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 			// if joint name is invalid print error and return -1
 			if (jntNameCheck != 1) {
-				fprintf(stderr, "joint name '%s' is incorrect\n", name);
+				fprintf(stderr, "Joint name '%s' is incorrect\n", name);
 				return -1; // parsing failed
 			}
             else
             {
-                for(int k=0; k<ARM_JOINT_COUNT; k++)
-                    if( leftarmjoints[k]==i )
-                        memcpy( &lactrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<ARM_JOINT_COUNT; k++)
-                    if( rightarmjoints[k]==i )
-                        memcpy( &ractrl.joint[k], &tempJC, sizeof(tempJC) );
+                if( strcmp(type, "LA") == 0 )
+                {
+                    memcpy( &lactrl.joint[lactrl.count], &tempJC, sizeof(tempJC) );
+                    lactrl.jointIndices[lactrl.count] = i;
+                    lactrl.count++;
+                }
                 
-                for(int k=0; k<LEG_JOINT_COUNT; k++)
-                    if( leftlegjoints[k]==i )
-                        memcpy( &llctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<LEG_JOINT_COUNT; k++)
-                    if( rightlegjoints[k]==i )
-                        memcpy( &rlctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<FIN_JOINT_COUNT; k++)
-                    if( leftfinjoints[k]==i )
-                        memcpy( &lfctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<FIN_JOINT_COUNT; k++)
-                    if( rightfinjoints[k]==i )
-                        memcpy( &rfctrl.joint[k], &tempJC, sizeof(tempJC) );                        
-
-                for(int k=0; k<AUX_JOINT_COUNT; k++)
-                    if( auxjoints[k]==i )
-                        memcpy( &auxctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-            } // end: jntNameCheck
+                else if( strcmp(type, "RA") == 0 )
+                {
+                    memcpy( &ractrl.joint[ractrl.count], &tempJC, sizeof(tempJC) );
+                    ractrl.jointIndices[ractrl.count] = i;
+                    ractrl.count++;
+                }
+                
+                else if( strcmp(type, "LL") == 0 )
+                {
+                    memcpy( &llctrl.joint[llctrl.count], &tempJC, sizeof(tempJC) );
+                    llctrl.jointIndices[llctrl.count] = i;
+                    llctrl.count++;
+                }
+                
+                else if( strcmp(type, "RL") == 0 )
+                {
+                    memcpy( &rlctrl.joint[rlctrl.count], &tempJC, sizeof(tempJC) );
+                    rlctrl.jointIndices[rlctrl.count] = i;
+                    rlctrl.count++;
+                }
+                
+                else if( strcmp(type, "LF") == 0 )
+                {
+                    memcpy( &lfctrl.joint[lfctrl.count], &tempJC, sizeof(tempJC) );
+                    lfctrl.jointIndices[lfctrl.count] = i;
+                    lfctrl.count++;
+                }
+                
+                else if( strcmp(type, "RF") == 0 )
+                {
+                    memcpy( &rfctrl.joint[rfctrl.count], &tempJC, sizeof(tempJC) );
+                    rfctrl.jointIndices[rfctrl.count] = i;
+                    rfctrl.count++;
+                }
+                
+                else if( strcmp(type, "BD") == 0 )
+                {
+                    memcpy( &bodctrl.joint[bodctrl.count], &tempJC, sizeof(tempJC) );
+                    bodctrl.jointIndices[bodctrl.count] = i;
+                    bodctrl.count++;
+                }
+                
+                else if( strcmp(type, "NK") == 0 )
+                {
+                    memcpy( &nckctrl.joint[nckctrl.count], &tempJC, sizeof(tempJC) );
+                    nckctrl.jointIndices[nckctrl.count] = i;
+                    nckctrl.count++;
+                }
+                
+            } // end: if (jnkNameCheck != 1)
 		} // end: sscanf
 	} // end: fgets
 
@@ -617,7 +650,8 @@ int setCtrlDefaults( struct hubo_control *ctrl )
     ach_put( &chan_hubo_ll_ctrl, &llctrl, sizeof(llctrl) );
     ach_put( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl) );
     ach_put( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl) );
-    ach_put( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl) );
+    ach_put( &chan_hubo_bod_ctrl, &bodctrl, sizeof(bodctrl) );
+    ach_put( &chan_hubo_nck_ctrl, &nckctrl, sizeof(nckctrl) );
 
     return 0;
 

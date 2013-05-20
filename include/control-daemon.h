@@ -46,10 +46,16 @@
 #include <math.h>
 #include "daemonizer.h"
 
-#define ARM_JOINT_COUNT 6
-#define LEG_JOINT_COUNT 6
+// Trajectory upper bounds
+#define TRAJ_FREQ_HZ 200
+#define MAX_TRAJ_TIME 10
+#define MAX_TRAJ_SIZE MAX_TRAJ_TIME*TRAJ_FREQ_HZ
+
+#define ARM_JOINT_COUNT 10
+#define LEG_JOINT_COUNT 10
 #define FIN_JOINT_COUNT 5
-#define AUX_JOINT_COUNT 4
+#define NCK_JOINT_COUNT 5
+#define BOD_JOINT_COUNT 5
 
 #define     HUBO_CHAN_RL_CTRL_NAME      "hubo-RL-control" // Right Leg control channel
 #define     HUBO_CHAN_LL_CTRL_NAME      "hubo-LL-control" // Left Leg control channel
@@ -57,18 +63,23 @@
 #define     HUBO_CHAN_LA_CTRL_NAME      "hubo-LA-control" // Left Arm control channel
 #define     HUBO_CHAN_RF_CTRL_NAME      "hubo-RF-control" // Right Finger control channel
 #define     HUBO_CHAN_LF_CTRL_NAME      "hubo-LF-control" // Left Finger control channel
-#define     HUBO_CHAN_AUX_CTRL_NAME     "hubo-AUX-control"// Neck and Waist control channel
+#define     HUBO_CHAN_NCK_CTRL_NAME     "hubo-NCK-control"// Neck control channel
+#define     HUBO_CHAN_BOD_CTRL_NAME     "hubo-bod-control"// Body (waist) control channel
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
 
 // TODO: Save these as parameters defined in a table instead:
+/*
 const int leftarmjoints[ARM_JOINT_COUNT]  = { LSP, LSR, LSY, LEB, LWY, LWP };
 const int rightarmjoints[ARM_JOINT_COUNT] = { RSP, RSR, RSY, REB, RWY, RWP };
 const int leftlegjoints[LEG_JOINT_COUNT]  = { LHY, LHR, LHP, LKN, LAP, LAR };
 const int rightlegjoints[LEG_JOINT_COUNT] = { RHY, RHR, RHP, RKN, RAP, RAR };
 const int leftfinjoints[FIN_JOINT_COUNT]  = { LF1, LF2, LF3, LF4, LF5 };
 const int rightfinjoints[FIN_JOINT_COUNT]  = { RF1, RF2, RF3, RF4, RF5 };
-const int auxjoints[AUX_JOINT_COUNT] = { WST, NKY, NK1, NK2 }; 
+const int bodyjoints[BOD_JOINT_COUNT] = { WST };
+const int neckjoints[AUX_JOINT_COUNT] = { NKY, NK1, NK2 };
+*/
+
 
 typedef enum {
     CTRL_OFF    = 0,
@@ -80,7 +91,7 @@ typedef enum {
 } hubo_ctrl_mode_t;
 
 
-struct hubo_joint_control {
+typedef struct hubo_joint_control {
     double position;
     double speed;
     double velocity;
@@ -94,38 +105,53 @@ struct hubo_joint_control {
     double timeOut;
 
     hubo_ctrl_mode_t mode;
-};
+} hubo_joint_control_t;
 
-struct hubo_control {
+typedef struct hubo_control {
     struct hubo_joint_control joint[HUBO_JOINT_COUNT];
     int active;
-};
+} hubo_control_t;
 
-struct hubo_arm_control {
+typedef struct hubo_arm_control {
     struct hubo_joint_control joint[ARM_JOINT_COUNT];
+    int jointIndices[ARM_JOINT_COUNT];
+    int count;
     int active;
-};
+} hubo_arm_control_t;
 
-struct hubo_leg_control {
+typedef struct hubo_leg_control {
     struct hubo_joint_control joint[LEG_JOINT_COUNT];
+    int jointIndices[LEG_JOINT_COUNT];
+    int count;
     int active;
-};
+} hubo_leg_control_t;
 
-struct hubo_fin_control {
+typedef struct hubo_fin_control {
     struct hubo_joint_control joint[FIN_JOINT_COUNT];
+    int jointIndices[FIN_JOINT_COUNT];
+    int count;
     int active;
-};
+} hubo_fin_control_t;
 
-struct hubo_aux_control {
-    struct hubo_joint_control joint[AUX_JOINT_COUNT];
+typedef struct hubo_nck_control {
+    struct hubo_joint_control joint[NCK_JOINT_COUNT];
+    int jointIndices[NCK_JOINT_COUNT];
+    int count;
     int active;
-};
+} hubo_nck_control_t;
 
-struct hubo_ctrl_state {
+typedef struct hubo_bod_control {
+    struct hubo_joint_control joint[BOD_JOINT_COUNT];
+    int jointIndices[BOD_JOINT_COUNT];
+    int count;
+    int active;
+} hubo_bod_control_t;
+
+typedef struct hubo_ctrl_state {
     double velocity[HUBO_JOINT_COUNT];
     int status[HUBO_JOINT_COUNT];
     int paused;
-};
+} hubo_ctrl_state_t;
 
 
 #endif // CONTROLDAEMON_H
