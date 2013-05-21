@@ -66,6 +66,9 @@ int main( int argc, char **argv )
 
                 output.error[j] = traj.joint[j].position[i] - hubo.getJointAngleState(i);
             }
+
+            output.status = TRAJ_RUNNING;
+            ach_put( &traj_state_chan, &output, sizeof(output) );
             
             hubo.sendControls();
 

@@ -27,9 +27,9 @@ typedef struct hubo_traj {
 
 
 typedef enum {
-    
-    TRAJ_RUNNING,
-    TRAJ_COMPLETE
+
+    TRAJ_COMPLETE = 0,
+    TRAJ_RUNNING
 
 } traj_status_t;
 
