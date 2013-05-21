@@ -281,7 +281,6 @@ void controlLoop()
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
-
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
                 if( ctrl.joint[jnt].mode == CTRL_PASS )
@@ -555,16 +554,17 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (7 == sscanf(buff, "%s%s%lf%lf%lf%lf%lf%lf",
+		if (8 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%s",
 			name,
-            type,
 			&tempJC.speed,
 			&tempJC.acceleration,
 			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
-            &tempJC.timeOut ) ) // check that all values are found
+            &tempJC.timeOut,
+            type ) ) // check that all values are found
 		{
+
 			// check to make sure jointName is valid
 			size_t x; int i; jntNameCheck = 0;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
@@ -643,7 +643,6 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	} // end: fgets
 
 	fclose(ptr_file);	// close file stream
-
     ach_put( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl) );
     ach_put( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl) );
     ach_put( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl) ); 
