@@ -92,7 +92,7 @@ int main( int argc, char **argv )
             if( manip_req.interrupt[side] || manip_state.cmd_state[side] == MC_READY )
                 memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
             
-            manip_state.cmd_state[2] = manip_cmd[side].m_cmd[side];
+            manip_state.cmd_state[side] = manip_cmd[side].m_cmd[side];
             
             // Handle arm motions
             switch( manip_cmd[side].m_cmd[side] )
