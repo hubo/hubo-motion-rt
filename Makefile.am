@@ -25,7 +25,7 @@ trajectory_run_SOURCES = src/trajectory-run.cpp
 trajectory_run_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 walker_SOURCES = src/walker.cpp
-walker_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
+walker_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 hubo_ctrldir = /usr/lib
 hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la

@@ -3,7 +3,7 @@
 #define HAVE_HUBO_ACH
 #include <hubo-zmp.h>
 
-#include "HuboKin.h"
+//#include "HuboKin.h"
 
 
 ach_channel_t zmp_chan;
@@ -159,92 +159,94 @@ static inline void clamp(double& x, double cap) {
 // qr & ql are planned joint angles - used for 
 // state holds the nudge integrators
 // elem is our zmp_traj_element_t
-// dt is likely to be 1.0/TRAJ_FREQ_HZ
-void integrateNudgeIK( Hubo_Control &hubo, Vector6d &qr, Vector6d& ql,
-		       nudge_state_t& state, zmp_traj_element_t elem, double dt,
-		       HK::HuboKin& hkin) {
-
-  // now truncate stuff
-  if (state.nudge.norm() > nudge_max_norm) {
-    state.nudge *= nudge_max_norm / state.nudge.norm();
-  }
-
-  clamp(state.spin[0], spin_max_angle);
-  clamp(state.spin[1], spin_max_angle);
-  clamp(state.larerr,  comp_max_angle);
-  clamp(state.laperr,  comp_max_angle);
-  clamp(state.rarerr,  comp_max_angle);
-  clamp(state.raperr,  comp_max_angle);
+// dt is likely to be 1.0/ZMP_TRAJ_FREQ_HZ
 
 
-  Vector6d* qboth[2] = { &qr, &ql };
+//void integrateNudgeIK( Hubo_Control &hubo, Vector6d &qr, Vector6d& ql,
+//		       nudge_state_t& state, zmp_traj_element_t elem, double dt,
+//		       HK::HuboKin& hkin) {
 
-  for (int side=0; side<2; ++side) {
+//  // now truncate stuff
+//  if (state.nudge.norm() > nudge_max_norm) {
+//    state.nudge *= nudge_max_norm / state.nudge.norm();
+//  }
+
+//  clamp(state.spin[0], spin_max_angle);
+//  clamp(state.spin[1], spin_max_angle);
+//  clamp(state.larerr,  comp_max_angle);
+//  clamp(state.laperr,  comp_max_angle);
+//  clamp(state.rarerr,  comp_max_angle);
+//  clamp(state.raperr,  comp_max_angle);
 
 
-    // Matt being paranoid: don't run IK code if no nudging to be done.
-    if (state.nudge.squaredNorm() || state.spin.squaredNorm()) {
+//  Vector6d* qboth[2] = { &qr, &ql };
 
-      Vector6d& qs = *(qboth[side]);
+//  for (int side=0; side<2; ++side) {
 
 
-      Eigen::Isometry3d FK;
+//    // Matt being paranoid: don't run IK code if no nudging to be done.
+//    if (state.nudge.squaredNorm() || state.spin.squaredNorm()) {
 
-      // right comes first in HuboKin cause it was written by right handed people?
-      hkin.legFK(FK, qs, side);
+//      Vector6d& qs = *(qboth[side]);
 
-      // FK maps foot frame to body
-      // 
 
-      const Vector6d qs_prev = qs;
+//      Eigen::Isometry3d FK;
 
-      const Eigen::Vector3d p = -state.nudge;
+//      // right comes first in HuboKin cause it was written by right handed people?
+//      hkin.legFK(FK, qs, side);
+
+//      // FK maps foot frame to body
+//      //
+
+//      const Vector6d qs_prev = qs;
+
+//      const Eigen::Vector3d p = -state.nudge;
     
-      const Eigen::Quaterniond R = 
-	Eigen::AngleAxisd(state.spin[0], Eigen::Vector3d::UnitX()) *
-	Eigen::AngleAxisd(state.spin[1], Eigen::Vector3d::UnitY());
+//      const Eigen::Quaterniond R =
+//	Eigen::AngleAxisd(state.spin[0], Eigen::Vector3d::UnitX()) *
+//	Eigen::AngleAxisd(state.spin[1], Eigen::Vector3d::UnitY());
 
-      /*
-      std::cout << "nudge for leg " << side << " is " << p.transpose() << "\n";
-      std::cout << "spin for leg " << side << " is " << state.spin.transpose() << "\n";
-      */
+//      /*
+//      std::cout << "nudge for leg " << side << " is " << p.transpose() << "\n";
+//      std::cout << "spin for leg " << side << " is " << state.spin.transpose() << "\n";
+//      */
 
-      Eigen::Isometry3d Tdelta;
-      Tdelta.setIdentity();
-      Tdelta.rotate(R);
-      Tdelta.pretranslate(p);
+//      Eigen::Isometry3d Tdelta;
+//      Tdelta.setIdentity();
+//      Tdelta.rotate(R);
+//      Tdelta.pretranslate(p);
       
-      /*
-      std::cout << "Tdelta for leg " << side << "=\n" << Tdelta.matrix() << "\n";
-      Eigen::Isometry3d desired = Tdelta * FK;
-      */
+//      /*
+//      std::cout << "Tdelta for leg " << side << "=\n" << Tdelta.matrix() << "\n";
+//      Eigen::Isometry3d desired = Tdelta * FK;
+//      */
 
-      Eigen::Isometry3d desired = FK;
+//      Eigen::Isometry3d desired = FK;
 
-      hkin.legIK(qs, desired, qs_prev, side);
+//      hkin.legIK(qs, desired, qs_prev, side);
 
-      //std::cout << "Diff for leg " << side << " is " << (qs_prev - qs).transpose() << "\n";
-
-
-    }
-
-  }
-
-  qr(AR) += state.rarerr;
-  qr(AP) += state.raperr;
-
-  ql(AR) += state.larerr;
-  ql(AP) += state.laperr;
+//      //std::cout << "Diff for leg " << side << " is " << (qs_prev - qs).transpose() << "\n";
 
 
-}
+//    }
+
+//  }
+
+//  qr(AR) += state.rarerr;
+//  qr(AP) += state.raperr;
+
+//  ql(AR) += state.larerr;
+//  ql(AP) += state.laperr;
+
+
+//}
 
 /*
 // input is a hubo_control
 // qr & ql are planned joint angles - used for 
 // state holds the nudge integrators
 // elem is our zmp_traj_element_t
-// dt is likely to be 1.0/TRAJ_FREQ_HZ
+// dt is likely to be 1.0/ZMP_TRAJ_FREQ_HZ
 void integrateNudge( Hubo_Control &hubo, Vector6d &qr, Vector6d& ql,
                         nudge_state_t state, zmp_traj_element_t elem, double dt )
 {
@@ -334,80 +336,80 @@ void integrateNudge( Hubo_Control &hubo, Vector6d &qr, Vector6d& ql,
 }
 */
 
-void nudgeRefs( Hubo_Control &hubo, zmp_traj_element_t &elem, //Eigen::Vector3d &vprev,
-		nudge_state_t &state, double dt,
-		HK::HuboKin& hkin)
-{
+//void nudgeRefs( Hubo_Control &hubo, zmp_traj_element_t &elem, //Eigen::Vector3d &vprev,
+//		nudge_state_t &state, double dt,
+//		HK::HuboKin& hkin)
+//{
 
-  Vector6d qr, ql;
-  qr(HY) = elem.angles[RHY];
-  qr(HR) = elem.angles[RHR];
-  qr(HP) = elem.angles[RHP];
-  qr(KN) = elem.angles[RKN];
-  qr(AP) = elem.angles[RAP];
-  qr(AR) = elem.angles[RAR];
+//  Vector6d qr, ql;
+//  qr(HY) = elem.angles[RHY];
+//  qr(HR) = elem.angles[RHR];
+//  qr(HP) = elem.angles[RHP];
+//  qr(KN) = elem.angles[RKN];
+//  qr(AP) = elem.angles[RAP];
+//  qr(AR) = elem.angles[RAR];
 
-  ql(HY) = elem.angles[LHY];
-  ql(HR) = elem.angles[LHR];
-  ql(HP) = elem.angles[LHP];
-  ql(KN) = elem.angles[LKN];
-  ql(AP) = elem.angles[LAP];
-  ql(AR) = elem.angles[LAR];
+//  ql(HY) = elem.angles[LHY];
+//  ql(HR) = elem.angles[LHR];
+//  ql(HP) = elem.angles[LHP];
+//  ql(KN) = elem.angles[LKN];
+//  ql(AP) = elem.angles[LAP];
+//  ql(AR) = elem.angles[LAR];
 
-  // TODO: smoothly phase in the integrator for each foot
-  if( hubo.getRightFootFz()+hubo.getLeftFootFz() > weight_thresh_N) {
+//  // TODO: smoothly phase in the integrator for each foot
+//  if( hubo.getRightFootFz()+hubo.getLeftFootFz() > weight_thresh_N) {
         
-      nudge_state_t lstate=state, rstate=state;
+//      nudge_state_t lstate=state, rstate=state;
 
-      getLegNudge( hubo, qr, elem, rstate, RIGHT, dt );
-      getLegNudge( hubo, ql, elem, lstate, LEFT,  dt );
+//      getLegNudge( hubo, qr, elem, rstate, RIGHT, dt );
+//      getLegNudge( hubo, ql, elem, lstate, LEFT,  dt );
         
-      state.larerr = lstate.larerr;
-      state.rarerr = rstate.rarerr;
-      state.laperr = lstate.laperr;
-      state.raperr = rstate.raperr;
+//      state.larerr = lstate.larerr;
+//      state.rarerr = rstate.rarerr;
+//      state.laperr = lstate.laperr;
+//      state.raperr = rstate.raperr;
 
-      if( elem.forces[RIGHT][2]+elem.forces[LEFT][2] == 0 ) {
+//      if( elem.forces[RIGHT][2]+elem.forces[LEFT][2] == 0 ) {
 
-	elem.forces[RIGHT][2] = 1;
-	elem.forces[LEFT][2]  = 1;
-	fprintf(stderr, "Warning: predicted forces both 0!");
-      }
+//	elem.forces[RIGHT][2] = 1;
+//	elem.forces[LEFT][2]  = 1;
+//	fprintf(stderr, "Warning: predicted forces both 0!");
+//      }
 
-      state.nudge = (elem.forces[RIGHT][2]*rstate.nudge + elem.forces[LEFT][2]*lstate.nudge)/
-	(elem.forces[RIGHT][2]+elem.forces[LEFT][2]);
-      state.spin  = (elem.forces[RIGHT][2]*rstate.spin  + elem.forces[LEFT][2]*lstate.spin )/
-	(elem.forces[RIGHT][2]+elem.forces[LEFT][2]);
-
-
-  }
+//      state.nudge = (elem.forces[RIGHT][2]*rstate.nudge + elem.forces[LEFT][2]*lstate.nudge)/
+//	(elem.forces[RIGHT][2]+elem.forces[LEFT][2]);
+//      state.spin  = (elem.forces[RIGHT][2]*rstate.spin  + elem.forces[LEFT][2]*lstate.spin )/
+//	(elem.forces[RIGHT][2]+elem.forces[LEFT][2]);
 
 
-  std::cout << "Nudge: " << state.nudge.transpose() << "\tSpin: " << state.spin.transpose() << "\n";
-  std::cout << "Offsets: " 
-	    << state.raperr << ", " 
-	    << state.rarerr << ", " 
-	    << state.laperr << ", " 
-	    << state.larerr << "\n";
+//  }
 
-  integrateNudgeIK( hubo, qr, ql, state, elem, dt, hkin );
+
+//  std::cout << "Nudge: " << state.nudge.transpose() << "\tSpin: " << state.spin.transpose() << "\n";
+//  std::cout << "Offsets: "
+//	    << state.raperr << ", "
+//	    << state.rarerr << ", "
+//	    << state.laperr << ", "
+//	    << state.larerr << "\n";
+
+//  integrateNudgeIK( hubo, qr, ql, state, elem, dt, hkin );
 
         
-  elem.angles[RHY] = qr(HY);
-  elem.angles[RHR] = qr(HR);
-  elem.angles[RHP] = qr(HP);
-  elem.angles[RKN] = qr(KN);
-  elem.angles[RAP] = qr(AP);
-  elem.angles[RAR] = qr(AR);
+//  elem.angles[RHY] = qr(HY);
+//  elem.angles[RHR] = qr(HR);
+//  elem.angles[RHP] = qr(HP);
+//  elem.angles[RKN] = qr(KN);
+//  elem.angles[RAP] = qr(AP);
+//  elem.angles[RAR] = qr(AR);
 
-  elem.angles[LHY] = ql(HY);
-  elem.angles[LHR] = ql(HR);
-  elem.angles[LHP] = ql(HP);
-  elem.angles[LKN] = ql(KN);
-  elem.angles[LAP] = ql(AP);
-  elem.angles[LAR] = ql(AR);
+//  elem.angles[LHY] = ql(HY);
+//  elem.angles[LHR] = ql(HR);
+//  elem.angles[LHP] = ql(HP);
+//  elem.angles[LKN] = ql(KN);
+//  elem.angles[LAP] = ql(AP);
+//  elem.angles[LAR] = ql(AR);
 
-}
+//}
 
 
 
@@ -449,11 +451,11 @@ int main(int argc, char **argv)
 {
     Hubo_Control hubo;
 
-    HK::HuboKin hkin;
+//    HK::HuboKin hkin;
 
-    hkin.kc.leg_l1 = 0; // eliminate neck -> waist Z distance
-    hkin.kc.leg_l3 = 0; // eliminate waist -> hip Z distance
-    hkin.kc.leg_l6 = 0; // eliminate ankle -> foot Z distance
+//    hkin.kc.leg_l1 = 0; // eliminate neck -> waist Z distance
+//    hkin.kc.leg_l3 = 0; // eliminate waist -> hip Z distance
+//    hkin.kc.leg_l6 = 0; // eliminate ankle -> foot Z distance
 
     nudge_state_t state;
     memset( &state, 0, sizeof(nudge_state_t) );
@@ -548,8 +550,8 @@ int main(int argc, char **argv)
             {
                 hubo.setJointAngle( i, trajectory.traj[t].angles[i] );
                 hubo.setJointNominalSpeed( i,
-                       (trajectory.traj[t].angles[i]-trajectory.traj[t-1].angles[i])*TRAJ_FREQ_HZ );
-                double accel = TRAJ_FREQ_HZ*TRAJ_FREQ_HZ*(
+                       (trajectory.traj[t].angles[i]-trajectory.traj[t-1].angles[i])*ZMP_TRAJ_FREQ_HZ );
+                double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
                                     trajectory.traj[t-1].angles[i]
                                 - 2*trajectory.traj[t].angles[i]
                                 +   trajectory.traj[t+1].angles[i] );
@@ -571,7 +573,7 @@ int main(int argc, char **argv)
             clock_gettime( ACH_DEFAULT_CLOCK, &t );
             t.tv_sec += 1;
             r = ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, &t, ACH_O_WAIT | ACH_O_LAST );
-        } while(!daemon_sig_quit && r==ACH_STALE_FRAME);
+        } while(!daemon_sig_quit && r==ACH_STALE_FRAMES);
 
 
     }
