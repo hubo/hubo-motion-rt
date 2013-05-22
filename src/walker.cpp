@@ -449,7 +449,8 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem, nudge_state_t &s
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo;
+    Hubo_Control hubo("walker");
+
 
 //    HK::HuboKin hkin;
 
@@ -557,6 +558,7 @@ int main(int argc, char **argv)
                                 +   trajectory.traj[t+1].angles[i] );
                 hubo.setJointNominalAcceleration( i, 10*accel );
             }
+
 
             hubo.setJointAngle( RSR, trajectory.traj[t].angles[RSR] + hubo.getJointAngleMax(RSR) );
             hubo.setJointAngle( LSR, trajectory.traj[t].angles[LSR] + hubo.getJointAngleMin(LSR) );
