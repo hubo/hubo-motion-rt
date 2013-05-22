@@ -54,6 +54,7 @@
 typedef enum {
     
     MC_READY = 0,
+    MC_STOPPED,
     MC_TRANS_EULER,
     MC_TRANS_QUAT,
     MC_TRAJ
@@ -148,7 +149,7 @@ typedef struct hubo_manip_cmd {
 	// eulerAngles[RIGHT][1] -> right arm's pitch
 	// eulerAngles[RIGHT][2] -> right arm's yaw
 	// Euler Angles are applied in the following order: X1, Y2, Z3
-    
+    double stopNorm;
     double convergeNorm;
     
 } hubo_manip_cmd_t;
