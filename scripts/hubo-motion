@@ -42,6 +42,9 @@ HUBO_BOD_CTRL_CHAN='hubo-BOD-control'
 HUBO_NCK_CTRL_CHAN='hubo-NCK-control'
 HUBO_CTRL_STATE_CHAN='ctrl-d-state'
 HUBO_MANIP_CMD_CHAN='manip-cmd'
+HUBO_MANIP_TRAJ_CHAN='manip-traj'
+HUBO_MANIP_PARAM_CHAN='manip-param'
+HUBO_MANIP_STATE_CHAN='manip-state'
 HUBO_ZMP_CHAN='hubo-zmp-traj'
 LIBERTY_CHAN='liberty'
 
@@ -98,8 +101,10 @@ Ach()
 		sudo ach -1 -C $HUBO_NCK_CTRL_CHAN       -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_STATE_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_TRAJ_CHAN     -m 10 -n 1000000 -o 666
         sudo ach -1 -C $HUBO_ZMP_CHAN           -m 3  -n 1000000 -o 666
-
 	;;
 	esac
 }
@@ -176,6 +181,7 @@ StartHubo()
 
         sudo hubo-daemon
 		sudo control-daemon
+        sudo manip-daemon
 
         echo
         echo 'Now please run hubo_init from your remote computer!'
