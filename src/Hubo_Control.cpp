@@ -37,6 +37,10 @@
 
 #include <Hubo_Control.h>
 
+extern "C" {
+#include "daemonizer.h"
+}
+
 Hubo_Control::Hubo_Control()
 {
     controlInit();

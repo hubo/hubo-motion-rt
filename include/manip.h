@@ -130,6 +130,7 @@ typedef union
 
 typedef struct hubo_manip_state {
 
+	uint32_t goalID[NUM_ARMS];
     manip_mode_t mode_state[NUM_ARMS];    ///< Current state of the operational mode. Changes to manip_mode_t::MC_READY when path finished.
     manip_grasp_t grasp_state[NUM_ARMS];  ///< Current state of the grasp command
     manip_error_t error[NUM_ARMS];        ///< Current error state of the daemon
@@ -139,6 +140,7 @@ typedef struct hubo_manip_state {
 
 typedef struct hubo_manip_cmd {
     
+	uint32_t goalID[NUM_ARMS];
     manip_mode_t m_mode[NUM_ARMS];        ///< Defines what type of manipulation to execute: trajectory or pose
     manip_ctrl_t m_ctrl[NUM_ARMS];        ///< Defines the type of compliance to use
     manip_grasp_t m_grasp[NUM_ARMS];      ///< Defines at what point to perform a grasp
@@ -149,6 +151,7 @@ typedef struct hubo_manip_cmd {
 	// eulerAngles[RIGHT][1] -> right arm's pitch
 	// eulerAngles[RIGHT][2] -> right arm's yaw
 	// Euler Angles are applied in the following order: X1, Y2, Z3
+    
     double stopNorm;
     double convergeNorm;
     
@@ -191,4 +194,3 @@ typedef struct hubo_manip_traj {
     unsigned int count;
     
 } hubo_manip_traj_t;
-

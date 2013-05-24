@@ -36,6 +36,12 @@
 
 #include "manip.h"
 
+extern "C" {
+// For process management
+#include "daemonizer.h"
+}
+
+
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
@@ -95,6 +101,7 @@ int main( int argc, char **argv )
                 memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
             
             manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
+            manip_state.goalID[side] = manip_cmd[side].goalID[side];
             
             // Handle arm motions
             switch( manip_cmd[side].m_mode[side] )
@@ -119,6 +126,7 @@ int main( int argc, char **argv )
         }
         
         hubo.sendControls();
+        ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }
     
     ach_close( &chan_manip_cmd );

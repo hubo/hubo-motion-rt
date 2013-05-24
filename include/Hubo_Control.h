@@ -51,9 +51,6 @@ extern "C" {
 #include "hubo.h"
 #include "control-daemon.h"
 #include "hubo-jointparams.h"
-
-// For process management
-#include "daemonizer.h"
 }
 #include <iostream>
 
