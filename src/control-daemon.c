@@ -102,7 +102,7 @@ double sign(double x)
 
 void controlLoop()
 {
-    struct hubo_ref H_ref;//, r_check;
+    struct hubo_ref H_ref, stored_ref;
     struct hubo_board_cmd H_cmd;
     struct hubo_state H_state;
     struct hubo_control ctrl;
@@ -152,6 +152,7 @@ void controlLoop()
     {
         daemon_assert( sizeof(H_state) == fs, __LINE__ );
     }
+    memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
     result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != result )
     {
@@ -163,6 +164,7 @@ void controlLoop()
     double V[HUBO_JOINT_COUNT];
     double V0[HUBO_JOINT_COUNT];
     double dV[HUBO_JOINT_COUNT];
+    double V0_actual[HUBO_JOINT_COUNT];
     double adr;
     double dtMax = 0.1;
     double errorFactor = 10;
@@ -170,32 +172,76 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    int cresult, rresult, sresult, presult, iter=0, maxi=15;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=15;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
         dr[i] = 0;  dV[i] = 0;
         V[i] = 0;   V0[i] = 0;
-
+        V0_actual[i] = 0;
         fail[i] = 0;
     }
 
     double t0 = H_state.time;
     double t, dt, err;
-
+    dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
 
     // Main control loop
     while( !daemon_sig_quit )
     {
-        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_WAIT );
-        if( ACH_OK != sresult )
+
+        struct timespec recheck;
+        clock_gettime( ACH_DEFAULT_CLOCK, &recheck );
+        int nanoWait = recheck.tv_nsec + (int)(dt/3.0*1E9);
+        recheck.tv_sec += (int)(nanoWait/1E9);
+        recheck.tv_nsec = (int)(nanoWait%((int)1E9));
+
+        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs,
+                             &recheck, ACH_O_WAIT | ACH_O_LAST );
+        if( ACH_TIMEOUT == sresult || ACH_STALE_FRAMES == sresult )
         {
-            // TODO: Print a debug message
+            memcpy( &H_ref, &stored_ref, sizeof(H_ref) );
         }
-        else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
+        else if( ACH_OK == sresult || ACH_MISSED_FRAME == sresult )
+        {
+            daemon_assert( sizeof(H_state) == fs, __LINE__ );
+
+            if( dt > 0 )
+            {
+                for(int i=0; i<HUBO_JOINT_COUNT; i++)
+                {
+                    C_state.actual_vel[i] = (H_state.joint[i].pos - C_state.actual_pos[i])/dt;
+                    C_state.actual_acc[i] = (C_state.actual_vel[i] - V0_actual[i])/dt;
+                    V0_actual[i] = C_state.actual_vel[i];
+                    C_state.actual_pos[i] = H_state.joint[i].pos;
+                }
+                ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
+
+                // These are being updated now because they belong to ach_put of the next cycle
+                for(int i=0; i<HUBO_JOINT_COUNT; i++)
+                {
+                    C_state.requested_pos[i] = H_ref.ref[i];
+                    C_state.requested_vel[i] = V[i];
+                    C_state.requested_acc[i] = (V[i]-V0[i])/dt;
+
+                    V0[i] = V[i];
+                    t = H_state.time;
+                    timeElapse[i] += dt;
+                    dt = t - t0;
+                }
+
+                memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
+            }
+            else if( dt < 0 )
+                fprintf(stderr, "You have traveled backwards through time by %f seconds!\n", -dt);
+            else if( dt == 0 )
+                fprintf(stderr, "Something unnatural has happened...\n");
+        }
+        else
+            fprintf( stderr, "Unexpected ach state: %s\n", ach_result_to_string(sresult) );
 
 
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
@@ -245,8 +291,6 @@ void controlLoop()
                                   &rfctrl, &lfctrl,
                                   &bodctrl, &nckctrl );
 
-        t = H_state.time;
-        dt = t - t0;
         
         if( ctrl.active == 2 || H_state.refWait==1 )
         {
@@ -258,6 +302,7 @@ void controlLoop()
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 H_ref.ref[jnt] = H_state.joint[jnt].ref;
+                stored_ref.ref[jnt] = H_state.joint[jnt].ref;
                 V[jnt] = 0; V0[jnt] = 0; dV[jnt] = 0;
                 dr[jnt]=0;
 /*
@@ -350,10 +395,7 @@ void controlLoop()
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_HOME )
                         {
-//                            H_ref.ref[jnt] = 0; 
                             V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
-                            //r[jnt]=0; r0[jnt]=0;
-//                            dr[jnt]=0;
                         }
                         else
                         {
@@ -361,9 +403,9 @@ void controlLoop()
                                 jnt, (int)ctrl.joint[jnt].mode );
                         }
 
-                        timeElapse[jnt] += dt;
-                        V0[jnt] = V[jnt];
-                        C_state.velocity[jnt] = V[jnt];
+//                        timeElapse[jnt] += dt;
+//                        V0[jnt] = V[jnt];
+//                        C_state.velocity[jnt] = V[jnt];
                         reset[jnt]=0;
                     }
 
@@ -404,7 +446,6 @@ void controlLoop()
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
                         presult, ach_result_to_string(presult));
-                ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
             }
             
         }// end: time test

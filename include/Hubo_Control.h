@@ -143,7 +143,7 @@ public:
      * \li Joint reference (encoder value);
     */
     /// Retrieves the latest data from the state and ref channels
-    ctrl_flag_t update(bool stateWait=false, bool printError=false);   
+    ctrl_flag_t update(bool stateWait=true, double quitSec = 0.1, bool printError=false);   
 
 
     // ~~~*** Sending Control Commands ***~~~ //
