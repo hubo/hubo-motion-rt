@@ -10,6 +10,14 @@ init_d_SCRIPTS = scripts/hubo-motion
 # installed under $prefix/include/
 include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h include/motion-trajectory.h include/walker.h
 
+hubo_ctrldir = /usr/lib
+hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la
+libdaemonizer_la_SOURCES = src/daemonizer.c
+libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
+libhuboctrl_la_SOURCES = src/Hubo_Control.cpp
+libhuboctrl_la_LDFLAGS = -module -avoid-version -shared
+libhuboctrl_la_LIBADD = -lm -lach -lhuboparams
+
 bin_PROGRAMS = control-daemon manip-daemon trajectory-run walker
 
 huboctrlconfdir=/etc/hubo-ach
@@ -27,10 +35,3 @@ trajectory_run_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 walker_SOURCES = src/walker.cpp
 walker_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
-hubo_ctrldir = /usr/lib
-hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la
-libdaemonizer_la_SOURCES = src/daemonizer.c
-libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
-libhuboctrl_la_SOURCES = src/Hubo_Control.cpp
-libhuboctrl_la_LDFLAGS = -module -avoid-version -shared
-#libhuboctrl_la_LIBADD = -lm -lach -lhuboparams
