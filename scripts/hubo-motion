@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh  
 
 ### BEGIN INIT INFO
 # Provides:             hubo-daemon control-daemon
@@ -87,7 +87,6 @@ Ach()
         sudo ach -U $HUBO_BOD_CTRL_CHAN
         sudo ach -U $HUBO_NCK_CTRL_CHAN
         sudo ach -U $HUBO_CTRL_STATE_CHAN
-        sudo ach -U $HUBO_ZMP_CHAN
         sudo ach -U $HUBO_MANIP_CMD_CHAN
         sudo ach -U $HUBO_MANIP_STATE_CHAN
         sudo ach -U $HUBO_MANIP_PARAM_CHAN
