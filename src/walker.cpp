@@ -468,7 +468,7 @@ int main(int argc, char **argv)
     size_t fs;
     zmp_traj_t trajectory;
     memset( &trajectory, 0, sizeof(trajectory) );
-    ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, NULL, ACH_O_LAST );
+    ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, NULL, ACH_O_WAIT );
 
     fprintf(stderr, "Count: %d\n", (int)trajectory.count);
     for(int i=0; i<trajectory.count; i++)
