@@ -172,7 +172,7 @@ StopHubo()
 StartMotionDaemons()
 {
 	sudo control-daemon
-        sudo walker
+        sudo trajectory-run
 }
 
 StartHubo()
