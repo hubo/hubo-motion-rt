@@ -245,9 +245,9 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
     
     Eigen::Quaterniond quat;
     quat.w() = cmd.pose[side].w;
-    quat.x() = cmd.pose[side].x;
-    quat.y() = cmd.pose[side].y;
-    quat.z() = cmd.pose[side].z;
+    quat.x() = cmd.pose[side].i;
+    quat.y() = cmd.pose[side].j;
+    quat.z() = cmd.pose[side].k;
     B.rotate(quat);
     
     bool valid = hubo.huboArmIK( armAngles, B, zeroAngles, side );
