@@ -151,6 +151,7 @@ typedef struct hubo_manip_cmd {
 	// eulerAngles[RIGHT][2] -> right arm's yaw
 	// Euler Angles are applied in the following order: X1, Y2, Z3
     
+    double stopNorm;
     double convergeNorm;
     
 } hubo_manip_cmd_t;

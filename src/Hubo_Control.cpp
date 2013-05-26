@@ -37,6 +37,10 @@
 
 #include <Hubo_Control.h>
 
+extern "C" {
+#include "daemonizer.h"
+}
+
 Hubo_Control::Hubo_Control()
 {
     controlInit();
@@ -268,7 +272,7 @@ void Hubo_Control::releaseNeck()
 
 double Hubo_Control::getTime() { return H_State.time; }
 
-ctrl_flag_t Hubo_Control::update(bool stateWait, bool printError)
+ctrl_flag_t Hubo_Control::update(bool stateWait, double quitSec, bool printError)
 {
     int r1, r2;
     size_t fs;
@@ -276,13 +280,27 @@ ctrl_flag_t Hubo_Control::update(bool stateWait, bool printError)
     if( !stateWait )
     {
         r2 = ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_LAST );
-        if( ACH_OK != r2 && printError )
-            fprintf( stdout, "Ach report -- State Channel: %s at time=%f",
-                ach_result_to_string((ach_status_t)r2), getTime() );
     }
     else
     {
-        r2 = ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
+        if(quitSec<0)
+            r2 = ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
+        else
+        {
+            struct timespec waitTime;
+            clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+            int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+            waitTime.tv_sec += (int)(nanoWait/1E9);
+            waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+            
+            r2 = ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs,
+                            &waitTime, ACH_O_LAST | ACH_O_WAIT );
+        }
+
+        if( ACH_OK != r2 && printError )
+            fprintf( stdout, "Ach report -- State Channel: %s at time=%f",
+                ach_result_to_string((ach_status_t)r2), getTime() );
+        
         if( ACH_OK != r2 && printError )
             fprintf( stdout, "Ach report -- State Channel: %s at time=%f",
                 ach_result_to_string((ach_status_t)r2), getTime() );
@@ -1027,7 +1045,7 @@ double Hubo_Control::getJointNominalSpeed(int joint)
 double Hubo_Control::getJointVelocity(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return C_State.velocity[joint];
+        return C_State.requested_vel[joint];
     else
         return 0;
 }
