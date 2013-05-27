@@ -1,7 +1,11 @@
 
 
-#define BALANCE_PARAM_CHAN "balance-param"
+#ifndef WALKER_H
+#define WALKER_H
 
+
+#include "balance-daemon.h"
+#include "Hubo_Control.h"
 
 typedef struct nudge_state {
 
@@ -23,45 +27,9 @@ typedef struct nudge_state {
 } nudge_state_t;
 
 
-typedef struct balance_gains {
-
-    double flattening_gain[2];
-
-    double straightening_gain[2];
-    
-    double spring_gain[2];
-    double damping_gain[2];
-    double fz_response[2];
-
-} balance_gains_t;
-
-
-
 
 
 const double hipDistance = 0.08843*2.0; // Distance between hip joints
-
-typedef enum {
-
-    STATE_INVALID,
-    S_HORSE,
-    S_CRANE,
-    Q_SHIFTDIST,
-    Q_LIFTLEG,
-    Q_CROUCH
-
-
-} balance_state_t;
-
-
-typedef enum {
-    
-    T_INVALID,
-    T_INCOMPLETE,
-    T_COMPLETE
-
-} transition_result_t;
-
 
 
 
@@ -104,5 +72,5 @@ protected:
 };
 
 
-
+#endif // WALKER_H
 
