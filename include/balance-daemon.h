@@ -8,8 +8,11 @@
 typedef struct balance_gains {
 
     double flattening_gain[2];
+    double force_min_threshold[2];
+    double force_max_threshold[2];
 
-    double straightening_gain[2];
+    double straightening_pitch_gain[2];
+    double straightening_roll_gain[2];
     
     double spring_gain[2];
     double damping_gain[2];

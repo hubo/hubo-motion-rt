@@ -15,10 +15,10 @@ typedef struct nudge_state {
 
     Eigen::Vector3d nudge;
     Eigen::Vector3d spin;
-    double larerr; // Left Ankle Roll compliance
-    double laperr; // Left Ankle Pitch compliance
-    double rarerr;
-    double raperr;
+    double ankle_roll_compliance[2];
+    double ankle_pitch_compliance[2];
+    double ankle_roll_resistance[2];
+    double ankle_pitch_resistance[2];
 
     double knee_offset[2];
 
@@ -29,7 +29,6 @@ typedef struct nudge_state {
 
 
 
-const double hipDistance = 0.08843*2.0; // Distance between hip joints
 
 
 
