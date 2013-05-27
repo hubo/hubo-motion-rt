@@ -1,3 +1,5 @@
+
+#include <Hubo_Control.h>
 #include "walker.h"
 
 #define HAVE_HUBO_ACH
@@ -39,6 +41,22 @@ const double fzMin = 10;
 const double fzMax = 50;
 
 const double flatteningGain = 0.02;
+
+// Stance Controllers
+void calibrateBoth( Hubo_Control &hubo );
+void horseStance( Hubo_Control &hubo );
+void craneStance( int side, Hubo_Control &hubo, double dt );
+void craneStance( int side, Vector6d swingVels, Hubo_Control &hubo, double dt );
+
+
+// Horse Stance Quasi-Statics
+bool shiftToDistribution( int side, double distro, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
+bool shiftToSide( int side, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
+bool crouch( double height, Hubo_Control &hubo, double dt );
+
+
+// Crane Stance Quasi-Statics
+bool placeSwingFoot( int side, Eigen::Vector3d footPose, Hubo_Control &hubo, double dt );
 
 
 //const double compPitchGain = 0.0015;
