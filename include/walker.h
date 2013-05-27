@@ -1,5 +1,7 @@
 
 
+#define BALANCE_PARAM_CHAN "balance-param"
+
 
 typedef struct nudge_state {
 
@@ -23,13 +25,13 @@ typedef struct nudge_state {
 
 typedef struct balance_gains {
 
-    flattening_gain[2];
+    double flattening_gain[2];
 
-    straightening_gain[2];
+    double straightening_gain[2];
     
-    spring_gain[2];
-    damping_gain[2];
-    fz_response[2];
+    double spring_gain[2];
+    double damping_gain[2];
+    double fz_response[2];
 
 } balance_gains_t;
 
