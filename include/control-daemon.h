@@ -68,18 +68,6 @@
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
 
-// TODO: Save these as parameters defined in a table instead:
-/*
-const int leftarmjoints[ARM_JOINT_COUNT]  = { LSP, LSR, LSY, LEB, LWY, LWP };
-const int rightarmjoints[ARM_JOINT_COUNT] = { RSP, RSR, RSY, REB, RWY, RWP };
-const int leftlegjoints[LEG_JOINT_COUNT]  = { LHY, LHR, LHP, LKN, LAP, LAR };
-const int rightlegjoints[LEG_JOINT_COUNT] = { RHY, RHR, RHP, RKN, RAP, RAR };
-const int leftfinjoints[FIN_JOINT_COUNT]  = { LF1, LF2, LF3, LF4, LF5 };
-const int rightfinjoints[FIN_JOINT_COUNT]  = { RF1, RF2, RF3, RF4, RF5 };
-const int bodyjoints[BOD_JOINT_COUNT] = { WST };
-const int neckjoints[AUX_JOINT_COUNT] = { NKY, NK1, NK2 };
-*/
-
 
 typedef enum {
     CTRL_OFF    = 0,
@@ -148,7 +136,14 @@ typedef struct hubo_bod_control {
 } hubo_bod_control_t;
 
 typedef struct hubo_ctrl_state {
-    double velocity[HUBO_JOINT_COUNT];
+    
+    double requested_pos[HUBO_JOINT_COUNT];
+    double actual_pos[HUBO_JOINT_COUNT];
+    double requested_vel[HUBO_JOINT_COUNT];
+    double actual_vel[HUBO_JOINT_COUNT];
+    double requested_acc[HUBO_JOINT_COUNT];
+    double actual_acc[HUBO_JOINT_COUNT];
+
     int status[HUBO_JOINT_COUNT];
     int paused;
 } hubo_ctrl_state_t;

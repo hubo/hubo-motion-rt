@@ -1,4 +1,3 @@
-#include <Hubo_Control.h>
 
 
 
@@ -15,12 +14,24 @@ typedef struct nudge_state {
     double rarerr;
     double raperr;
 
+    double knee_offset[2];
+
     Eigen::Vector3d imu_offset;
     
 } nudge_state_t;
 
 
+typedef struct balance_gains {
 
+    flattening_gain[2];
+
+    straightening_gain[2];
+    
+    spring_gain[2];
+    damping_gain[2];
+    fz_response[2];
+
+} balance_gains_t;
 
 
 
@@ -92,20 +103,4 @@ protected:
 
 
 
-
-// Stance Controllers
-void calibrateBoth( Hubo_Control &hubo );
-void horseStance( Hubo_Control &hubo );
-void craneStance( int side, Hubo_Control &hubo, double dt );
-void craneStance( int side, Vector6d swingVels, Hubo_Control &hubo, double dt );
-
-
-// Horse Stance Quasi-Statics
-bool shiftToDistribution( int side, double distro, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
-bool shiftToSide( int side, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
-bool crouch( double height, Hubo_Control &hubo, double dt );
-
-
-// Crane Stance Quasi-Statics
-bool placeSwingFoot( int side, Eigen::Vector3d footPose, Hubo_Control &hubo, double dt );
 

@@ -1,3 +1,5 @@
+
+#include <Hubo_Control.h>
 #include "walker.h"
 
 #define HAVE_HUBO_ACH
@@ -39,6 +41,22 @@ const double fzMin = 10;
 const double fzMax = 50;
 
 const double flatteningGain = 0.02;
+
+// Stance Controllers
+void calibrateBoth( Hubo_Control &hubo );
+void horseStance( Hubo_Control &hubo );
+void craneStance( int side, Hubo_Control &hubo, double dt );
+void craneStance( int side, Vector6d swingVels, Hubo_Control &hubo, double dt );
+
+
+// Horse Stance Quasi-Statics
+bool shiftToDistribution( int side, double distro, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
+bool shiftToSide( int side, Hubo_Control &hubo, Balance_Monitor &trans, double dt );
+bool crouch( double height, Hubo_Control &hubo, double dt );
+
+
+// Crane Stance Quasi-Statics
+bool placeSwingFoot( int side, Eigen::Vector3d footPose, Hubo_Control &hubo, double dt );
 
 
 //const double compPitchGain = 0.0015;
@@ -417,7 +435,7 @@ void integrateNudge( Hubo_Control &hubo, Vector6d &qr, Vector6d& ql,
 void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem, nudge_state_t &state, double dt )
 {
     
-    std::cout << "RFz:" << hubo.getRightFootFz() << "RAP:" << state.raperr << "\tLFz:" << hubo.getLeftFootFz() << "\tLAP:" << state.laperr << std::endl;
+//    std::cout << "RFz:" << hubo.getRightFootFz() << "RAP:" << state.raperr << "\tLFz:" << hubo.getLeftFootFz() << "\tLAP:" << state.laperr << std::endl;
 
     if( fzMin < hubo.getRightFootFz() && hubo.getRightFootFz() < fzMax )
     {
@@ -451,6 +469,7 @@ int main(int argc, char **argv)
 {
     Hubo_Control hubo("walker");
 
+//    fprintf(stdout, "Print something!!\n");
 
 //    HK::HuboKin hkin;
 
@@ -468,7 +487,13 @@ int main(int argc, char **argv)
     size_t fs;
     zmp_traj_t trajectory;
     memset( &trajectory, 0, sizeof(trajectory) );
-    ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, NULL, ACH_O_LAST );
+
+    do {
+        struct timespec t;
+        clock_gettime( ACH_DEFAULT_CLOCK, &t );
+        t.tv_sec += 1;
+        ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, &t, ACH_O_WAIT | ACH_O_LAST );
+    } while(!daemon_sig_quit && r==ACH_TIMEOUT);
 
     fprintf(stderr, "Count: %d\n", (int)trajectory.count);
     for(int i=0; i<trajectory.count; i++)
@@ -496,6 +521,10 @@ int main(int argc, char **argv)
     
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
 
+    while( !daemon_sig_quit && time - stime < 3 ) {
+      hubo.update(true);
+      time = hubo.getTime();
+    }
 
 /*
 //    while( time - stime < 7 )
@@ -531,10 +560,6 @@ int main(int argc, char **argv)
 
     while(!daemon_sig_quit)
     {
-        while( time - stime < 3 ) {
-          hubo.update(true);
-          time = hubo.getTime();
-        }
 
 
         fprintf(stdout, "%d\n", (int)trajectory.count);
@@ -575,7 +600,7 @@ int main(int argc, char **argv)
             clock_gettime( ACH_DEFAULT_CLOCK, &t );
             t.tv_sec += 1;
             r = ach_get( &zmp_chan, &trajectory, sizeof(trajectory), &fs, &t, ACH_O_WAIT | ACH_O_LAST );
-        } while(!daemon_sig_quit && r==ACH_STALE_FRAMES);
+        } while(!daemon_sig_quit && r==ACH_TIMEOUT);
 
 
     }
