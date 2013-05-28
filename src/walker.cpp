@@ -226,9 +226,9 @@ void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
     if( elem.stance == SINGLE_RIGHT )
     {
         state.ankle_pitch_resistance[RIGHT] += dt*gains.straightening_pitch_gain[RIGHT]
-                                                *( hubo.getAngleY() );
+                                                 *( hubo.getAngleY() );
         state.ankle_roll_resistance[RIGHT]  += dt*gains.straightening_roll_gain[RIGHT]
-                                                *( hubo.getAngleX() );
+                                                 *( hubo.getAngleX() );
     }
     
     elem.angles[RAR] += state.ankle_roll_resistance[RIGHT];
@@ -241,12 +241,26 @@ void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-    if( elem.stance == SINGLE_LEFT )
-    {
-        
-    }
+    state.knee_velocity_offset[LEFT] =
+                   gains.spring_gain[LEFT]*( elem.angles[LKN] - hubo.getJointAngle(LKN))
+                 + gains.damping_gain[LEFT]*( -state.knee_velocity_offset[LEFT] )
+                 + gains.fz_response[LEFT]*( hubo.getLeftFootFz() );
 
+    state.knee_velocity_offset[RIGHT] =
+                   gains.spring_gain[RIGHT]*( elem.angles[LKN] - hubo.getJointAngle(LKN))
+                 + gains.damping_gain[RIGHT]*( -state.knee_velocity_offset[RIGHT] )
+                 + gains.fz_response[RIGHT]*( hubo.getRightFootFz() );
+   
+    for(int i=0; i<2; i++)
+        state.knee_offset[i] += dt*state.knee_velocity_offset[i];
 
+    elem.angles[LAP] += -state.knee_offset[LEFT]/2.0;
+    elem.angles[LKN] += state.knee_offset[LEFT]/2.0;
+    elem.angles[LHP] += -state.knee_offset[LEFT]/2.0;
+
+    elem.angles[RAP] += -state.knee_offset[RIGHT]/2.0;
+    elem.angles[RKN] += state.knee_offset[RIGHT];
+    elem.angles[RHP] += -state.knee_offset[RIGHT]/2.0;
 }
 
 
@@ -254,13 +268,6 @@ int main(int argc, char **argv)
 {
     Hubo_Control hubo("walker");
 
-//    fprintf(stdout, "Print something!!\n");
-
-//    HK::HuboKin hkin;
-
-//    hkin.kc.leg_l1 = 0; // eliminate neck -> waist Z distance
-//    hkin.kc.leg_l3 = 0; // eliminate waist -> hip Z distance
-//    hkin.kc.leg_l6 = 0; // eliminate ankle -> foot Z distance
 
     nudge_state_t state;
     balance_gains_t gains;
@@ -334,35 +341,37 @@ int main(int argc, char **argv)
         fprintf(stdout, "%d\n", (int)trajectory.count);
         for(int t=1; t<trajectory.count-1; t++)
         {
-
+            zmp_traj_element_t alteredElem;
+            memcpy( &alteredElem, &trajectory.traj[t], sizeof(alteredElem) );
+            
             hubo.update(true);
             dt = hubo.getTime() - time;
             time = hubo.getTime();
 
             ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
 
-            flattenFoot( hubo, trajectory.traj[t], state, gains, dt );
-            straightenBack( hubo, trajectory.traj[t], state, gains, dt );
-            complyKnee( hubo, trajectory.traj[t], state, gains, dt );
-            //nudgeRefs( hubo, trajectory.traj[t], state, dt, hkin ); //vprev, verr, dt );
+            flattenFoot( hubo, alteredElem, state, gains, dt );
+            straightenBack( hubo, alteredElem, state, gains, dt );
+            complyKnee( hubo, alteredElem, state, gains, dt );
+            //nudgeRefs( hubo, alteredElem, state, dt, hkin ); //vprev, verr, dt );
             for(int i=0; i<HUBO_JOINT_COUNT; i++)
             {
-                hubo.setJointAngle( i, trajectory.traj[t].angles[i] );
+                hubo.setJointAngle( i, alteredElem.angles[i] );
                 hubo.setJointNominalSpeed( i,
-                       (trajectory.traj[t].angles[i]-trajectory.traj[t-1].angles[i])*ZMP_TRAJ_FREQ_HZ );
+                       (alteredElem.angles[i]-trajectory.traj[t-1].angles[i])*ZMP_TRAJ_FREQ_HZ );
                 double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
                                     trajectory.traj[t-1].angles[i]
-                                - 2*trajectory.traj[t].angles[i]
+                                - 2*alteredElem.angles[i]
                                 +   trajectory.traj[t+1].angles[i] );
                 hubo.setJointNominalAcceleration( i, 10*accel );
             }
 
 
-            hubo.setJointAngle( RSR, trajectory.traj[t].angles[RSR] + hubo.getJointAngleMax(RSR) );
-            hubo.setJointAngle( LSR, trajectory.traj[t].angles[LSR] + hubo.getJointAngleMin(LSR) );
+            hubo.setJointAngle( RSR, alteredElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
+            hubo.setJointAngle( LSR, alteredElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
 
-            hubo.setJointAngleMin( LHR, trajectory.traj[t].angles[RHR] );
-            hubo.setJointAngleMax( RHR, trajectory.traj[t].angles[LHR] );
+            hubo.setJointAngleMin( LHR, alteredElem.angles[RHR] );
+            hubo.setJointAngleMax( RHR, alteredElem.angles[LHR] );
             hubo.sendControls();
         }
 

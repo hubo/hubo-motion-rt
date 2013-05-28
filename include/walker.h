@@ -15,12 +15,14 @@ typedef struct nudge_state {
 
     Eigen::Vector3d nudge;
     Eigen::Vector3d spin;
+
     double ankle_roll_compliance[2];
     double ankle_pitch_compliance[2];
     double ankle_roll_resistance[2];
     double ankle_pitch_resistance[2];
 
     double knee_offset[2];
+    double knee_velocity_offset[2];
 
     Eigen::Vector3d imu_offset;
     
