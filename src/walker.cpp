@@ -215,16 +215,36 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-//    if( 
-    
+    if( elem.stance == SINGLE_LEFT )
+    {
+        state.ankle_pitch_resistance[LEFT] += dt*gains.straightening_pitch_gain[LEFT]
+                                                *( hubo.getAngleY() );
+        state.ankle_roll_resistance[LEFT]  += dt*gains.straightening_roll_gain[LEFT]
+                                                *( hubo.getAngleX() );
+    }
 
+    if( elem.stance == SINGLE_RIGHT )
+    {
+        state.ankle_pitch_resistance[RIGHT] += dt*gains.straightening_pitch_gain[RIGHT]
+                                                *( hubo.getAngleY() );
+        state.ankle_roll_resistance[RIGHT]  += dt*gains.straightening_roll_gain[RIGHT]
+                                                *( hubo.getAngleX() );
+    }
+    
+    elem.angles[RAR] += state.ankle_roll_resistance[RIGHT];
+    elem.angles[RAP] += state.ankle_pitch_resistance[RIGHT];
+    elem.angles[LAR] += state.ankle_roll_resistance[LEFT];
+    elem.angles[LAP] += state.ankle_pitch_resistance[LEFT];
 
 }
 
 void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-
+    if( elem.stance == SINGLE_LEFT )
+    {
+        
+    }
 
 
 }
