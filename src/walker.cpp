@@ -12,7 +12,10 @@
 ach_channel_t zmp_chan;
 ach_channel_t param_chan;
 
+const double jointSpaceTolerance = 0.075;
+const double jointVelContTol = 6.0; // Joint trajectory velocity-based continuity tolerance
 
+const double tau_dead_band = 1;
 
 /*
 const double nudgePGain = 0.04;
@@ -22,7 +25,6 @@ const double nudgeDGain = 0.0;
 
 
 /* Set by balance param struct now
-const double jointSpaceTolerance = 0.075;
 
 const double hipDistance = 0.08843*2.0; // Distance between hip joints
 
@@ -41,7 +43,6 @@ const double nudge_max_norm = 0.05; // m
 const double spin_max_angle = 30 * M_PI/180;
 const double comp_max_angle = 30 * M_PI/180;
 
-const double tau_dead_band = 1;
 
 
 const double fzMin = 10;
@@ -50,7 +51,6 @@ const double fzMax = 50;
 const double flatteningGain = 0.02;
 */
 
-const double jointVelContTol = 6.0; // Joint trajectory velocity-based continuity tolerance
 
 
 double applyDeadband( double x ) {
@@ -70,12 +70,13 @@ static inline void clamp(double& x, double cap) {
 }
 
 
-void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &currentElem,
-            zmp_traj_element &prevElem, &gains, double dt );
+void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
+            zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
+            nudge_state_t &state, balance_gains_t &gains, double dt );
 
 
-bool checkForNewTrajectory(zmp_traj_t &newTrajectory);
-bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt )
+bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready);
+bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt );
 
 
 void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
@@ -84,7 +85,8 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
     
 //    std::cout << "RFz:" << hubo.getRightFootFz() << "RAP:" << state.ankle_pitch_compliance[RIGHT] << "\tLFz:" << hubo.getLeftFootFz() << "\tLAP:" << state.ankle_pitch_compliance[LEFT] << std::endl;
 
-    if( fzMin < hubo.getRightFootFz() && hubo.getRightFootFz() < fzMax )
+    if( gains.force_min_threshold[RIGHT] < hubo.getRightFootFz() 
+     && hubo.getRightFootFz() < gains.force_max_threshold[RIGHT] )
     {
         std::cout << "Flattening Right Foot" << std::endl;
         state.ankle_roll_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
@@ -93,7 +95,8 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
                                                  *( hubo.getRightFootMy() );
     }
 
-    if( fzMin < hubo.getLeftFootFz() && hubo.getLeftFootFz() < fzMax )
+    if( gains.force_min_threshold[LEFT] < hubo.getLeftFootFz()
+     && hubo.getLeftFootFz() < gains.force_max_threshold[LEFT] )
     {
         std::cout<< "Flattening Left Foot" << std::endl;
         state.ankle_roll_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
@@ -237,7 +240,7 @@ int main(int argc, char **argv)
 
     if( time-stime >= maxWait )
         fprintf(stderr, "Warning: could not reach the starting currentTrajectory within 15 seconds");
-    daemon_assert( time-stime < maxWait );
+    daemon_assert( time-stime < maxWait, __LINE__ );
 
     timeIndex = 1;
     while(!daemon_sig_quit)
@@ -253,17 +256,19 @@ int main(int argc, char **argv)
             nextTimeIndex = timeIndex+1;
             executeTimeStep( hubo, prevTrajectory.traj[prevTimeIndex],
                                    currentTrajectory.traj[timeIndex],
-                                   currentTrajectory.traj[nextTimeIndex] );
+                                   currentTrajectory.traj[nextTimeIndex],
+                                   state, gains, dt );
         }
         else if( timeIndex == currentTrajectory.periodEndTick && haveNewTrajectory )
         {
             if( validateNextTrajectory( currentTrajectory.traj[timeIndex],
-                                        nextTrajectory.traj[0] ) )
+                                        nextTrajectory.traj[0], dt ) )
             {
                 nextTimeIndex = 0;
                 executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                        currentTrajectory.traj[timeIndex],
-                                       nextTrajectory.traj[nextTimeIndex] );
+                                       nextTrajectory.traj[nextTimeIndex],
+                                       state, gains, dt );
                 
                 memcpy( &prevTrajectory, &currentTrajectory, sizeof(prevTrajectory) );
                 memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
@@ -275,7 +280,8 @@ int main(int argc, char **argv)
                 nextTimeIndex = timeIndex+1;
                 executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                        currentTrajectory.traj[timeIndex],
-                                       currentTrajectory.traj[nextTimeIndex] );
+                                       currentTrajectory.traj[nextTimeIndex],
+                                       state, gains, dt );
             }
             haveNewTrajectory = false;
         }
@@ -285,7 +291,7 @@ int main(int argc, char **argv)
             executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                    currentTrajectory.traj[timeIndex],
                                    currentTrajectory.traj[nextTimeIndex],
-                                   gains, dt );
+                                   state, gains, dt );
         }
         else if( timeIndex < currentTrajectory.count-1 && !haveNewTrajectory )
         {
@@ -293,17 +299,18 @@ int main(int argc, char **argv)
             executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                    currentTrajectory.traj[timeIndex],
                                    currentTrajectory.traj[nextTimeIndex],
-                                   gains, dt );
+                                   state, gains, dt );
         }
         else if( timeIndex == currentTrajectory.count-1 && haveNewTrajectory )
         {
             if( validateNextTrajectory( currentTrajectory.traj[timeIndex],
-                                        nextTrajectory.traj[0] ) )
+                                        nextTrajectory.traj[0], dt ) )
             {
                 nextTimeIndex = 0;
                 executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                        currentTrajectory.traj[timeIndex],
-                                       nextTrajectory.traj[nextTimeIndex] );
+                                       nextTrajectory.traj[nextTimeIndex],
+                                       state, gains, dt );
                 
                 memcpy( &prevTrajectory, &currentTrajectory, sizeof(prevTrajectory) );
                 memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
@@ -349,7 +356,7 @@ bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &ne
 
 void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            &gains, double dt )
+            nudge_state_t &state, balance_gains_t &gains, double dt )
 {
         flattenFoot( hubo, currentElem, state, gains, dt );
         straightenBack( hubo, currentElem, state, gains, dt );
@@ -360,9 +367,9 @@ void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
         {
             hubo.setJointAngle( i, currentElem.angles[i] );
             hubo.setJointNominalSpeed( i,
-                   (currentElem.angles[i]-previousElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
+                   (currentElem.angles[i]-prevElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
             double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
-                                previousElem.angles[i]
+                                prevElem.angles[i]
                             - 2*currentElem.angles[i]
                             +   nextElem.angles[i] );
             hubo.setJointNominalAcceleration( i, 10*accel );
