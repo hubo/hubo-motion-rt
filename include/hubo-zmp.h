@@ -36,7 +36,8 @@ typedef struct zmp_traj {
   zmp_traj_element_t traj[ZMP_MAX_TRAJ_SIZE];
   size_t count;
   size_t trajNumber;
-  size_t startTick;
+  size_t periodStartTick;
+  size_t periodEndTick;
   bool reuse;
 } zmp_traj_t;
 
