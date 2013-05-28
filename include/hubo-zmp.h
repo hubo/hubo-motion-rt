@@ -14,22 +14,6 @@ enum stance_t {
   SINGLE_RIGHT = 3
 };
 
-enum walkState_t {
-  WALKING_FORWARD = 0,
-  WALKING_BACKWARD,
-  SIDESTEPPING_LEFT,
-  SIDESTEPPING_RIGHT,
-  STOP
-};
-
-enum walkTransition_t {
-  STAY_STILL = 0,
-  KEEP_WALKING,
-  SWITCH_WALK,
-  WALK_TO_STOP
-};
-
-
 enum {
   ZMP_TRAJ_FREQ_HZ = 200,
   ZMP_MAX_TRAJ_SIZE = 2000
@@ -53,8 +37,7 @@ typedef struct zmp_traj {
   size_t count;
   size_t trajNumber;
   size_t startTick;
-  walkState_t walkState;
-  walkTransition_t walkTransition;
+  bool reuse;
 } zmp_traj_t;
 
 /*
