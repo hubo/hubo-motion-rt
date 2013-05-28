@@ -16,13 +16,13 @@ huboctrlconfdir=/etc/hubo-ach
 huboctrlconf_DATA = tables/control.table
 
 control_daemon_SOURCES = src/control-daemon.c
-control_daemon_LDADD = -lm -lach -lc libdaemonizer.la -lhuboparams
+control_daemon_LDADD = -lm -lrt -lach -lc libdaemonizer.la -lhuboparams
 
 manip_daemon_SOURCES = src/manip-daemon.cpp
-manip_daemon_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
+manip_daemon_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 trajectory_run_SOURCES = src/trajectory-run.cpp
-trajectory_run_LDADD = -lm -lach libhuboctrl.la libdaemonizer.la -lhuboparams
+trajectory_run_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
 
 walker_SOURCES = src/walker.cpp
 walker_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
@@ -33,4 +33,4 @@ libdaemonizer_la_SOURCES = src/daemonizer.c
 libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
 libhuboctrl_la_SOURCES = src/Hubo_Control.cpp
 libhuboctrl_la_LDFLAGS = -module -avoid-version -shared
-#libhuboctrl_la_LIBADD = -lm -lach -lhuboparams
+#libhuboctrl_la_LIBADD = -lm -lach

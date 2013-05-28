@@ -80,7 +80,6 @@ void Hubo_Control::controlInit()
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
-    memset( &H_Param, 0, sizeof(H_Param) );
 
     memset( H_Arm_Ctrl,  0, 2*sizeof(H_Arm_Ctrl[0]) );
     memset( H_Leg_Ctrl,  0, 2*sizeof(H_Leg_Ctrl[0]) );
@@ -93,7 +92,6 @@ void Hubo_Control::controlInit()
 
     memset( jointAngleCalibration, 0, sizeof(jointAngleCalibration[0])*HUBO_JOINT_COUNT );
 
-    setJointParams( &H_Param, &H_State );
 
     for(int i=0; i<8; i++)
         ctrlOn[i] = false;

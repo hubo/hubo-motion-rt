@@ -50,7 +50,6 @@ extern "C" {
 // For Hubo
 #include "hubo.h"
 #include "control-daemon.h"
-#include "hubo-jointparams.h"
 }
 #include <iostream>
 
@@ -977,7 +976,6 @@ protected:
     hubo_bod_control_t H_Bod_Ctrl_Default;
     hubo_nck_control_t H_Nck_Ctrl_Default;
     
-    hubo_param_t H_Param;
 
     int armjoints[2][ARM_JOINT_COUNT];
     int legjoints[2][LEG_JOINT_COUNT];
