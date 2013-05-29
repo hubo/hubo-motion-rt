@@ -12,7 +12,7 @@
 ach_channel_t zmp_chan;
 ach_channel_t param_chan;
 
-const double jointSpaceTolerance = 0.075;
+const double jointSpaceTolerance = 0.02;
 const double jointVelContTol = 6.0; // Joint trajectory velocity-based continuity tolerance
 
 const double tau_dead_band = 1;
@@ -230,28 +230,40 @@ int main(int argc, char **argv)
 
     hubo.sendControls();
 
-    double maxWait = 15;
+    double maxWait = 10;
+    double biggestErr = 0;
+    int worstJoint=-1;
     
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
     double norm = jointSpaceTolerance+1; // make sure this fails initially
     while( !daemon_sig_quit && (norm > jointSpaceTolerance && time-stime < maxWait)) {
-      hubo.update(true);
-      norm = 0;
-      for(int i=0; i<HUBO_JOINT_COUNT; i++)
-          norm += (hubo.getJointAngleState( i )-currentTrajectory.traj[0].angles[i])
-                   *(hubo.getJointAngleState( i )-currentTrajectory.traj[0].angles[i]);
-      norm = sqrt(norm);
-      time = hubo.getTime();
-      std::cout << "Actual RSP:" << hubo.getJointAngle(RSP)
-                << "\tReq RSP:" << currentTrajectory.traj[0].angles[RSP]
-                << "\tVel RSP:" << hubo.getJointNominalSpeed(RSP);
-      std::cout << "\tActual LSP:" << hubo.getJointAngleState(LSP)
-                << "\tReq LSP:" << currentTrajectory.traj[0].angles[LSP] << std::endl;
-      
+        hubo.update(true);
+        norm = 0;
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        {
+            double err=0;
+            if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+             && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i )
+                err = (hubo.getJointAngleState( i )-currentTrajectory.traj[0].angles[i]);
+            if( LSR == i )
+                err -= hubo.getJointAngleMin(i);
+            if( RSR == i )
+                err -= hubo.getJointAngleMax(i);
+
+            norm += err*err;
+            if( fabs(err) > fabs(biggestErr) )
+            {
+                biggestErr = err;
+                worstJoint = i;
+            }
+        }
+        norm = sqrt(norm); std::cout << "norm:" << norm << "\tbiggest error:" << biggestErr << std::endl;
+        time = hubo.getTime();
     }
 
     if( time-stime >= maxWait )
-        fprintf(stderr, "Warning: could not reach the starting Trajectory within 15 seconds\n");
+        fprintf(stderr, "Warning: could not reach the starting Trajectory within 15 seconds\n"
+                        " -- Biggest error was %f radians in joint %s\n", biggestErr, jointNames[worstJoint] );
     daemon_assert( time-stime < maxWait, __LINE__ );
 
     timeIndex = 1;

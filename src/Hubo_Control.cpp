@@ -1407,7 +1407,7 @@ double Hubo_Control::getJointErrorMax(int joint)
 double Hubo_Control::getJointAngleState(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_State.joint[joint].pos - jointAngleCalibration[joint];
+        return H_State.joint[joint].pos; //- jointAngleCalibration[joint];
     else
         return 0;
 }
