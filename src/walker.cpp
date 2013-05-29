@@ -88,21 +88,23 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
     if( gains.force_min_threshold[RIGHT] < hubo.getRightFootFz() 
      && hubo.getRightFootFz() < gains.force_max_threshold[RIGHT] )
     {
-        std::cout << "Flattening Right Foot" << std::endl;
         state.ankle_roll_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
                                                 *( hubo.getRightFootMx() );
         state.ankle_pitch_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
                                                  *( hubo.getRightFootMy() );
+        std::cout << "Flattening Right Foot" << "\troll:" << state.ankle_roll_compliance[RIGHT]
+                  << "\tpitch:" << state.ankle_pitch_compliance[RIGHT] << std::endl;
     }
 
     if( gains.force_min_threshold[LEFT] < hubo.getLeftFootFz()
      && hubo.getLeftFootFz() < gains.force_max_threshold[LEFT] )
     {
-        std::cout<< "Flattening Left Foot" << std::endl;
         state.ankle_roll_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
                                                *( hubo.getLeftFootMx() );
         state.ankle_pitch_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
                                                 *( hubo.getLeftFootMy() );
+        std::cout<< "Flattening Left Foot" << "\troll:" << state.ankle_roll_compliance[LEFT]
+                  << "\tpitch:" << state.ankle_pitch_compliance[LEFT] << std::endl;
     }
 
     elem.angles[RAR] += state.ankle_roll_compliance[RIGHT];
@@ -243,7 +245,8 @@ int main(int argc, char **argv)
         {
             double err=0;
             if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
-             && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i )
+             && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+             && NK1!=i && NK2!=i && NKY!=i )
                 err = (hubo.getJointAngleState( i )-currentTrajectory.traj[0].angles[i]);
             if( LSR == i )
                 err -= hubo.getJointAngleMin(i);
@@ -384,28 +387,28 @@ void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
             nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-        flattenFoot( hubo, currentElem, state, gains, dt );
-        straightenBack( hubo, currentElem, state, gains, dt );
-        complyKnee( hubo, currentElem, state, gains, dt );
-        //nudgeRefs( hubo, currentElem, state, dt, hkin ); //vprev, verr, dt );
+    flattenFoot( hubo, currentElem, state, gains, dt );
+    straightenBack( hubo, currentElem, state, gains, dt );
+    complyKnee( hubo, currentElem, state, gains, dt );
+    //nudgeRefs( hubo, currentElem, state, dt, hkin ); //vprev, verr, dt );
 
-        for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        {
-            hubo.setJointAngle( i, currentElem.angles[i] );
-            hubo.setJointNominalSpeed( i,
-                   (currentElem.angles[i]-prevElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
-            double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
-                                prevElem.angles[i]
-                            - 2*currentElem.angles[i]
-                            +   nextElem.angles[i] );
-            hubo.setJointNominalAcceleration( i, 10*accel );
-        }
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+    {
+        hubo.setJointAngle( i, currentElem.angles[i] );
+        hubo.setJointNominalSpeed( i,
+               (currentElem.angles[i]-prevElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
+        double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
+                            prevElem.angles[i]
+                        - 2*currentElem.angles[i]
+                        +   nextElem.angles[i] );
+        hubo.setJointNominalAcceleration( i, 10*accel );
+    }
 
 
-        hubo.setJointAngle( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
-        hubo.setJointAngle( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
+    hubo.setJointAngle( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
+    hubo.setJointAngle( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
 
-        hubo.setJointAngleMin( LHR, currentElem.angles[RHR] );
-        hubo.setJointAngleMax( RHR, currentElem.angles[LHR] );
-        hubo.sendControls();
+    hubo.setJointAngleMin( LHR, currentElem.angles[RHR] );
+    hubo.setJointAngleMax( RHR, currentElem.angles[LHR] );
+    hubo.sendControls();
 }
