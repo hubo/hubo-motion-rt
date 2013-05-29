@@ -8,9 +8,9 @@ init_ddir = /etc/init.d
 init_d_SCRIPTS = scripts/hubo-motion
 
 # installed under $prefix/include/
-include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h
+include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h include/hubo-zmp.h
 
-bin_PROGRAMS = control-daemon proto-manip-daemon
+bin_PROGRAMS = control-daemon 
 
 huboctrlconfdir=/etc/hubo-ach
 huboctrlconf_DATA = tables/control.table
