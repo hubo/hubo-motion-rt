@@ -51,6 +51,7 @@ HUBO_TRAJ_STATE_CHAN='hubo-traj-state'
 HUBO_FULLBODY_TRAJ_CHAN='hubo-traj'
 HUBO_ZMP_CMD_CHAN='hubo-zmp-cmd'
 HUBO_ZMP_TRAJ_CHAN='hubo-zmp-traj'
+HUBO_BAL_PARAM_CHAN='balance-param'
 LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
@@ -92,25 +93,24 @@ Ach()
         sudo ach -U $HUBO_MANIP_PARAM_CHAN
         sudo ach -U $HUBO_MANIP_TRAJ_CHAN
         sudo ach -U $HUBO_ZMP_TRAJ_CHAN
-	sudo ach -U $HUBO_ZMP_CMD_CHAN
-	sudo ach -U $HUBO_ZMP_TRAJ_CHAN
+        sudo ach -U $HUBO_ZMP_CMD_CHAN
 
 	;;	
 
 	*)
 
         sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 6000 -o 666
-		sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
-		sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_BOD_CTRL_CHAN      -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_NCK_CTRL_CHAN      -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
+        sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BOD_CTRL_CHAN      -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_NCK_CTRL_CHAN      -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_STATE_CHAN   -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN   -m 10 -n 3000 -o 666
@@ -119,6 +119,7 @@ Ach()
         sudo ach -1 -C $HUBO_ZMP_CMD_CHAN       -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_FULLBODY_TRAJ_CHAN -m 3  -n 1000000 -o 666
         sudo ach -1 -C $HUBO_TRAJ_STATE_CHAN    -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BAL_PARAM_CHAN    -m 10 -n 3000 -o 666
 
 	;;
 	esac

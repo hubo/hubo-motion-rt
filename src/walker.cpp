@@ -169,7 +169,8 @@ void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo("walker");
+//    Hubo_Control hubo("walker");
+    Hubo_Control hubo;
 
     int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
 
@@ -192,17 +193,21 @@ int main(int argc, char **argv)
     memset( &currentTrajectory, 0, sizeof(currentTrajectory) );
     memset( &nextTrajectory, 0, sizeof(nextTrajectory) );
 
+    fprintf(stdout, "Waiting for first trajectory\n"); fflush(stdout);
     do {
         struct timespec t;
         clock_gettime( ACH_DEFAULT_CLOCK, &t );
         t.tv_sec += 1;
-        ach_get( &zmp_chan, &currentTrajectory, sizeof(currentTrajectory), &fs, &t, ACH_O_WAIT | ACH_O_LAST );
+        r = ach_get( &zmp_chan, &currentTrajectory, sizeof(currentTrajectory), &fs,
+                    &t, ACH_O_WAIT | ACH_O_LAST );
     } while(!daemon_sig_quit && r==ACH_TIMEOUT);
+
+    if(!daemon_sig_quit)
+        fprintf(stdout, "First trajectory acquired\t");
+        
     daemon_assert( ACH_TIMEOUT != r, __LINE__ );
 
-    fprintf(stderr, "Count: %d\n", (int)currentTrajectory.count);
-//    for(int i=0; i<currentTrajectory.count; i++)
-//        fprintf(stdout, "%d: RHR %f\n", i, currentTrajectory.traj[i].angles[RHR] );
+    fprintf(stdout, "Count: %d\n", (int)currentTrajectory.count); fflush(stdout);
 
     ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
 
@@ -213,7 +218,8 @@ int main(int argc, char **argv)
         hubo.setJointNominalSpeed( i, 0.4 );
         hubo.setJointNominalAcceleration( i, 0.4 );
     }
-
+    
+    hubo.setJointAngle(RSP, 0.34);
     hubo.setJointNominalSpeed( RKN, 0.8 );
     hubo.setJointNominalAcceleration( RKN, 0.8 );
     hubo.setJointNominalSpeed( LKN, 0.8 );
@@ -236,13 +242,20 @@ int main(int argc, char **argv)
                    *(hubo.getJointAngleState( i )-currentTrajectory.traj[0].angles[i]);
       norm = sqrt(norm);
       time = hubo.getTime();
+      std::cout << "Actual RSP:" << hubo.getJointAngle(RSP)
+                << "\tReq RSP:" << currentTrajectory.traj[0].angles[RSP]
+                << "\tVel RSP:" << hubo.getJointNominalSpeed(RSP);
+      std::cout << "\tActual LSP:" << hubo.getJointAngleState(LSP)
+                << "\tReq LSP:" << currentTrajectory.traj[0].angles[LSP] << std::endl;
+      
     }
 
     if( time-stime >= maxWait )
-        fprintf(stderr, "Warning: could not reach the starting currentTrajectory within 15 seconds");
+        fprintf(stderr, "Warning: could not reach the starting Trajectory within 15 seconds\n");
     daemon_assert( time-stime < maxWait, __LINE__ );
 
     timeIndex = 1;
+    fprintf(stdout, "Beginning main loop\n"); fflush(stdout);
     while(!daemon_sig_quit)
     {
         bool haveNewTrajectory = checkForNewTrajectory(nextTrajectory, haveNewTrajectory);
@@ -272,10 +285,11 @@ int main(int argc, char **argv)
                 
                 memcpy( &prevTrajectory, &currentTrajectory, sizeof(prevTrajectory) );
                 memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
+                fprintf(stderr, "Notice: Swapping in new trajectory\n");
             }
             else
             {
-                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Walking to a stop.");
+                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Walking to a stop.\n");
 
                 nextTimeIndex = timeIndex+1;
                 executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
@@ -293,7 +307,7 @@ int main(int argc, char **argv)
                                    currentTrajectory.traj[nextTimeIndex],
                                    state, gains, dt );
         }
-        else if( timeIndex < currentTrajectory.count-1 && !haveNewTrajectory )
+        else if( timeIndex < currentTrajectory.count-1 )
         {
             nextTimeIndex = timeIndex+1;
             executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
@@ -316,7 +330,7 @@ int main(int argc, char **argv)
                 memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
             }
             else
-                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Discarding it.");
+                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Discarding it.\n");
 
             haveNewTrajectory = false;
         }
