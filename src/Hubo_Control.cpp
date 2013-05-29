@@ -139,9 +139,9 @@ void Hubo_Control::controlInit()
     ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_WAIT );
     ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
 
-    ach_result_t checkCtrl;
+    ach_status_t checkCtrl;
 
-    quitSec = 0.5;
+    double quitSec = 0.5;
     struct timespec waitTime;
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -152,7 +152,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),
@@ -160,7 +160,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]),
@@ -168,7 +168,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),
@@ -176,7 +176,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]),
@@ -184,7 +184,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),
@@ -192,7 +192,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_bod_ctrl, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl),
@@ -200,7 +200,7 @@ void Hubo_Control::controlInit()
     assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
-    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
     waitTime.tv_sec += (int)(nanoWait/1E9);
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_nck_ctrl, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl),
