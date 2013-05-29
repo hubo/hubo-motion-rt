@@ -83,7 +83,12 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 			nudge_state_t &state, balance_gains_t &gains, double dt )
 {
     
-//    std::cout << "RFz:" << hubo.getRightFootFz() << "RAP:" << state.ankle_pitch_compliance[RIGHT] << "\tLFz:" << hubo.getLeftFootFz() << "\tLAP:" << state.ankle_pitch_compliance[LEFT] << std::endl;
+     
+    state.ankle_roll_compliance[LEFT] -= gains.decay_gain[LEFT]*state.ankle_roll_compliance[LEFT];
+    state.ankle_roll_compliance[RIGHT] -= gains.decay_gain[RIGHT]*state.ankle_roll_compliance[RIGHT];
+
+    state.ankle_pitch_compliance[LEFT] -= gains.decay_gain[LEFT]*state.ankle_pitch_compliance[LEFT];
+    state.ankle_pitch_compliance[RIGHT] -= gains.decay_gain[RIGHT]*state.ankle_pitch_compliance[RIGHT];
 
     if( gains.force_min_threshold[RIGHT] < hubo.getRightFootFz() 
      && hubo.getRightFootFz() < gains.force_max_threshold[RIGHT] )
@@ -106,6 +111,7 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
         std::cout<< "Flattening Left Foot" << "\troll:" << state.ankle_roll_compliance[LEFT]
                   << "\tpitch:" << state.ankle_pitch_compliance[LEFT] << std::endl;
     }
+
 
     elem.angles[RAR] += state.ankle_roll_compliance[RIGHT];
     elem.angles[RAP] += state.ankle_pitch_compliance[RIGHT];

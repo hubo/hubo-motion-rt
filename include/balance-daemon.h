@@ -8,6 +8,7 @@
 typedef struct balance_gains {
 
     double flattening_gain[2];
+    double decay_gain[2];
     double force_min_threshold[2];
     double force_max_threshold[2];
 
