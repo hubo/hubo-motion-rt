@@ -17,6 +17,8 @@ const double jointVelContTol = 6.0; // Joint trajectory velocity-based continuit
 
 const double tau_dead_band = 1;
 
+FILE* fp;
+
 /*
 const double nudgePGain = 0.04;
 const double nudgeIGain = 0.2;
@@ -74,7 +76,7 @@ void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
             nudge_state_t &state, balance_gains_t &gains, double dt );
 
-
+void printStats( Hubo_Control &hubo, zmp_traj_element &currentElem );
 bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready);
 bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt );
 
@@ -180,6 +182,8 @@ int main(int argc, char **argv)
 //    Hubo_Control hubo("walker");
     Hubo_Control hubo;
 
+    fp = fopen("/home/grey/walkStats.txt", "w");
+
     int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
 
     nudge_state_t state;
@@ -276,12 +280,16 @@ int main(int argc, char **argv)
     daemon_assert( time-stime < maxWait, __LINE__ );
 
     timeIndex = 1;
+    bool haveNewTrajectory = false;
     fprintf(stdout, "Beginning main loop\n"); fflush(stdout);
     while(!daemon_sig_quit)
     {
-        bool haveNewTrajectory = checkForNewTrajectory(nextTrajectory, haveNewTrajectory);
+        haveNewTrajectory = checkForNewTrajectory(nextTrajectory, haveNewTrajectory);
         ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
         hubo.update(true);
+
+//        printStats( hubo, currentTrajectory.traj[timeIndex] );
+
         dt = hubo.getTime() - time;
         time = hubo.getTime();
 
@@ -361,6 +369,8 @@ int main(int argc, char **argv)
         timeIndex = nextTimeIndex;
     }
 
+    fclose(fp);
+
 }
 
 
@@ -373,7 +383,10 @@ bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready)
     ach_status_t r = ach_get( &zmp_chan, &newTrajectory, sizeof(newTrajectory), &fs, NULL, ACH_O_LAST );
 
     if( ACH_OK==r || ACH_MISSED_FRAME==r )
+    {
+        fprintf(stdout, "Noticed new trajectory: ID #%d\n", (int)newTrajectory.trajNumber);
         return true;
+    }
     else
         return haveNewTrajAlready || false;
 
@@ -418,3 +431,25 @@ void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR] );
     hubo.sendControls();
 }
+
+
+void printStats( Hubo_Control &hubo, zmp_traj_element &elem )
+{
+    // A: actual
+    // P: predicted
+    // left_mx[A/P], right_mx[A/P], left_my[A/P], right_my[A/P], left_fz[A/P], right_fz[A/P], zmp_y
+    fprintf( fp, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",
+                    hubo.getLeftFootMx(), elem.torque[LEFT][0],
+                    hubo.getRightFootMx(), elem.torque[RIGHT][0],
+                    hubo.getLeftFootMy(), elem.torque[LEFT][1],
+                    hubo.getRightFootMy(), elem.torque[RIGHT][1],
+                    hubo.getLeftFootFz(), elem.forces[LEFT][2],
+                    hubo.getRightFootFz(), elem.forces[RIGHT][2], 
+                    elem.zmp[1] );
+
+}
+
+
+
+
+

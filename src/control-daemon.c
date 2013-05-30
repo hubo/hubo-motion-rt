@@ -209,6 +209,9 @@ void controlLoop()
         {
             daemon_assert( sizeof(H_state) == fs, __LINE__ );
 
+            t = H_state.time;
+            dt = t - t0;
+
             if( dt > 0 )
             {
                 for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -228,9 +231,7 @@ void controlLoop()
                     C_state.requested_acc[i] = (V[i]-V0[i])/dt;
 
                     V0[i] = V[i];
-                    t = H_state.time;
                     timeElapse[i] += dt;
-                    dt = t - t0;
                 }
 
                 memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
