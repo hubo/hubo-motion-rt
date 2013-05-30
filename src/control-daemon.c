@@ -184,7 +184,7 @@ void controlLoop()
     }
 
     double t0 = H_state.time;
-    double t, dt, err;
+    double t = H_state.time, dt, err;
     dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
@@ -211,6 +211,7 @@ void controlLoop()
 
             t = H_state.time;
             dt = t - t0;
+            t0 = t;
 
             if( dt > 0 )
             {
@@ -455,7 +456,6 @@ void controlLoop()
         else if( dt < 0 )
             fprintf(stderr, "Congratulations! You have traveled backwards"
                             " through time by %f seconds!", -dt);
-        t0 = t;
 
         fflush(stdout);
         fflush(stderr);
