@@ -281,6 +281,11 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
         dt = hubo.getTime() - time;
         time = hubo.getTime();
+        if( dt <= 0 )
+        {
+            fprintf(stderr, "Something unnatural has happened... %f\n", dt);
+            continue;
+        }
 
         if( timeIndex==0 )
         {
