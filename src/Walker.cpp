@@ -180,6 +180,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     memset( &prevTrajectory, 0, sizeof(prevTrajectory) );
     memset( &currentTrajectory, 0, sizeof(currentTrajectory) );
     memset( &nextTrajectory, 0, sizeof(nextTrajectory) );
+    
+    // Note: Consider making these values persistent
+    memset( state, 0, sizeof(state) );
+
 
     memcpy( &bal_state, &parent_state, sizeof(bal_state) );
 
