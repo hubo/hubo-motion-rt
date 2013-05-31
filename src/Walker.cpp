@@ -182,7 +182,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     memset( &nextTrajectory, 0, sizeof(nextTrajectory) );
     
     // Note: Consider making these values persistent
-    memset( state, 0, sizeof(state) );
+    memset( &state, 0, sizeof(state) );
 
 
     memcpy( &bal_state, &parent_state, sizeof(bal_state) );
@@ -434,8 +434,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             nudge_state_t &state, balance_gains_t &gains, double dt )
 {
     flattenFoot( hubo, currentElem, state, gains, dt );
-    straightenBack( hubo, currentElem, state, gains, dt );
-    complyKnee( hubo, currentElem, state, gains, dt );
+    //straightenBack( hubo, currentElem, state, gains, dt );
+    //complyKnee( hubo, currentElem, state, gains, dt );
     //nudgeRefs( hubo, currentElem, state, dt, hkin ); //vprev, verr, dt );
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)

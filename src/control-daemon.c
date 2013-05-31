@@ -344,6 +344,14 @@ void controlLoop()
                         {
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
+
+                            int inBounds = 0;
+                            if( H_ref.ref[jnt] < ctrl.joint[jnt].pos_min )
+                                ctrl.joint[jnt].velocity = fabs(ctrl.joint[jnt].velocity);
+                            else if( H_ref.ref[jnt] > ctrl.joint[jnt].pos_max )
+                                ctrl.joint[jnt].velocity = -fabs(ctrl.joint[jnt].velocity);
+                            else
+                                inBounds = 1;
                            
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
                             if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
@@ -355,9 +363,10 @@ void controlLoop()
 
                             dr[jnt] = V[jnt]*dt;
 
-                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
+
+                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
-                            else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max )
+                            else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
                                 H_ref.ref[jnt] += dr[jnt];
@@ -365,6 +374,12 @@ void controlLoop()
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_POS )
                         {
+
+                            if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
+                            else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_max;
+
                             dr[jnt] = ctrl.joint[jnt].position - H_ref.ref[jnt]; // Check how far we are from desired position
 
                             ctrl.joint[jnt].velocity = sign(dr[jnt])*fabs(ctrl.joint[jnt].speed); // Set velocity into the correct direction
@@ -388,12 +403,13 @@ void controlLoop()
                             else if( fabs(dr[jnt]) > fabs(V[jnt]*dt) && V[jnt]*dr[jnt] < 0 )
                                 dr[jnt] = -V[jnt]*dt;
 
-                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
+/*                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
                             else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
-                                H_ref.ref[jnt] += dr[jnt];
+                                H_ref.ref[jnt] += dr[jnt];*/
+                            H_ref.ref[jnt] += dr[jnt];
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_HOME )
                         {

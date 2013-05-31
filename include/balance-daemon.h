@@ -100,6 +100,8 @@ typedef struct balance_gains {
 typedef struct balance_cmd {
 
     balance_mode_t cmd_request;
+    
+    double height;
 
 } balance_cmd_t;
 
