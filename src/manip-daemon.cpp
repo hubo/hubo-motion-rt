@@ -42,9 +42,14 @@ extern "C" {
 }
 
 
-manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
-manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
-manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
+manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
+
+manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
+
+manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 
 void grasp_close( Hubo_Control &hubo, int side );
 void grasp_open( Hubo_Control &hubo, int side );
@@ -58,8 +63,8 @@ int main( int argc, char **argv )
     ach_channel_t chan_manip_traj;
     ach_channel_t chan_manip_param;
     ach_channel_t chan_manip_state;
+    ach_channel_t chan_manip_override;
 
-    size_t fs;
     ach_status_t r = ach_open( &chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
     
@@ -71,61 +76,75 @@ int main( int argc, char **argv )
     
     r = ach_open( &chan_manip_state, CHAN_HUBO_MANIP_STATE, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
+
+    r = ach_open( &chan_manip_override, CHAN_HUBO_MANIP_OVERRIDE, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
     
     hubo_manip_cmd_t manip_cmd[2];
     hubo_manip_cmd_t manip_req;
     hubo_manip_traj_t manip_traj;
     hubo_manip_param_t manip_param;
     hubo_manip_state manip_state;
+    manip_override_t override_cmd;
+
     memset( &(manip_cmd[RIGHT]), 0, sizeof(hubo_manip_cmd_t) );
     memset( &(manip_cmd[LEFT]),  0, sizeof(hubo_manip_cmd_t) );
     memset( &manip_req, 0, sizeof(manip_req) );
     memset( &manip_traj, 0, sizeof(manip_traj) );
     memset( &manip_param, 0, sizeof(manip_param) );
     memset( &manip_state, 0, sizeof(manip_state) );
+    memset( &override_cmd, 0, sizeof(override_cmd) );
 
     ArmVector arms[2];
     
     hubo.update(true);
     
-    
+    size_t fs;
     while( !daemon_sig_quit )
     {
         hubo.update(true);
         ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
-        
-        
-        for(int side=0; side<2; side++)
+        ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
+
+        manip_state.override = override_cmd.m_override;
+
+        if( OVR_SOVEREIGN == manip_state.override )
         {
-            if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
-                memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
-            
-            manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
-            manip_state.goalID[side] = manip_cmd[side].goalID[side];
-            
-            // Handle arm motions
-            switch( manip_cmd[side].m_mode[side] )
+            for(int side=0; side<2; side++)
             {
-                case MC_TRANS_EULER:
-                    handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
-                case MC_TRANS_QUAT:
-                    handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
-                case MC_TRAJ:
-                    handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
+                    memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
+                
+                manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
+                manip_state.goalID[side] = manip_cmd[side].goalID[side];
+                
+                // Handle arm motions
+                switch( manip_cmd[side].m_mode[side] )
+                {
+                    case MC_TRANS_EULER:
+                        handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                    case MC_TRANS_QUAT:
+                        handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                    case MC_TRAJ:
+                        handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                }
+                
+                // Handle grasping
+                if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
+                       ( manip_cmd[side].m_grasp[side]==MC_GRASP_AT_END
+                        && manip_state.mode_state[side]==MC_READY ) )
+                    grasp_close(hubo, side);
+                else if( manip_cmd[side].m_grasp[side]==MC_RELEASE_NOW ||
+                        ( manip_cmd[side].m_grasp[side]==MC_RELEASE_AT_END
+                        && manip_state.mode_state[side]==MC_READY ) )
+                    grasp_open(hubo, side);
+                else if( manip_cmd[side].m_grasp[side]==MC_GRASP_LIMP )
+                    grasp_limp(hubo, side);
             }
-            
-            // Handle grasping
-            if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
-               ( manip_cmd[side].m_grasp[side]==MC_GRASP_AT_END && manip_state.mode_state[side]==MC_READY ) )
-                grasp_close(hubo, side);
-            else if( manip_cmd[side].m_grasp[side]==MC_RELEASE_NOW ||
-                    ( manip_cmd[side].m_grasp[side]==MC_RELEASE_AT_END && manip_state.mode_state[side]==MC_READY ) )
-                grasp_open(hubo, side);
-            else if( manip_cmd[side].m_grasp[side]==MC_GRASP_LIMP )
-                grasp_limp(hubo, side);
-        }
         
-        hubo.sendControls();
+            hubo.sendControls();
+        }
+
         ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }
     
@@ -133,6 +152,8 @@ int main( int argc, char **argv )
     ach_close( &chan_manip_traj );
     ach_close( &chan_manip_param );
     ach_close( &chan_manip_state );
+
+    return 0;
 }
 
 void grasp_close( Hubo_Control &hubo, int side )

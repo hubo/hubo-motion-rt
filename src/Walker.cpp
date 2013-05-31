@@ -1,87 +1,47 @@
 
+/*
+ * Copyright (c) 2013, Georgia Tech Research Corporation
+ * All rights reserved.
+ *
+ * Author: Michael X. Grey <mxgrey@gatech.edu>
+ * Date: May 30, 2013
+ *
+ * Humanoid Robotics Lab      Georgia Institute of Technology
+ * Director: Mike Stilman     http://www.golems.org
+ *
+ *
+ * This file is provided under the following "BSD-style" License:
+ *   Redistribution and use in source and binary forms, with or
+ *   without modification, are permitted provided that the following
+ *   conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ *   CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ *   INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ *   USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ *   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *   ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *   POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
 #include <Hubo_Control.h>
-#include "walker.h"
+#include "Walker.h"
 #include "balance-daemon.h"
 
-#define HAVE_HUBO_ACH
-#include <hubo-zmp.h>
 
-//#include "HuboKin.h"
-
-
-ach_channel_t zmp_chan;
-ach_channel_t param_chan;
-
-const double jointSpaceTolerance = 0.02;
-const double jointVelContTol = 6.0; // Joint trajectory velocity-based continuity tolerance
-
-const double tau_dead_band = 1;
-
-FILE* fp;
-
-/*
-const double nudgePGain = 0.04;
-const double nudgeIGain = 0.2;
-const double nudgeDGain = 0.0;
-*/
-
-
-/* Set by balance param struct now
-
-const double hipDistance = 0.08843*2.0; // Distance between hip joints
-
-// gain for ankle flat
-const double k_tau = 0.0010; // Grey likes this value
-
-// gain for moment reducing
-const double k_pos = 0.0030; // Crane stance resistance to torque
-
-// gain for IMU rotation
-const double k_theta_x = 0;
-const double k_theta_y = 0.5*M_PI/180.0; // IMU feedback gain
-
-const double weight_thresh_N = -1e5; // TESTING k_tau 30; // weight to turn on/off integrators
-const double nudge_max_norm = 0.05; // m
-const double spin_max_angle = 30 * M_PI/180;
-const double comp_max_angle = 30 * M_PI/180;
-
-
-
-const double fzMin = 10;
-const double fzMax = 50;
-
-const double flatteningGain = 0.02;
-*/
-
-
-
-double applyDeadband( double x ) {
-
-  if (x > tau_dead_band) {
-    return x - tau_dead_band;
-  } else if (x < -tau_dead_band) {
-    return x + tau_dead_band;
-  } else {
-    return 0;
-  }
-
-}
-
-static inline void clamp(double& x, double cap) {
-  x = std::max(-cap, std::min(x, cap));
-}
-
-
-void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
-            zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, balance_gains_t &gains, double dt );
-
-void printStats( Hubo_Control &hubo, zmp_traj_element &currentElem );
-bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready);
-bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt );
-
-
-void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
+void Walker::flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 			nudge_state_t &state, balance_gains_t &gains, double dt )
 {
     
@@ -99,8 +59,6 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
                                                 *( hubo.getRightFootMx() );
         state.ankle_pitch_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
                                                  *( hubo.getRightFootMy() );
-        std::cout << "Flattening Right Foot" << "\troll:" << state.ankle_roll_compliance[RIGHT]
-                  << "\tpitch:" << state.ankle_pitch_compliance[RIGHT] << std::endl;
     }
 
     if( gains.force_min_threshold[LEFT] < hubo.getLeftFootFz()
@@ -110,8 +68,6 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
                                                *( hubo.getLeftFootMx() );
         state.ankle_pitch_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
                                                 *( hubo.getLeftFootMy() );
-        std::cout<< "Flattening Left Foot" << "\troll:" << state.ankle_roll_compliance[LEFT]
-                  << "\tpitch:" << state.ankle_pitch_compliance[LEFT] << std::endl;
     }
 
 
@@ -122,7 +78,7 @@ void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
 }
 
-void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
+void Walker::straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
     if( elem.stance == SINGLE_LEFT )
@@ -148,7 +104,7 @@ void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
 }
 
-void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
+void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
     state.knee_velocity_offset[LEFT] =
@@ -175,37 +131,65 @@ void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
 
 
-
-
-int main(int argc, char **argv)
+Walker::Walker(double maxInitTime, double jointSpaceTolerance, double jointVelContinuityTolerance) :
+        m_maxInitTime(maxInitTime),
+        m_jointSpaceTolerance( jointSpaceTolerance ),
+        m_jointVelContTol( jointVelContinuityTolerance ),
+        keepWalking(true),
+        hubo()
 {
-//    Hubo_Control hubo("walker");
-    Hubo_Control hubo;
-
-    fp = fopen("/home/grey/walkStats.txt", "w");
-
-    int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
-
-    nudge_state_t state;
-    balance_gains_t gains;
-    memset( &state, 0, sizeof(nudge_state_t) );
-    memset( &gains, 0, sizeof(balance_gains_t) );
-
     ach_status_t r = ach_open( &zmp_chan, HUBO_CHAN_ZMP_TRAJ_NAME, NULL );
     if( r != ACH_OK )
-        fprintf( stderr, "%s (%d)\n", ach_result_to_string(r), (int)r );
+        fprintf( stderr, "Problem with channel %s: %s (%d)\n",
+                HUBO_CHAN_ZMP_TRAJ_NAME, ach_result_to_string(r), (int)r );
     
     r = ach_open( &param_chan, BALANCE_PARAM_CHAN, NULL );
     if( r != ACH_OK )
-        fprintf( stderr, "%s (%d)\n", ach_result_to_string(r), (int)r );
-    
+        fprintf( stderr, "Problem with channel %s: %s (%d)\n",
+                BALANCE_PARAM_CHAN, ach_result_to_string(r), (int)r );
+
+    r = ach_open( &bal_cmd_chan, BALANCE_CMD_CHAN, NULL );
+    if( r != ACH_OK )
+        fprintf( stderr, "Problem with channel %s: %s (%d)\n",
+                BALANCE_CMD_CHAN, ach_result_to_string(r), (int)r );
+
+    r = ach_open( &bal_state_chan, BALANCE_STATE_CHAN, NULL );
+    if( r != ACH_OK )
+        fprintf( stderr, "Problem with channel %s: %s (%d)\n",
+                BALANCE_STATE_CHAN, ach_result_to_string(r), (int)r );
+
+    memset( &cmd, 0, sizeof(cmd) );
+    memset( &bal_state, 0, sizeof(bal_state) );
+} 
+
+Walker::~Walker()
+{
+    ach_close( &zmp_chan );
+    ach_close( &param_chan );
+    ach_close( &bal_cmd_chan );
+    ach_close( &bal_state_chan );
+}
+
+void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_gains_t &gains)
+{
+    int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
+    keepWalking = true;
     size_t fs;
+ 
     zmp_traj_t prevTrajectory, currentTrajectory, nextTrajectory;
     memset( &prevTrajectory, 0, sizeof(prevTrajectory) );
     memset( &currentTrajectory, 0, sizeof(currentTrajectory) );
     memset( &nextTrajectory, 0, sizeof(nextTrajectory) );
 
+    memcpy( &bal_state, &parent_state, sizeof(bal_state) );
+
+    bal_state.m_balance_mode = BAL_ZMP_WALKING; 
+    bal_state.m_walk_mode = WALK_WAITING;
+    bal_state.m_walk_error = NO_WALK_ERROR;
+    sendState();
+
     fprintf(stdout, "Waiting for first trajectory\n"); fflush(stdout);
+    ach_status_t r;
     do {
         struct timespec t;
         clock_gettime( ACH_DEFAULT_CLOCK, &t );
@@ -219,7 +203,8 @@ int main(int argc, char **argv)
         
     daemon_assert( ACH_TIMEOUT != r, __LINE__ );
 
-    fprintf(stdout, "Count: %d\n", (int)currentTrajectory.count); fflush(stdout);
+    bal_state.m_walk_mode = WALK_INITIALIZING;
+    sendState();
 
     ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
 
@@ -231,7 +216,6 @@ int main(int argc, char **argv)
         hubo.setJointNominalAcceleration( i, 0.4 );
     }
     
-    hubo.setJointAngle(RSP, 0.34);
     hubo.setJointNominalSpeed( RKN, 0.8 );
     hubo.setJointNominalAcceleration( RKN, 0.8 );
     hubo.setJointNominalSpeed( LKN, 0.8 );
@@ -242,13 +226,13 @@ int main(int argc, char **argv)
 
     hubo.sendControls();
 
-    double maxWait = 10;
+    double m_maxInitTime = 10;
     double biggestErr = 0;
     int worstJoint=-1;
     
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
-    double norm = jointSpaceTolerance+1; // make sure this fails initially
-    while( !daemon_sig_quit && (norm > jointSpaceTolerance && time-stime < maxWait)) {
+    double norm = m_jointSpaceTolerance+1; // make sure this fails initially
+    while( !daemon_sig_quit && (norm > m_jointSpaceTolerance && time-stime < m_maxInitTime)) {
         hubo.update(true);
         norm = 0;
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -270,36 +254,43 @@ int main(int argc, char **argv)
                 worstJoint = i;
             }
         }
-        norm = sqrt(norm); std::cout << "norm:" << norm << "\tbiggest error:" << biggestErr << std::endl;
         time = hubo.getTime();
     }
 
-    if( time-stime >= maxWait )
-        fprintf(stderr, "Warning: could not reach the starting Trajectory within 15 seconds\n"
-                        " -- Biggest error was %f radians in joint %s\n", biggestErr, jointNames[worstJoint] );
-    daemon_assert( time-stime < maxWait, __LINE__ );
+    if( time-stime >= m_maxInitTime )
+    {
+        fprintf(stderr, "Warning: could not reach the starting Trajectory within %f seconds\n"
+                        " -- Biggest error was %f radians in joint %s\n",
+                        m_maxInitTime, biggestErr, jointNames[worstJoint] );
+
+        keepWalking = false;
+        
+        bal_state.m_walk_error = WALK_INIT_FAILED;
+    }
 
     timeIndex = 1;
     bool haveNewTrajectory = false;
-    fprintf(stdout, "Beginning main loop\n"); fflush(stdout);
-    while(!daemon_sig_quit)
+    fprintf(stdout, "Beginning main walking loop\n"); fflush(stdout);
+    while(keepWalking && !daemon_sig_quit)
     {
         haveNewTrajectory = checkForNewTrajectory(nextTrajectory, haveNewTrajectory);
         ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
         hubo.update(true);
 
-//        printStats( hubo, currentTrajectory.traj[timeIndex] );
+        bal_state.m_walk_mode = WALK_IN_PROGRESS;
 
         dt = hubo.getTime() - time;
         time = hubo.getTime();
 
         if( timeIndex==0 )
         {
+            bal_state.m_walk_error = NO_WALK_ERROR;
             nextTimeIndex = timeIndex+1;
             executeTimeStep( hubo, prevTrajectory.traj[prevTimeIndex],
                                    currentTrajectory.traj[timeIndex],
                                    currentTrajectory.traj[nextTimeIndex],
                                    state, gains, dt );
+            
         }
         else if( timeIndex == currentTrajectory.periodEndTick && haveNewTrajectory )
         {
@@ -319,6 +310,7 @@ int main(int argc, char **argv)
             else
             {
                 fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Walking to a stop.\n");
+                bal_state.m_walk_error = WALK_FAILED_SWAP;
 
                 nextTimeIndex = timeIndex+1;
                 executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
@@ -330,7 +322,15 @@ int main(int argc, char **argv)
         }
         else if( timeIndex == currentTrajectory.periodEndTick && currentTrajectory.reuse )
         {
-            nextTimeIndex = currentTrajectory.periodStartTick;
+            checkCommands();
+            if( cmd.cmd_request != BAL_ZMP_WALKING )
+                currentTrajectory.reuse = false;
+
+            if( currentTrajectory.reuse == true )
+                nextTimeIndex = currentTrajectory.periodStartTick;
+            else
+                nextTimeIndex = timeIndex+1;
+
             executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
                                    currentTrajectory.traj[timeIndex],
                                    currentTrajectory.traj[nextTimeIndex],
@@ -346,37 +346,54 @@ int main(int argc, char **argv)
         }
         else if( timeIndex == currentTrajectory.count-1 && haveNewTrajectory )
         {
-            if( validateNextTrajectory( currentTrajectory.traj[timeIndex],
-                                        nextTrajectory.traj[0], dt ) )
+            checkCommands();
+            if( cmd.cmd_request != BAL_ZMP_WALKING )
+                keepWalking = false;
+
+            if( keepWalking )
             {
-                nextTimeIndex = 0;
-                executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
-                                       currentTrajectory.traj[timeIndex],
-                                       nextTrajectory.traj[nextTimeIndex],
-                                       state, gains, dt );
-                
-                memcpy( &prevTrajectory, &currentTrajectory, sizeof(prevTrajectory) );
-                memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
+                if( validateNextTrajectory( currentTrajectory.traj[timeIndex],
+                                            nextTrajectory.traj[0], dt ) )
+                {
+                    bal_state.m_walk_error = NO_WALK_ERROR;
+                    nextTimeIndex = 0;
+                    executeTimeStep( hubo, currentTrajectory.traj[prevTimeIndex],
+                                           currentTrajectory.traj[timeIndex],
+                                           nextTrajectory.traj[nextTimeIndex],
+                                           state, gains, dt );
+                    
+                    memcpy( &prevTrajectory, &currentTrajectory, sizeof(prevTrajectory) );
+                    memcpy( &currentTrajectory, &nextTrajectory, sizeof(nextTrajectory) );
+                }
+                else
+                {
+                    bal_state.m_walk_mode = WALK_WAITING;
+                    bal_state.m_walk_error = WALK_FAILED_SWAP;
+                    fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Discarding it.\n");
+                }
+                haveNewTrajectory = false;
             }
-            else
-                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Discarding it.\n");
-
-            haveNewTrajectory = false;
         }
-
+        else
+        {
+            checkCommands();
+            if( cmd.cmd_request != BAL_ZMP_WALKING )
+                keepWalking = false;
+        }
 
         prevTimeIndex = timeIndex;
         timeIndex = nextTimeIndex;
+        sendState();
     }
 
-    fclose(fp);
-
+    bal_state.m_walk_mode = WALK_INACTIVE;
+    sendState();
 }
 
 
 
 
-bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready)
+bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready)
 {
     size_t fs;
     
@@ -392,17 +409,18 @@ bool checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAlready)
 
 }
 
-bool validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt )
+bool Walker::validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_element_t &next, double dt )
 {
     bool valid = true;
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        if( fabs(next.angles[i]-current.angles[i])/fabs(dt) > fabs(jointVelContTol) )
+        if( fabs(next.angles[i]-current.angles[i])/fabs(dt) > fabs(m_jointVelContTol) )
             valid = false;
+
     return valid;
 }
 
 
-void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
+void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
             nudge_state_t &state, balance_gains_t &gains, double dt )
 {
@@ -433,23 +451,15 @@ void executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 }
 
 
-void printStats( Hubo_Control &hubo, zmp_traj_element &elem )
+void Walker::sendState()
 {
-    // A: actual
-    // P: predicted
-    // left_mx[A/P], right_mx[A/P], left_my[A/P], right_my[A/P], left_fz[A/P], right_fz[A/P], zmp_y
-    fprintf( fp, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",
-                    hubo.getLeftFootMx(), elem.torque[LEFT][0],
-                    hubo.getRightFootMx(), elem.torque[RIGHT][0],
-                    hubo.getLeftFootMy(), elem.torque[LEFT][1],
-                    hubo.getRightFootMy(), elem.torque[RIGHT][1],
-                    hubo.getLeftFootFz(), elem.forces[LEFT][2],
-                    hubo.getRightFootFz(), elem.forces[RIGHT][2], 
-                    elem.zmp[1] );
-
+    ach_put( &bal_state_chan, &bal_state, sizeof(bal_state) );
 }
 
 
-
-
+void Walker::checkCommands()
+{
+    size_t fs;
+    ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
+}
 

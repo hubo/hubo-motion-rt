@@ -48,6 +48,7 @@
 #define CHAN_HUBO_MANIP_TRAJ "manip-traj"
 #define CHAN_HUBO_MANIP_PARAM "manip-param"
 #define CHAN_HUBO_MANIP_STATE "manip-state"
+#define CHAN_HUBO_MANIP_OVERRIDE "manip-override"
 
 #define NUM_ARMS 2
 
@@ -60,6 +61,13 @@ typedef enum {
     MC_TRAJ
     
 } manip_mode_t;
+
+typedef enum {
+
+    OVR_SOVEREIGN = 0,
+    OVR_ACQUIESCENT
+
+} override_t;
 
 typedef enum {
     
@@ -98,6 +106,12 @@ typedef enum {
     
 } manip_error_t;
 
+typedef struct manip_override {
+
+    override_t m_override;
+
+} manip_override_t;
+
 /**
  * \union manip_pose_t
  * \brief Contains all pose parameters to pass to manipulation daemon for ik-control
@@ -134,6 +148,7 @@ typedef struct hubo_manip_state {
     manip_mode_t mode_state[NUM_ARMS];    ///< Current state of the operational mode. Changes to manip_mode_t::MC_READY when path finished.
     manip_grasp_t grasp_state[NUM_ARMS];  ///< Current state of the grasp command
     manip_error_t error[NUM_ARMS];        ///< Current error state of the daemon
+    override_t override;
     
 } hubo_manip_state_t;
 
@@ -147,11 +162,7 @@ typedef struct hubo_manip_cmd {
     bool interrupt[NUM_ARMS];             ///< Interrupts the specified arm's execution
     
     hubo_manip_pose_t pose[NUM_ARMS];     ///< Defines a pose target for the arm. Ignored if m_mode == manip_mode_t::MC_TRAJ
-	// eulerAngles[RIGHT][0] -> right arm's roll
-	// eulerAngles[RIGHT][1] -> right arm's pitch
-	// eulerAngles[RIGHT][2] -> right arm's yaw
-	// Euler Angles are applied in the following order: X1, Y2, Z3
-    
+
     double stopNorm;
     double convergeNorm;
     

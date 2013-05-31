@@ -2681,4 +2681,137 @@ void Hubo_Control::HuboDrillIK(ArmVector &q, double y) {
     
 }
 
+void Hubo_Control::storeArmDefaults(int side)
+{
+    if( side == LEFT || side == RIGHT )
+        memcpy( &(H_Arm_Ctrl_Defaults[side]), &(H_Arm_Ctrl[side]), sizeof(H_Arm_Ctrl_Defaults[side]) );
+    else
+        fprintf(stderr, "Invalid state parameter for Storing Arm Defaults! %d\n", side);
+}
+
+void Hubo_Control::storeRightArmDefaults()
+{ storeArmDefaults(RIGHT); }
+
+void Hubo_Control::storeLeftArmDefaults()
+{ storeArmDefaults(LEFT); }
+
+
+void Hubo_Control::storeLegDefaults(int side)
+{
+    if( side == LEFT || side == RIGHT )
+        memcpy( &(H_Leg_Ctrl_Defaults[side]), &(H_Leg_Ctrl[side]), sizeof(H_Leg_Ctrl_Defaults[side]) );
+    else
+        fprintf(stderr, "Invalid side parameter for Storing Leg Defaults! %d\n", side);
+}
+
+void Hubo_Control::storeRightLegDefaults()
+{ storeLegDefaults(RIGHT); }
+
+void Hubo_Control::storeLeftLegDefaults()
+{ storeLegDefaults(LEFT); }
+
+
+void Hubo_Control::storeBodyDefaults()
+{
+    memcpy( &H_Bod_Ctrl_Defaults, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl_Defaults) );
+}
+
+
+void Hubo_Control::storeNeckDefaults()
+{
+    memcpy( &H_Nck_Ctrl_Defaults, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl_Defaults) );
+}
+
+
+void Hubo_Control::storeAllDefaults()
+{
+    storeLeftArmDefaults();
+    storeRightArmDefaults();
+    storeLeftLegDefaults();
+    storeRightLegDefaults();
+    storeBodyDefaults();
+    storeNeckDefaults();
+}
+
+
+void Hubo_Control::resetArmDefaults(int side, bool send)
+{
+    if( side == LEFT || side == RIGHT )
+    {
+        for(int i=0; i<H_Arm_Ctrl_Defaults[side].count; i++)
+            H_Arm_Ctrl_Defaults[side].joint[i].position = H_Arm_Ctrl[side].joint[i].position;
+
+        memcpy( &(H_Arm_Ctrl[side]), &(H_Arm_Ctrl_Defaults[side]), sizeof(H_Arm_Ctrl[side]) );
+    }
+    else
+        fprintf(stderr, "Invalid side parameter for Resetting Arm Defaults! %d\n", side);
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetRightArmDefaults(bool send)
+{ resetArmDefaults(RIGHT, send); }
+
+void Hubo_Control::resetLeftArmDefaults(bool send)
+{ resetArmDefaults(LEFT, send); }
+
+
+void Hubo_Control::resetLegDefaults(int side, bool send)
+{
+    if( side == LEFT || side == RIGHT )
+    {
+        for(int i=0; i<H_Leg_Ctrl_Defaults[side].count; i++)
+            H_Leg_Ctrl_Defaults[side].joint[i].position = H_Leg_Ctrl[side].joint[i].position;
+
+        memcpy( &(H_Leg_Ctrl[side]), &(H_Leg_Ctrl_Defaults[side]), sizeof(H_Leg_Ctrl[side]) );
+    }
+    else
+        fprintf(stderr, "Invalid side parameter for Resetting Leg Defaults! %d\n", side);
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetRightLegDefaults(bool send)
+{ resetLegDefaults(RIGHT, send); }
+
+void Hubo_Control::resetLeftLegDefaults(bool send)
+{ resetLegDefaults(LEFT, send); }
+
+
+
+void Hubo_Control::resetBodyDefaults(bool send)
+{
+    for(int i=0; i<H_Bod_Ctrl_Defaults.count; i++)
+        H_Bod_Ctrl_Defaults.joint[i].position = H_Bod_Ctrl.joint[i].position;
+
+    memcpy( &H_Bod_Ctrl, &H_Bod_Ctrl_Defaults, sizeof(H_Bod_Ctrl) );
+
+    if(send)
+        sendControls();
+}
+
+
+void Hubo_Control::resetNeckDefaults(bool send)
+{
+    for(int i=0; i<H_Nck_Ctrl_Defaults.count; i++)
+        H_Nck_Ctrl_Defaults.joint[i].position = H_Nck_Ctrl.joint[i].position;
+
+    memcpy( &H_Nck_Ctrl, &H_Nck_Ctrl_Defaults, sizeof(H_Nck_Ctrl) );
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetAllDefaults(bool send)
+{
+    resetLeftArmDefaults();
+    resetRightArmDefaults();
+    resetLeftLegDefaults();
+    resetRightLegDefaults();
+    resetBodyDefaults();
+    resetNeckDefaults(send);
+}
+
 
