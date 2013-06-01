@@ -130,7 +130,7 @@ typedef union
 		{
 			struct
 			{
-				double i,j,k,w;
+				double w,i,j,k;
 			};
 
 			struct

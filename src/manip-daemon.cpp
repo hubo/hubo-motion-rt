@@ -108,56 +108,55 @@ int main( int argc, char **argv )
 
         manip_state.override = override_cmd.m_override;
 
-        if( OVR_SOVEREIGN == manip_state.override )
+        for(int side=0; side<2; side++)
         {
-            for(int side=0; side<2; side++)
+            if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
+                memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
+            
+            manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
+            manip_state.goalID[side] = manip_cmd[side].goalID[side];
+            
+            // Handle arm motions
+            switch( manip_cmd[side].m_mode[side] )
             {
-                if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
-                    memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
-                
-                manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
-                manip_state.goalID[side] = manip_cmd[side].goalID[side];
-                
-                // Handle arm motions
-                switch( manip_cmd[side].m_mode[side] )
-                {
-                    case MC_TRANS_EULER:
-                        handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
-                    case MC_TRANS_QUAT:
-                        handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
-                    case MC_TRAJ:
-                        handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
-                }
-                
-                // Handle grasping
-                if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
-                       ( manip_cmd[side].m_grasp[side]==MC_GRASP_AT_END
-                        && manip_state.mode_state[side]==MC_READY ) )
-                    grasp_close(hubo, side);
-                else if( manip_cmd[side].m_grasp[side]==MC_RELEASE_NOW ||
-                        ( manip_cmd[side].m_grasp[side]==MC_RELEASE_AT_END
-                        && manip_state.mode_state[side]==MC_READY ) )
-                    grasp_open(hubo, side);
-                else if( manip_cmd[side].m_grasp[side]==MC_GRASP_LIMP )
-                    grasp_limp(hubo, side);
+                case MC_TRANS_EULER:
+                    handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                case MC_TRANS_QUAT:
+                    handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                case MC_TRAJ:
+                    handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
             }
-        
-            hubo.sendControls();
-        }
-    
-        Eigen::Isometry3d Breal; ArmVector qreal;
-        hubo.getArmAngleStates( side, qreal );
-        hubo.huboArmFK( Breal, qreal, side );
-        Eigen::Quaterniond quatreal( Breal.rotation() );
-        Eigen::Vector3d transreal( Breal.translation() );
-        
-        state.pose[side].w = quatreal.w();
-        state.pose[side].i = quatreal.x();
-        state.pose[side].j = quatreal.y();
-        state.pose[side].k = quatreal.z();
+            
+            // Handle grasping
+            if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
+                   ( manip_cmd[side].m_grasp[side]==MC_GRASP_AT_END
+                    && manip_state.mode_state[side]==MC_READY ) )
+                grasp_close(hubo, side);
+            else if( manip_cmd[side].m_grasp[side]==MC_RELEASE_NOW ||
+                    ( manip_cmd[side].m_grasp[side]==MC_RELEASE_AT_END
+                    && manip_state.mode_state[side]==MC_READY ) )
+                grasp_open(hubo, side);
+            else if( manip_cmd[side].m_grasp[side]==MC_GRASP_LIMP )
+                grasp_limp(hubo, side);
 
-        for(int i=0; i<3; i++)
-            state.pose[side].data[i] = transreal(i);
+            Eigen::Isometry3d Breal; ArmVector qreal;
+            hubo.getArmAngleStates( side, qreal );
+            hubo.huboArmFK( Breal, qreal, side );
+            Eigen::Quaterniond quatreal( Breal.rotation() );
+            Eigen::Vector3d transreal( Breal.translation() );
+            
+            manip_state.pose[side].w = quatreal.w();
+            manip_state.pose[side].i = quatreal.x();
+            manip_state.pose[side].j = quatreal.y();
+            manip_state.pose[side].k = quatreal.z();
+
+            for(int i=0; i<3; i++)
+                manip_state.pose[side].data[i] = transreal(i);
+        }
+        
+        // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
+        if( OVR_SOVEREIGN == manip_state.override )
+            hubo.sendControls();
 
         ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }
