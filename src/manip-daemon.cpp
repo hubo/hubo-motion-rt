@@ -144,6 +144,20 @@ int main( int argc, char **argv )
         
             hubo.sendControls();
         }
+    
+        Eigen::Isometry3d Breal; ArmVector qreal;
+        hubo.getArmAngleStates( side, qreal );
+        hubo.huboArmFK( Breal, qreal, side );
+        Eigen::Quaterniond quatreal( Breal.rotation() );
+        Eigen::Vector3d transreal( Breal.translation() );
+        
+        state.pose[side].w = quatreal.w();
+        state.pose[side].i = quatreal.x();
+        state.pose[side].j = quatreal.y();
+        state.pose[side].k = quatreal.z();
+
+        for(int i=0; i<3; i++)
+            state.pose[side].data[i] = transreal(i);
 
         ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }
@@ -285,7 +299,7 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
     hubo.getArmAngleStates( side, armStates );
     if( (armAngles-armStates).norm() < cmd.convergeNorm )
         cmd.m_mode[side] = MC_READY;
-    
+
     state.mode_state[side] = cmd.m_mode[side];
 }
 

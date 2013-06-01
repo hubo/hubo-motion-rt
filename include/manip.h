@@ -148,6 +148,7 @@ typedef struct hubo_manip_state {
     manip_mode_t mode_state[NUM_ARMS];    ///< Current state of the operational mode. Changes to manip_mode_t::MC_READY when path finished.
     manip_grasp_t grasp_state[NUM_ARMS];  ///< Current state of the grasp command
     manip_error_t error[NUM_ARMS];        ///< Current error state of the daemon
+    hubo_manip_pose_t pose[NUM_ARMS];
     override_t override;
     
 } hubo_manip_state_t;
