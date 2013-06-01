@@ -159,6 +159,8 @@ int main( int argc, char **argv )
             for(int i=0; i<3; i++)
                 manip_state.pose[side].data[i] = transreal(i);
         }
+
+        hubo.setJointAngle( WST, manip_req.waistAngle );
         
         // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
         if( OVR_SOVEREIGN == manip_state.override )

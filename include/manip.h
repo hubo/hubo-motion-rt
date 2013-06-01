@@ -160,6 +160,7 @@ typedef struct hubo_manip_cmd {
     manip_mode_t m_mode[NUM_ARMS];        ///< Defines what type of manipulation to execute: trajectory or pose
     manip_ctrl_t m_ctrl[NUM_ARMS];        ///< Defines the type of compliance to use
     manip_grasp_t m_grasp[NUM_ARMS];      ///< Defines at what point to perform a grasp
+    double waistAngle;
     bool interrupt[NUM_ARMS];             ///< Interrupts the specified arm's execution
     
     hubo_manip_pose_t pose[NUM_ARMS];     ///< Defines a pose target for the arm. Ignored if m_mode == manip_mode_t::MC_TRAJ

@@ -192,6 +192,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     bal_state.m_walk_error = NO_WALK_ERROR;
     sendState();
 
+    currentTrajectory.reuse = true;
     fprintf(stdout, "Waiting for first trajectory\n"); fflush(stdout);
     ach_status_t r;
     do {
@@ -200,12 +201,25 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         t.tv_sec += 1;
         r = ach_get( &zmp_chan, &currentTrajectory, sizeof(currentTrajectory), &fs,
                     &t, ACH_O_WAIT | ACH_O_LAST );
-    } while(!daemon_sig_quit && r==ACH_TIMEOUT);
+
+        checkCommands();
+        if( cmd.cmd_request != BAL_ZMP_WALKING )
+            keepWalking = false;
+    } while(!daemon_sig_quit && keepWalking && r==ACH_TIMEOUT
+                && !currentTrajectory.reuse); // TODO: Replace this with something more intelligent
+
+    if(!keepWalking)
+    {
+        bal_state.m_walk_mode = WALK_INACTIVE;
+        sendState();
+        return;
+    }
 
     if(!daemon_sig_quit)
         fprintf(stdout, "First trajectory acquired\t");
+    
         
-    daemon_assert( ACH_TIMEOUT != r, __LINE__ );
+    daemon_assert( !daemon_sig_quit, __LINE__ );
 
     bal_state.m_walk_mode = WALK_INITIALIZING;
     sendState();
@@ -274,7 +288,8 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
     timeIndex = 1;
     bool haveNewTrajectory = false;
-    fprintf(stdout, "Beginning main walking loop\n"); fflush(stdout);
+    if( keepWalking )
+        fprintf(stdout, "Beginning main walking loop\n"); fflush(stdout);
     while(keepWalking && !daemon_sig_quit)
     {
         haveNewTrajectory = checkForNewTrajectory(nextTrajectory, haveNewTrajectory);
