@@ -54,6 +54,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 int main(int argc, char **argv)
 {
     Hubo_Control hubo("balance-daemon", 35);
+    //Hubo_Control hubo;
 
     hubo.storeAllDefaults();
 
@@ -151,6 +152,7 @@ int main(int argc, char **argv)
 
 void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
 {
+
     hubo.setJointNominalAcceleration( LKN, 0.6 );
     hubo.setJointNominalAcceleration( LHP, 0.6 );
     hubo.setJointNominalAcceleration( LHR, 0.6 );

@@ -51,6 +51,9 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state,
 manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state,
                 hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 
+manip_error_t handle_halt(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
+
 void grasp_close( Hubo_Control &hubo, int side );
 void grasp_open( Hubo_Control &hubo, int side );
 void grasp_limp( Hubo_Control &hubo, int side );
@@ -125,6 +128,9 @@ int main( int argc, char **argv )
                     handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRAJ:
                     handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                case MC_HALT:
+                    handle_halt(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                    
             }
             
             // Handle grasping
@@ -229,6 +235,15 @@ void grasp_limp( Hubo_Control &hubo, int side )
     }
 }
 
+manip_error_t handle_halt(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
+{
+    ArmVector currentAngles;
+    hubo.getArmAngles( side, currentAngles );
+    hubo.setArmAngles( side, currentAngles );
+    // We set the desired position to wherever we happen to currently be.
+
+    state.mode_state[side] = cmd.m_mode[side];
+}
 
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
 {
@@ -256,7 +271,7 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
         state.error[side] = MC_INVALID_POSE;
 
     if( (arm - armStates).norm() < cmd.stopNorm )
-        state.mode_state[side] = MC_STOPPED;
+        state.mode_state[side] = MC_HALT;
     
     hubo.getArmAngleStates( side, armStates );
     if( (armAngles-armStates).norm() < cmd.convergeNorm )
@@ -293,7 +308,7 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
         state.error[side] = MC_INVALID_POSE;
 
     if( (arm - armStates).norm() < cmd.stopNorm )
-        state.mode_state[side] = MC_STOPPED;
+        state.mode_state[side] = MC_HALT;
     
     hubo.getArmAngleStates( side, armStates );
     if( (armAngles-armStates).norm() < cmd.convergeNorm )

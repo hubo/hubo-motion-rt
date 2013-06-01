@@ -55,7 +55,7 @@
 typedef enum {
     
     MC_READY = 0,
-    MC_STOPPED,
+    MC_HALT,
     MC_TRANS_EULER,
     MC_TRANS_QUAT,
     MC_TRAJ
