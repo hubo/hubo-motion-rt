@@ -80,7 +80,6 @@ void Hubo_Control::controlInit()
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
     memset( &H_State, 0, sizeof(H_State) );
-    memset( &H_Param, 0, sizeof(H_Param) );
 
     memset( H_Arm_Ctrl,  0, 2*sizeof(H_Arm_Ctrl[0]) );
     memset( H_Leg_Ctrl,  0, 2*sizeof(H_Leg_Ctrl[0]) );
@@ -93,7 +92,6 @@ void Hubo_Control::controlInit()
 
     memset( jointAngleCalibration, 0, sizeof(jointAngleCalibration[0])*HUBO_JOINT_COUNT );
 
-    setJointParams( &H_Param, &H_State );
 
     for(int i=0; i<8; i++)
         ctrlOn[i] = false;
@@ -135,17 +133,84 @@ void Hubo_Control::controlInit()
     assert( ACH_OK == r );
 
     size_t fs;
+    
+    
 
-    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),  &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_bod_ctrl, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_nck_ctrl, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl), &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_WAIT );
+    ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
+
+    ach_status_t checkCtrl;
+
+    double quitSec = 0.5;
+    struct timespec waitTime;
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    int nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_bod_ctrl, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
+    nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
+    waitTime.tv_sec += (int)(nanoWait/1E9);
+    waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
+    checkCtrl = ach_get( &chan_hubo_nck_ctrl, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl),
+                            &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
+    assert( ACH_TIMEOUT != checkCtrl );
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+    {
+        ctrlMap[i] = -1;
+    }
 
     for(int i=0; i<H_Arm_Ctrl[LEFT].count; i++)
     {
@@ -401,7 +466,6 @@ ctrl_flag_t Hubo_Control::setPositionControl(int joint)
 
 ctrl_flag_t Hubo_Control::setJointAngle(int joint, double radians, bool send)
 {
-
     if( joint < HUBO_JOINT_COUNT )
     {
         switch( ctrlMap[joint] )
@@ -1409,7 +1473,7 @@ double Hubo_Control::getJointErrorMax(int joint)
 double Hubo_Control::getJointAngleState(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_State.joint[joint].pos - jointAngleCalibration[joint];
+        return H_State.joint[joint].pos; //- jointAngleCalibration[joint];
     else
         return 0;
 }
@@ -2619,6 +2683,139 @@ void Hubo_Control::HuboDrillIK(ArmVector &q, double y) {
     
     huboArmIK(q, B, qPrev, RIGHT, drill);
     
+}
+
+void Hubo_Control::storeArmDefaults(int side)
+{
+    if( side == LEFT || side == RIGHT )
+        memcpy( &(H_Arm_Ctrl_Defaults[side]), &(H_Arm_Ctrl[side]), sizeof(H_Arm_Ctrl_Defaults[side]) );
+    else
+        fprintf(stderr, "Invalid state parameter for Storing Arm Defaults! %d\n", side);
+}
+
+void Hubo_Control::storeRightArmDefaults()
+{ storeArmDefaults(RIGHT); }
+
+void Hubo_Control::storeLeftArmDefaults()
+{ storeArmDefaults(LEFT); }
+
+
+void Hubo_Control::storeLegDefaults(int side)
+{
+    if( side == LEFT || side == RIGHT )
+        memcpy( &(H_Leg_Ctrl_Defaults[side]), &(H_Leg_Ctrl[side]), sizeof(H_Leg_Ctrl_Defaults[side]) );
+    else
+        fprintf(stderr, "Invalid side parameter for Storing Leg Defaults! %d\n", side);
+}
+
+void Hubo_Control::storeRightLegDefaults()
+{ storeLegDefaults(RIGHT); }
+
+void Hubo_Control::storeLeftLegDefaults()
+{ storeLegDefaults(LEFT); }
+
+
+void Hubo_Control::storeBodyDefaults()
+{
+    memcpy( &H_Bod_Ctrl_Defaults, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl_Defaults) );
+}
+
+
+void Hubo_Control::storeNeckDefaults()
+{
+    memcpy( &H_Nck_Ctrl_Defaults, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl_Defaults) );
+}
+
+
+void Hubo_Control::storeAllDefaults()
+{
+    storeLeftArmDefaults();
+    storeRightArmDefaults();
+    storeLeftLegDefaults();
+    storeRightLegDefaults();
+    storeBodyDefaults();
+    storeNeckDefaults();
+}
+
+
+void Hubo_Control::resetArmDefaults(int side, bool send)
+{
+    if( side == LEFT || side == RIGHT )
+    {
+        for(int i=0; i<H_Arm_Ctrl_Defaults[side].count; i++)
+            H_Arm_Ctrl_Defaults[side].joint[i].position = H_Arm_Ctrl[side].joint[i].position;
+
+        memcpy( &(H_Arm_Ctrl[side]), &(H_Arm_Ctrl_Defaults[side]), sizeof(H_Arm_Ctrl[side]) );
+    }
+    else
+        fprintf(stderr, "Invalid side parameter for Resetting Arm Defaults! %d\n", side);
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetRightArmDefaults(bool send)
+{ resetArmDefaults(RIGHT, send); }
+
+void Hubo_Control::resetLeftArmDefaults(bool send)
+{ resetArmDefaults(LEFT, send); }
+
+
+void Hubo_Control::resetLegDefaults(int side, bool send)
+{
+    if( side == LEFT || side == RIGHT )
+    {
+        for(int i=0; i<H_Leg_Ctrl_Defaults[side].count; i++)
+            H_Leg_Ctrl_Defaults[side].joint[i].position = H_Leg_Ctrl[side].joint[i].position;
+
+        memcpy( &(H_Leg_Ctrl[side]), &(H_Leg_Ctrl_Defaults[side]), sizeof(H_Leg_Ctrl[side]) );
+    }
+    else
+        fprintf(stderr, "Invalid side parameter for Resetting Leg Defaults! %d\n", side);
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetRightLegDefaults(bool send)
+{ resetLegDefaults(RIGHT, send); }
+
+void Hubo_Control::resetLeftLegDefaults(bool send)
+{ resetLegDefaults(LEFT, send); }
+
+
+
+void Hubo_Control::resetBodyDefaults(bool send)
+{
+    for(int i=0; i<H_Bod_Ctrl_Defaults.count; i++)
+        H_Bod_Ctrl_Defaults.joint[i].position = H_Bod_Ctrl.joint[i].position;
+
+    memcpy( &H_Bod_Ctrl, &H_Bod_Ctrl_Defaults, sizeof(H_Bod_Ctrl) );
+
+    if(send)
+        sendControls();
+}
+
+
+void Hubo_Control::resetNeckDefaults(bool send)
+{
+    for(int i=0; i<H_Nck_Ctrl_Defaults.count; i++)
+        H_Nck_Ctrl_Defaults.joint[i].position = H_Nck_Ctrl.joint[i].position;
+
+    memcpy( &H_Nck_Ctrl, &H_Nck_Ctrl_Defaults, sizeof(H_Nck_Ctrl) );
+
+    if(send)
+        sendControls();
+}
+
+void Hubo_Control::resetAllDefaults(bool send)
+{
+    resetLeftArmDefaults();
+    resetRightArmDefaults();
+    resetLeftLegDefaults();
+    resetRightLegDefaults();
+    resetBodyDefaults();
+    resetNeckDefaults(send);
 }
 
 
