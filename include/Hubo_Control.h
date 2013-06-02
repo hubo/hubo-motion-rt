@@ -42,15 +42,14 @@
  * \author M.X. Grey
  */
 
-#ifndef HUBO_PLUS_H
-#define HUBO_PLUS_H
+#ifndef HUBO_CONTROL_H
+#define HUBO_CONTROL_H
 
 // C Headers
 extern "C" {
 // For Hubo
 #include "hubo.h"
 #include "control-daemon.h"
-#include "hubo-jointparams.h"
 }
 #include <iostream>
 
@@ -916,6 +915,8 @@ public:
     
     void storeBodyDefaults();
     void storeNeckDefaults();
+
+    void storeAllDefaults();
     
     void resetArmDefaults(int side, bool send=false);
     void resetRightArmDefaults(bool send=false);
@@ -925,8 +926,10 @@ public:
     void resetRightLegDefaults(bool send=false);
     void resetLeftLegDefaults(bool send=false);
     
-    void resetBodDefaults(bool send=false);
-    void resetNckDefaults(bool send=false);
+    void resetBodyDefaults(bool send=false);
+    void resetNeckDefaults(bool send=false);
+
+    void resetAllDefaults(bool send=false);
     
     void releaseArm(int side);
     void releaseRightArm();
@@ -971,13 +974,12 @@ protected:
     hubo_bod_control_t H_Bod_Ctrl;
     hubo_nck_control_t H_Nck_Ctrl;
     
-    hubo_arm_control_t H_Arm_Ctrl_Default[2];
-    hubo_leg_control_t H_Leg_Ctrl_Default[2];
-    hubo_fin_control_t H_Fin_Ctrl_Default[2];
-    hubo_bod_control_t H_Bod_Ctrl_Default;
-    hubo_nck_control_t H_Nck_Ctrl_Default;
+    hubo_arm_control_t H_Arm_Ctrl_Defaults[2];
+    hubo_leg_control_t H_Leg_Ctrl_Defaults[2];
+    hubo_fin_control_t H_Fin_Ctrl_Defaults[2];
+    hubo_bod_control_t H_Bod_Ctrl_Defaults;
+    hubo_nck_control_t H_Nck_Ctrl_Defaults;
     
-    hubo_param_t H_Param;
 
     int armjoints[2][ARM_JOINT_COUNT];
     int legjoints[2][LEG_JOINT_COUNT];
@@ -1015,4 +1017,4 @@ private:
     int localMap[HUBO_JOINT_COUNT];
 };
 
-#endif // HUBO_PLUS_H
+#endif // HUBO_CONTROL_H
