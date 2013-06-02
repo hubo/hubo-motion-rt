@@ -207,6 +207,11 @@ void Hubo_Control::controlInit()
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
     assert( ACH_TIMEOUT != checkCtrl );
 
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+    {
+        ctrlMap[i] = -1;
+    }
+
     for(int i=0; i<H_Arm_Ctrl[LEFT].count; i++)
     {
         armjoints[LEFT][i] = H_Arm_Ctrl[LEFT].jointIndices[i];
@@ -461,7 +466,6 @@ ctrl_flag_t Hubo_Control::setPositionControl(int joint)
 
 ctrl_flag_t Hubo_Control::setJointAngle(int joint, double radians, bool send)
 {
-
     if( joint < HUBO_JOINT_COUNT )
     {
         switch( ctrlMap[joint] )

@@ -14,6 +14,17 @@ include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemon
 
 bin_PROGRAMS = control-daemon manip-daemon balance-daemon trajectory-run
 
+hubo_ctrldir = /usr/lib
+hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la #libhubowalker.la 
+#libhubowalker_la_SOURCES = src/Walker.cpp
+#libhubowalker_la_LDFLAGS = -module -avoid-version -shared
+#libhubowalker_la_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
+libdaemonizer_la_SOURCES = src/daemonizer.c
+libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
+libhuboctrl_la_SOURCES = src/Hubo_Control.cpp
+libhuboctrl_la_LDFLAGS = -module -avoid-version -shared
+#libhuboctrl_la_LIBADD = -lm -lach
+
 huboctrlconfdir=/etc/hubo-ach
 huboctrlconf_DATA = tables/control.table
 
@@ -29,13 +40,3 @@ trajectory_run_LDADD = $(motionlibs)
 balance_daemon_SOURCES = src/balance-daemon.cpp src/Walker.cpp
 balance_daemon_LDADD = $(motionlibs)
 
-hubo_ctrldir = /usr/lib
-hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la #libhubowalker.la 
-#libhubowalker_la_SOURCES = src/Walker.cpp
-#libhubowalker_la_LDFLAGS = -module -avoid-version -shared
-#libhubowalker_la_LDADD = -lm -lrt -lach libhuboctrl.la libdaemonizer.la -lhuboparams
-libdaemonizer_la_SOURCES = src/daemonizer.c
-libdaemonizer_la_LDFLAGS = -module -avoid-version -shared
-libhuboctrl_la_SOURCES = src/Hubo_Control.cpp
-libhuboctrl_la_LDFLAGS = -module -avoid-version -shared
-#libhuboctrl_la_LIBADD = -lm -lach

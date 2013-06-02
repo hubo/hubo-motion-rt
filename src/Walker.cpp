@@ -205,10 +205,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         checkCommands();
         if( cmd.cmd_request != BAL_ZMP_WALKING )
             keepWalking = false;
-    } while(!daemon_sig_quit && keepWalking && r==ACH_TIMEOUT
-                && !currentTrajectory.reuse); // TODO: Replace this with something more intelligent
+    } while(!daemon_sig_quit && keepWalking && (r==ACH_TIMEOUT
+                || !currentTrajectory.reuse) ); // TODO: Replace this with something more intelligent
 
-    if(!keepWalking)
+    if(!keepWalking || !currentTrajectory.reuse) // TODO: Take out the reuse condition here
     {
         bal_state.m_walk_mode = WALK_INACTIVE;
         sendState();
@@ -216,7 +216,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     }
 
     if(!daemon_sig_quit)
-        fprintf(stdout, "First trajectory acquired\t");
+        fprintf(stdout, "First trajectory acquired\n");
     
         
     daemon_assert( !daemon_sig_quit, __LINE__ );

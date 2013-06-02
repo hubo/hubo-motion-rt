@@ -62,7 +62,7 @@ void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ract
 {
     for(int i=0; i < ractrl->count; i++)
         memcpy( &(ctrl->joint[ractrl->jointIndices[i]]), &(ractrl->joint[i]), sizeof(struct hubo_joint_control) );
-    
+
     for(int i=0; i < lactrl->count; i++)
         memcpy( &(ctrl->joint[lactrl->jointIndices[i]]),  &(lactrl->joint[i]), sizeof(struct hubo_joint_control) );
     
@@ -459,7 +459,6 @@ void controlLoop()
 
             if(ctrl.active == 1 && C_state.paused==0) 
             {
-
                 presult = ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
