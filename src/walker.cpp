@@ -270,7 +270,7 @@ int main(int argc, char **argv)
                 worstJoint = i;
             }
         }
-        norm = sqrt(norm); std::cout << "norm:" << norm << "\tbiggest error:" << biggestErr << std::endl;
+        norm = sqrt(norm); std::cout << "norm:" << norm << "\tbiggest error:" << biggestErr << "\tjoint:" << worstJoint << std::endl;
         time = hubo.getTime();
     }
 
