@@ -229,9 +229,14 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     hubo.update(true);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-        hubo.setJointAngle( i, currentTrajectory.traj[0].angles[i] );
-        hubo.setJointNominalSpeed( i, 0.4 );
-        hubo.setJointNominalAcceleration( i, 0.4 );
+        if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+         && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+         && NK1!=i && NK2!=i && NKY!=i )
+        {
+            hubo.setJointAngle( i, currentTrajectory.traj[0].angles[i] );
+            hubo.setJointNominalSpeed( i, 0.4 );
+            hubo.setJointNominalAcceleration( i, 0.4 );
+        }
     }
     
     hubo.setJointNominalSpeed( RKN, 0.8 );
