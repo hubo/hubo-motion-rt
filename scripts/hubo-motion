@@ -93,6 +93,8 @@ Ach()
         sudo ach -U $HUBO_MANIP_PARAM_CHAN
         sudo ach -U $HUBO_MANIP_TRAJ_CHAN
         sudo ach -U $HUBO_ZMP_TRAJ_CHAN
+        sudo ach -U $HUBO_FULLBODY_TRAJ_CHAN
+        sudo ach -U $HUBO_TRAJ_STATE_CHAN
 
 	;;	
 
