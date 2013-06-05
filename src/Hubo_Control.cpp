@@ -2078,7 +2078,7 @@ bool Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // If any solution has all joints within the limits...
     if(anyWithin)
     {
-        outOfWorkspace = false;
+        outOfWorkspace = true;
         // for each solution...
         for (int i = 0; i < 8; i++) {
             // if all the joints of solution i are within the limits...
@@ -2102,7 +2102,7 @@ bool Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // if no solution has all the joints within the limits...
     else
     {
-        outOfWorkspace = true;
+        outOfWorkspace = false;
         // then for each solution...
         for( int i=0; i<8; i++)
         {
@@ -2433,7 +2433,7 @@ bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // If any solution has all joints within the limits...
     if(anyWithin)
     {
-        outOfWorkspace = false;
+        outOfWorkspace = true;
         // for each solution...
         for (int i = 0; i < 8; i++)
         {
@@ -2461,7 +2461,7 @@ bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     // if no solution has all the joints within the limits...
     else
     {
-        outOfWorkspace = true;
+        outOfWorkspace = false;
         // then for each solution...
         for(int i=0; i<8; i++)
         {
