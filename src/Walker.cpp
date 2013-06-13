@@ -460,7 +460,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-        hubo.setJointAngle( i, currentElem.angles[i] );
+//        hubo.setJointAngle( i, currentElem.angles[i] );
+        hubo.passJointAngle( i, currentElem.angles[i] );
         hubo.setJointNominalSpeed( i,
                (currentElem.angles[i]-prevElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
         double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(

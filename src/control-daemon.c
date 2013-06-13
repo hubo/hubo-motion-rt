@@ -132,16 +132,6 @@ void controlLoop()
     memset( &H_param, 0, sizeof(H_param) );
     memset( &C_state, 0, sizeof(C_state) );
 
-    setJointParams( &H_param, &H_state);
-    if(setCtrlDefaults( &ctrl )==-1)
-        return;
-
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        ctrl.joint[i].mode = CTRL_HOME;
-
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        H_ref.mode[i] = 1; // Make sure that the values are not put through Dan's buffer/filter
-
     size_t fs;
     int result = ach_get( &chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != result )
@@ -152,6 +142,17 @@ void controlLoop()
     {
         daemon_assert( sizeof(H_state) == fs, __LINE__ );
     }
+
+    setJointParams( &H_param, &H_state);
+    if(setCtrlDefaults( &ctrl )==-1)
+        return;
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        ctrl.joint[i].mode = CTRL_HOME;
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        H_ref.mode[i] = HUBO_REF_MODE_REF; // Make sure that the values are not put through Dan's buffer/filter
+
     memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
     result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
     if( ACH_OK != result )
@@ -208,6 +209,7 @@ void controlLoop()
         else if( ACH_OK == sresult || ACH_MISSED_FRAME == sresult )
         {
             daemon_assert( sizeof(H_state) == fs, __LINE__ );
+fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[RSR].pos, V[RSR]); fflush(stderr);
 
             t = H_state.time;
             dt = t - t0;
@@ -333,6 +335,8 @@ void controlLoop()
                 if( ctrl.joint[jnt].mode == CTRL_PASS )
                 {
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
+//                    if( jnt == RF1 )
+//                        fprintf(stdout, "Pass:%f\t", ctrl.joint[jnt].position);
                 }
                 else if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
                     && fail[jnt]==0  )
@@ -374,6 +378,8 @@ void controlLoop()
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_POS )
                         {
+//if(jnt==RF1)
+//fprintf(stdout, "Pos:%f\t", ctrl.joint[jnt].position);
 
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
@@ -387,21 +393,27 @@ void controlLoop()
 
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
 
-                            adr = sqrt(fabs(2.0*ctrl.joint[jnt].acceleration*dr[jnt]));
-                            if( fabs(V0[jnt]) >= adr ) // Slow down before reaching goal
+                            adr = sqrt(fabs(2.0*ctrl.joint[jnt].acceleration*dr[jnt])); // Slow down before reaching goal
+                            if( fabs(V0[jnt]) >= adr ) 
                                 dV[jnt] = sign(dr[jnt])*adr-V0[jnt];
-
-                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
+                            else if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
                             else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) ) // Make sure the sign is correct
                                 dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
 
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
 
+/*
                             if( fabs(dr[jnt]) > fabs(V[jnt]*dt) && V[jnt]*dr[jnt] >= 0 )
                                 dr[jnt] = V[jnt]*dt;
                             else if( fabs(dr[jnt]) > fabs(V[jnt]*dt) && V[jnt]*dr[jnt] < 0 )
                                 dr[jnt] = -V[jnt]*dt;
+*/
+
+                            if( fabs(dr[jnt]) > fabs(V[jnt]*dt) || V[jnt]*dr[jnt] < 0 )
+                                dr[jnt] = V[jnt]*dt;
+
+                            V[jnt] = dr[jnt]/dt;
 
 /*                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
