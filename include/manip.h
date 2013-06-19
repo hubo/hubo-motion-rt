@@ -58,6 +58,7 @@ typedef enum {
     MC_HALT,
     MC_TRANS_EULER,
     MC_TRANS_QUAT,
+    MC_ANGLES,
     MC_TRAJ
     
 } manip_mode_t;
@@ -164,6 +165,7 @@ typedef struct hubo_manip_cmd {
     bool interrupt[NUM_ARMS];             ///< Interrupts the specified arm's execution
     
     hubo_manip_pose_t pose[NUM_ARMS];     ///< Defines a pose target for the arm. Ignored if m_mode == manip_mode_t::MC_TRAJ
+    double arm_angles[NUM_ARMS][ARM_JOINT_COUNT];   ///< Defines the joint angles for each arm
 
     double stopNorm;
     double convergeNorm;
