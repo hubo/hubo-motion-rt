@@ -140,7 +140,7 @@ void controlLoop()
     }
     else
     {
-        daemon_assert( sizeof(H_state) == fs, __LINE__ );
+        daemon_assert( sizeof(H_ref) == fs, __LINE__ );
     }
 
     setJointParams( &H_param, &H_state);
@@ -154,7 +154,15 @@ void controlLoop()
         H_ref.mode[i] = HUBO_REF_MODE_REF; // Make sure that the values are not put through Dan's buffer/filter
 
     memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
-    result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
+
+    do {
+        struct timespec timeoutCheck;
+        clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
+        timeoutCheck.tv_sec += 1;
+        result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
+    } while( !daemon_sig_quit && result == ACH_TIMEOUT );
+
+
     if( ACH_OK != result )
     {
         // TODO: Print a debug message
@@ -184,8 +192,11 @@ void controlLoop()
         fail[i] = 0;
     }
 
+    double minAccel = 0.1; // FIXME: Replace this with user-defined parameter
+
     double t0 = H_state.time;
     double t = H_state.time, dt, err;
+    fprintf(stderr, "Start time:%f\n", H_state.time); 
     dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
@@ -196,10 +207,9 @@ void controlLoop()
 
         struct timespec recheck;
         clock_gettime( ACH_DEFAULT_CLOCK, &recheck );
-        int nanoWait = recheck.tv_nsec + (int)(dt/3.0*1E9);
-        recheck.tv_sec += (int)(nanoWait/1E9);
-        recheck.tv_nsec = (int)(nanoWait%((int)1E9));
-
+        long nanoWait = recheck.tv_nsec + (long)(dt/3.0*1E9);
+        recheck.tv_sec += (long)(nanoWait/1E9);
+        recheck.tv_nsec = (long)(nanoWait%((long)1E9));
         sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs,
                              &recheck, ACH_O_WAIT | ACH_O_LAST );
         if( ACH_TIMEOUT == sresult || ACH_STALE_FRAMES == sresult )
@@ -209,14 +219,12 @@ void controlLoop()
         else if( ACH_OK == sresult || ACH_MISSED_FRAME == sresult )
         {
             daemon_assert( sizeof(H_state) == fs, __LINE__ );
-fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[RSR].pos, V[RSR]); fflush(stderr);
 
-            t = H_state.time;
-            dt = t - t0;
-            t0 = t;
-
-            if( dt > 0 )
+            if( H_state.time > t )
             {
+                t = H_state.time;
+                dt = t - t0;
+                t0 = t;
                 for(int i=0; i<HUBO_JOINT_COUNT; i++)
                 {
                     C_state.actual_vel[i] = (H_state.joint[i].pos - C_state.actual_pos[i])/dt;
@@ -334,6 +342,7 @@ fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[
 
                 if( ctrl.joint[jnt].mode == CTRL_PASS )
                 {
+                    V[jnt] = (ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
 //                    if( jnt == RF1 )
 //                        fprintf(stdout, "Pass:%f\t", ctrl.joint[jnt].position);
@@ -349,6 +358,14 @@ fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
 
+                            // FIXME: Remove this hack
+                            if( fabs(ctrl.joint[jnt].acceleration) == 0 )
+                                ctrl.joint[jnt].acceleration = fabs(minAccel);
+
+//                            if( fabs(ctrl.joint[jnt].acceleration) < fabs(minAccel) );
+//                                ctrl.joint[jnt].acceleration = fabs(minAccel);
+
+/*                          // FIXME: Figure out a good way to handle joint limits
                             int inBounds = 0;
                             if( H_ref.ref[jnt] < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].velocity = fabs(ctrl.joint[jnt].velocity);
@@ -356,7 +373,7 @@ fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[
                                 ctrl.joint[jnt].velocity = -fabs(ctrl.joint[jnt].velocity);
                             else
                                 inBounds = 1;
-                           
+*/                           
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
                             if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
@@ -366,20 +383,68 @@ fprintf(stderr, "%f\t%f\t%f\t%f\n", H_state.time, H_ref.ref[RSR], H_state.joint[
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
 
                             dr[jnt] = V[jnt]*dt;
-
-
+/*
+                            // FIXME: Figure out a good way to handle joints limits
                             if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
                             else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
                                 H_ref.ref[jnt] += dr[jnt];
+*/
+                            H_ref.ref[jnt] += dr[jnt];
+                        }
+                        else if( ctrl.joint[jnt].mode == CTRL_TRAJ )
+                        {
+                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+                                ctrl.joint[jnt].velocity = 0.0;
 
+                            if( ctrl.joint[jnt].correctness > 1 )
+                                ctrl.joint[jnt].correctness = 1;
+                            else if( ctrl.joint[jnt].correctness < 0 )
+                                ctrl.joint[jnt].correctness = 0;
+
+                            dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt];
+
+/*
+                            dV[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity - V0[jnt] // Check how far we are from desired velocity
+                                    + ctrl.joint[jnt].correctness*(
+                                        ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
+*/
+
+                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
+                                dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
+                            else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) )
+                                dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
+
+                            V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
+/*
+                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]*dt
+                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    -H_ref.ref[jnt]);
+*/
+
+                            V[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]
+                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    - H_ref.ref[jnt])/dt;
+
+/*
+                            // FIXME: remove this:
+                            ctrl.joint[jnt].correctness = 0.01;
+                            V[jnt] += ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    - H_ref.ref[jnt])/dt;
+*/
+                            dr[jnt] = V[jnt]*dt;
+
+                            H_ref.ref[jnt] += dr[jnt];
+                            V[jnt] = dr[jnt]/dt;
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_POS )
                         {
 //if(jnt==RF1)
 //fprintf(stdout, "Pos:%f\t", ctrl.joint[jnt].position);
+//                            if( ctrl.joint[jnt].acceleration < minAccel )
+//                                ctrl.joint[jnt].acceleration = fabs(minAccel);
 
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
@@ -623,10 +688,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (8 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%s",
+		if (9 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%s",
 			name,
 			&tempJC.speed,
 			&tempJC.acceleration,
+            &tempJC.correctness,
 			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,

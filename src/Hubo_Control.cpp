@@ -135,8 +135,7 @@ void Hubo_Control::controlInit()
     size_t fs;
     
     
-
-    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_WAIT );
+    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
     ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
 
     ach_status_t checkCtrl;
@@ -206,6 +205,7 @@ void Hubo_Control::controlInit()
     checkCtrl = ach_get( &chan_hubo_nck_ctrl, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
     assert( ACH_TIMEOUT != checkCtrl );
+
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
@@ -463,6 +463,61 @@ ctrl_flag_t Hubo_Control::resetJointStatus( int joint, bool send )
 // Position control
 ctrl_flag_t Hubo_Control::setPositionControl(int joint)
 { return setJointAngle( joint, H_State.joint[joint].pos ); }
+
+
+ctrl_flag_t Hubo_Control::setJointTraj( int joint, double radians,
+    double vel, double acc, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        setJointNominalSpeed( joint, vel );
+        setJointNominalAcceleration( joint, acc );
+
+        return setJointTraj( joint, radians, send );
+    }
+    else
+        return JOINT_OOB;
+
+}
+
+ctrl_flag_t Hubo_Control::setJointTraj( int joint, double radians, bool send )
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        setJointAngle( joint, radians, false );
+
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA: // Right Arm
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlLA: // Left Arm
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlRL: // Right Leg
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlLL: // Left Leg
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlRF: // Right Fingers
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlLF: // Left Fingers
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlBD: // Right Fingers
+                H_Bod_Ctrl.joint[localMap[joint]].mode = CTRL_TRAJ;
+            case CtrlNK: // Right Fingers
+                H_Nck_Ctrl.joint[localMap[joint]].mode = CTRL_TRAJ;
+        }
+
+        if(send)
+            sendControls();
+         
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+
+
 
 ctrl_flag_t Hubo_Control::setJointAngle(int joint, double radians, bool send)
 {

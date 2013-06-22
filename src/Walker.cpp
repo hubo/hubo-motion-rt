@@ -181,7 +181,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     memset( &currentTrajectory, 0, sizeof(currentTrajectory) );
     memset( &nextTrajectory, 0, sizeof(nextTrajectory) );
     
-    // Note: Consider making these values persistent
+    // TODO: Consider making these values persistent
     memset( &state, 0, sizeof(state) );
 
 
@@ -256,6 +256,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
     double norm = m_jointSpaceTolerance+1; // make sure this fails initially
     while( !daemon_sig_quit && (norm > m_jointSpaceTolerance && time-stime < m_maxInitTime)) {
+//    while(false) { // FIXME TODO: SWITCH THIS BACK!!!
         hubo.update(true);
         norm = 0;
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -453,30 +454,45 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
             nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-    flattenFoot( hubo, currentElem, state, gains, dt );
-    //straightenBack( hubo, currentElem, state, gains, dt );
-    //complyKnee( hubo, currentElem, state, gains, dt );
-    //nudgeRefs( hubo, currentElem, state, dt, hkin ); //vprev, verr, dt );
+    flattenFoot( hubo, nextElem, state, gains, dt );
+    //straightenBack( hubo, nextElem, state, gains, dt );
+    //complyKnee( hubo, nextElem, state, gains, dt );
+    //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
+    double vel, accel;
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-//        hubo.setJointAngle( i, currentElem.angles[i] );
-        hubo.passJointAngle( i, currentElem.angles[i] );
-        hubo.setJointNominalSpeed( i,
-               (currentElem.angles[i]-prevElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
-        double accel = ZMP_TRAJ_FREQ_HZ*ZMP_TRAJ_FREQ_HZ*(
-                            prevElem.angles[i]
-                        - 2*currentElem.angles[i]
-                        +   nextElem.angles[i] );
-        hubo.setJointNominalAcceleration( i, 10*accel );
+          hubo.setJointTraj( i, currentElem.angles[i] );
+//        hubo.setJointTraj( i, nextElem.angles[i] );
+//        hubo.setJointAngle( i, nextElem.angles[i] );
+//        hubo.passJointAngle( i, nextElem.angles[i] );
+
+
+        vel = (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ;
+        hubo.setJointVelocity( i, vel );
+//        hubo.setJointNominalSpeed(i, vel);
+//        hubo.setJointNominalSpeed( i, 1*
+//                (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ/2.0 );
+//               (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
+//               (nextElem.angles[i]-currentElem.angles[i])/dt );
+
+
+        accel = (vel-state.V0[i])*ZMP_TRAJ_FREQ_HZ;
+        state.V0[i] = vel;
+        hubo.setJointNominalAcceleration( i, 2*accel );
+        if( i == RHY || i == RHR || i == RHP || i == RKN || i == RAR || i==RAP )
+            std::cout << "(" << vel << ":" << accel << ")" << "\t";
     }
+    std::cout << std::endl;
 
+//    hubo.setJointAngle( RSR, nextElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
+//    hubo.setJointAngle( LSR, nextElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
+    hubo.setJointTraj( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
+    hubo.setJointTraj( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
 
-    hubo.setJointAngle( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
-    hubo.setJointAngle( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
+    hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
+    hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
 
-    hubo.setJointAngleMin( LHR, currentElem.angles[RHR] );
-    hubo.setJointAngleMax( RHR, currentElem.angles[LHR] );
     hubo.sendControls();
 }
 

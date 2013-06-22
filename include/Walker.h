@@ -62,6 +62,8 @@ typedef struct nudge_state {
     double knee_velocity_offset[2];
 
     Eigen::Vector3d imu_offset;
+
+    double V0[HUBO_JOINT_COUNT];
     
 } nudge_state_t;
 

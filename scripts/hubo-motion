@@ -182,8 +182,8 @@ StopHubo()
 StartMotionDaemons()
 {
 	sudo control-daemon
-    sudo balance-daemon
     sudo manip-daemon
+    sudo balance-daemon
 }
 
 StartHubo()

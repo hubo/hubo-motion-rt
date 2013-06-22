@@ -72,6 +72,7 @@
 typedef enum {
     CTRL_OFF    = 0,
     CTRL_POS,
+    CTRL_TRAJ,
     CTRL_VEL,
     CTRL_HOME,
     CTRL_RESET,
@@ -84,6 +85,9 @@ typedef struct hubo_joint_control {
     double speed;
     double velocity;
     double acceleration;
+
+    double correctness;
+// FIXME: Add minimum accel parameter
 
     double error_limit;
 
