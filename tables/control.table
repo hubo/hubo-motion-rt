@@ -23,8 +23,9 @@ LSP     1.00        0.8         0.50        3.0             -2.0        2.0     
 LSR     1.00        0.8         0.50        3.0             -0.3        2.0         0.5     LA      
 LSY     1.00        0.8         0.50        3.0             -2.25       2.0         0.5     LA      
 LEB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     LA      
-LWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA      
-LWP     1.00        0.8         0.50        3.0             -1.25       1.0         0.5     LA      
+LWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA     
+LWP     1.00        0.8         0.50        3.0             -1.25       1.0         0.5     LA     
+LWR     1.00        0.8         0.50        3.0             -1.5        1.5         0.5     LA 
 
 # RIGHT ARM JOINTS
 #name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
@@ -33,7 +34,8 @@ RSR     1.00        0.8         0.50        3.0             -2.0        0.3     
 RSY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
 REB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     RA      
 RWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
-RWP     1.00        0.8         0.50        3.0             -1.4        1.2         0.5     RA      
+RWP     1.00        0.8         0.50        3.0             -1.4        1.2         0.5     RA
+RWR     1.00        0.8         0.50        3.0             -1.5        1.5         0.5     RA
 
 # LEFT LEG JOINTS
 #name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
