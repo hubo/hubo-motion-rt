@@ -45,7 +45,8 @@ ach_channel_t chan_hubo_rl_ctrl;
 ach_channel_t chan_hubo_ll_ctrl;
 ach_channel_t chan_hubo_rf_ctrl;
 ach_channel_t chan_hubo_lf_ctrl;
-ach_channel_t chan_hubo_aux_ctrl;
+ach_channel_t chan_hubo_bod_ctrl;
+ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
 static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
@@ -57,43 +58,35 @@ int setCtrlDefaults( struct hubo_control *ctrl );
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
                                                    struct hubo_fin_control *rfctrl, struct hubo_fin_control *lfctrl,
-                        struct hubo_aux_control *auxctrl, int paused )
+                        struct hubo_bod_control *bodctrl, struct hubo_nck_control *nckctrl)
 {
-    for(int i=0; i<ARM_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightarmjoints[i]]), &(ractrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftarmjoints[i]]),  &(lactrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < ractrl->count; i++)
+        memcpy( &(ctrl->joint[ractrl->jointIndices[i]]), &(ractrl->joint[i]), sizeof(struct hubo_joint_control) );
 
-    for(int i=0; i<LEG_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightlegjoints[i]]), &(rlctrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftlegjoints[i]]),  &(llctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < lactrl->count; i++)
+        memcpy( &(ctrl->joint[lactrl->jointIndices[i]]),  &(lactrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < rlctrl->count; i++)
+        memcpy( &(ctrl->joint[rlctrl->jointIndices[i]]), &(rlctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < llctrl->count; i++)
+        memcpy( &(ctrl->joint[llctrl->jointIndices[i]]),  &(llctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
-    for(int i=0; i<FIN_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[rightfinjoints[i]]), &(rfctrl->joint[i]), sizeof(struct hubo_joint_control) );
-        memcpy( &(ctrl->joint[leftfinjoints[i]]),  &(lfctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < rfctrl->count; i++)
+        memcpy( &(ctrl->joint[rfctrl->jointIndices[i]]), &(rfctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < lfctrl->count; i++)
+        memcpy( &(ctrl->joint[lfctrl->jointIndices[i]]),  &(lfctrl->joint[i]), sizeof(struct hubo_joint_control) );
+    
+    for(int i=0; i < bodctrl->count; i++)
+        memcpy( &(ctrl->joint[bodctrl->jointIndices[i]]), &(bodctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
-    for(int i=0; i<AUX_JOINT_COUNT; i++)
-    {
-        memcpy( &(ctrl->joint[auxjoints[i]]), &(auxctrl->joint[i]), sizeof(struct hubo_joint_control) );
-    }
+    for(int i=0; i < nckctrl->count; i++)
+        memcpy( &(ctrl->joint[nckctrl->jointIndices[i]]), &(nckctrl->joint[i]), sizeof(struct hubo_joint_control) );
 
     
-  
-     
-/*
-    if( (ractrl->active==2 || lactrl->active==2 || rlctrl->active==2 || llctrl->active==2
-        || rfctrl->active==2 || lfctrl->active==2 || auxctrl->active==2) && paused==0 )
-    {
-        ctrl->active = 2;
-    }
-*/
     if( ractrl->active==1 || lactrl->active==1 || rlctrl->active==1 || llctrl->active==1
-        || rfctrl->active==1 || lfctrl->active==1 || auxctrl->active==1 )
+        || rfctrl->active==1 || lfctrl->active==1 || bodctrl->active==1 || nckctrl->active==1 )
     {
         ctrl->active = 1;
     }
@@ -109,7 +102,7 @@ double sign(double x)
 
 void controlLoop()
 {
-    struct hubo_ref H_ref;//, r_check;
+    struct hubo_ref H_ref, stored_ref;
     struct hubo_board_cmd H_cmd;
     struct hubo_state H_state;
     struct hubo_control ctrl;
@@ -119,7 +112,8 @@ void controlLoop()
     struct hubo_leg_control llctrl;
     struct hubo_fin_control rfctrl;
     struct hubo_fin_control lfctrl;
-    struct hubo_aux_control auxctrl;
+    struct hubo_bod_control bodctrl;
+    struct hubo_nck_control nckctrl;
     struct hubo_param H_param;
     struct hubo_ctrl_state C_state;
 
@@ -133,19 +127,10 @@ void controlLoop()
     memset( &llctrl,  0, sizeof(llctrl)  );
     memset( &rfctrl,  0, sizeof(rfctrl)  );
     memset( &lfctrl,  0, sizeof(lfctrl)  );
-    memset( &auxctrl, 0, sizeof(auxctrl) );
+    memset( &bodctrl, 0, sizeof(bodctrl) );
+    memset( &nckctrl, 0, sizeof(nckctrl) );
     memset( &H_param, 0, sizeof(H_param) );
     memset( &C_state, 0, sizeof(C_state) );
-
-    setJointParams( &H_param, &H_state);
-    if(setCtrlDefaults( &ctrl )==-1)
-        return;
-
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        ctrl.joint[i].mode = CTRL_HOME;
-
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        H_ref.mode[i] = 1; // Make sure that the values are not put through Dan's buffer/filter
 
     size_t fs;
     int result = ach_get( &chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST );
@@ -155,9 +140,29 @@ void controlLoop()
     }
     else
     {
-        daemon_assert( sizeof(H_state) == fs, __LINE__ );
+        daemon_assert( sizeof(H_ref) == fs, __LINE__ );
     }
-    result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
+
+    setJointParams( &H_param, &H_state);
+    if(setCtrlDefaults( &ctrl )==-1)
+        return;
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        ctrl.joint[i].mode = CTRL_HOME;
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        H_ref.mode[i] = HUBO_REF_MODE_REF; // Make sure that the values are not put through Dan's buffer/filter
+
+    memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
+
+    do {
+        struct timespec timeoutCheck;
+        clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
+        timeoutCheck.tv_sec += 1;
+        result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
+    } while( !daemon_sig_quit && result == ACH_TIMEOUT );
+
+
     if( ACH_OK != result )
     {
         // TODO: Print a debug message
@@ -168,6 +173,7 @@ void controlLoop()
     double V[HUBO_JOINT_COUNT];
     double V0[HUBO_JOINT_COUNT];
     double dV[HUBO_JOINT_COUNT];
+    double V0_actual[HUBO_JOINT_COUNT];
     double adr;
     double dtMax = 0.1;
     double errorFactor = 10;
@@ -175,77 +181,128 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    int cresult, rresult, sresult, presult, iter=0, maxi=15;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=15;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
         dr[i] = 0;  dV[i] = 0;
         V[i] = 0;   V0[i] = 0;
-
+        V0_actual[i] = 0;
         fail[i] = 0;
     }
 
-    double t0 = H_state.time;
-    double t, dt, err;
+    double minAccel = 0.1; // FIXME: Replace this with user-defined parameter
 
+    double t0 = H_state.time;
+    double t = H_state.time, dt, err;
+    fprintf(stderr, "Start time:%f\n", H_state.time); 
+    dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
 
     // Main control loop
     while( !daemon_sig_quit )
     {
-        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_WAIT );
-        if( ACH_OK != sresult )
+
+        struct timespec recheck;
+        clock_gettime( ACH_DEFAULT_CLOCK, &recheck );
+        long nanoWait = recheck.tv_nsec + (long)(dt/3.0*1E9);
+        recheck.tv_sec += (long)(nanoWait/1E9);
+        recheck.tv_nsec = (long)(nanoWait%((long)1E9));
+        sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs,
+                             &recheck, ACH_O_WAIT | ACH_O_LAST );
+        if( ACH_TIMEOUT == sresult || ACH_STALE_FRAMES == sresult )
         {
-            // TODO: Print a debug message
+            memcpy( &H_ref, &stored_ref, sizeof(H_ref) );
         }
-        else { daemon_assert( sizeof(H_state) == fs, __LINE__ ); }
+        else if( ACH_OK == sresult || ACH_MISSED_FRAME == sresult )
+        {
+            daemon_assert( sizeof(H_state) == fs, __LINE__ );
+
+            if( H_state.time > t )
+            {
+                t = H_state.time;
+                dt = t - t0;
+                t0 = t;
+                for(int i=0; i<HUBO_JOINT_COUNT; i++)
+                {
+                    C_state.actual_vel[i] = (H_state.joint[i].pos - C_state.actual_pos[i])/dt;
+                    C_state.actual_acc[i] = (C_state.actual_vel[i] - V0_actual[i])/dt;
+                    V0_actual[i] = C_state.actual_vel[i];
+                    C_state.actual_pos[i] = H_state.joint[i].pos;
+                }
+                ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
+
+                // These are being updated now because they belong to ach_put of the next cycle
+                for(int i=0; i<HUBO_JOINT_COUNT; i++)
+                {
+                    C_state.requested_pos[i] = H_ref.ref[i];
+                    C_state.requested_vel[i] = V[i];
+                    C_state.requested_acc[i] = (V[i]-V0[i])/dt;
+
+                    V0[i] = V[i];
+                    timeElapse[i] += dt;
+                }
+
+                memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
+            }
+            else if( dt < 0 )
+                fprintf(stderr, "You have traveled backwards through time by %f seconds!\n", -dt);
+            else if( dt == 0 )
+                fprintf(stderr, "Something unnatural has happened...\n");
+        }
+        else
+            fprintf( stderr, "Unexpected ach state: %s\n", ach_result_to_string(sresult) );
 
 
         cresult = ach_get( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<ARM_JOINT_COUNT; j++)
-                timeElapse[rightarmjoints[j]] = 0.0;
+                timeElapse[ractrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<ARM_JOINT_COUNT; j++)
-                timeElapse[leftarmjoints[j]] = 0.0;
+                timeElapse[lactrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<LEG_JOINT_COUNT; j++)
-                timeElapse[rightlegjoints[j]] = 0.0;
+                timeElapse[rlctrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_ll_ctrl, &llctrl, sizeof(llctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<LEG_JOINT_COUNT; j++)
-                timeElapse[leftlegjoints[j]] = 0.0;
+                timeElapse[llctrl.jointIndices[j]] = 0.0;
 
         cresult = ach_get( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<FIN_JOINT_COUNT; j++)
-                timeElapse[rightfinjoints[j]] = 0.0;
+                timeElapse[rfctrl.jointIndices[j]] = 0.0;
 
 
         cresult = ach_get( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
             for(int j=0; j<FIN_JOINT_COUNT; j++)
-                timeElapse[leftfinjoints[j]] = 0.0;
+                timeElapse[lfctrl.jointIndices[j]] = 0.0;
         
 
-        cresult = ach_get( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl), &fs, NULL, ACH_O_LAST );
+        cresult = ach_get( &chan_hubo_bod_ctrl, &bodctrl, sizeof(bodctrl), &fs, NULL, ACH_O_LAST );
         if( cresult==ACH_OK )
-            for(int j=0; j<AUX_JOINT_COUNT; j++)
-                timeElapse[auxjoints[j]] = 0.0;
+            for(int j=0; j<BOD_JOINT_COUNT; j++)
+                timeElapse[bodctrl.jointIndices[j]] = 0.0;
+        
+        cresult = ach_get( &chan_hubo_nck_ctrl, &nckctrl, sizeof(nckctrl), &fs, NULL, ACH_O_LAST );
+        if( cresult==ACH_OK )
+            for(int j=0; j<NCK_JOINT_COUNT; j++)
+                timeElapse[nckctrl.jointIndices[j]] = 0.0;
 
         sortJointControls( &ctrl, &ractrl, &lactrl,
                                   &rlctrl, &llctrl,
-                                  &rfctrl, &lfctrl, &auxctrl, C_state.paused );
+                                  &rfctrl, &lfctrl,
+                                  &bodctrl, &nckctrl );
 
-        t = H_state.time;
-        dt = t - t0;
         
         if( ctrl.active == 2 || H_state.refWait==1 )
         {
@@ -257,6 +314,7 @@ void controlLoop()
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 H_ref.ref[jnt] = H_state.joint[jnt].ref;
+                stored_ref.ref[jnt] = H_state.joint[jnt].ref;
                 V[jnt] = 0; V0[jnt] = 0; dV[jnt] = 0;
                 dr[jnt]=0;
 /*
@@ -280,12 +338,14 @@ void controlLoop()
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
-
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
                 if( ctrl.joint[jnt].mode == CTRL_PASS )
                 {
+                    V[jnt] = (ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
+//                    if( jnt == RF1 )
+//                        fprintf(stdout, "Pass:%f\t", ctrl.joint[jnt].position);
                 }
                 else if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
                     && fail[jnt]==0  )
@@ -297,7 +357,23 @@ void controlLoop()
                         {
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
-                           
+
+                            // FIXME: Remove this hack
+                            if( fabs(ctrl.joint[jnt].acceleration) == 0 )
+                                ctrl.joint[jnt].acceleration = fabs(minAccel);
+
+//                            if( fabs(ctrl.joint[jnt].acceleration) < fabs(minAccel) );
+//                                ctrl.joint[jnt].acceleration = fabs(minAccel);
+
+/*                          // FIXME: Figure out a good way to handle joint limits
+                            int inBounds = 0;
+                            if( H_ref.ref[jnt] < ctrl.joint[jnt].pos_min )
+                                ctrl.joint[jnt].velocity = fabs(ctrl.joint[jnt].velocity);
+                            else if( H_ref.ref[jnt] > ctrl.joint[jnt].pos_max )
+                                ctrl.joint[jnt].velocity = -fabs(ctrl.joint[jnt].velocity);
+                            else
+                                inBounds = 1;
+*/                           
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
                             if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
@@ -307,17 +383,74 @@ void controlLoop()
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
 
                             dr[jnt] = V[jnt]*dt;
-
-                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
+/*
+                            // FIXME: Figure out a good way to handle joints limits
+                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
-                            else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max )
+                            else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max && inBounds==1 )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
                                 H_ref.ref[jnt] += dr[jnt];
+*/
+                            H_ref.ref[jnt] += dr[jnt];
+                        }
+                        else if( ctrl.joint[jnt].mode == CTRL_TRAJ )
+                        {
+                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+                                ctrl.joint[jnt].velocity = 0.0;
 
+                            if( ctrl.joint[jnt].correctness > 1 )
+                                ctrl.joint[jnt].correctness = 1;
+                            else if( ctrl.joint[jnt].correctness < 0 )
+                                ctrl.joint[jnt].correctness = 0;
+
+                            dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt];
+
+/*
+                            dV[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity - V0[jnt] // Check how far we are from desired velocity
+                                    + ctrl.joint[jnt].correctness*(
+                                        ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
+*/
+
+                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
+                                dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
+                            else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) )
+                                dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
+
+                            V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
+/*
+                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]*dt
+                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    -H_ref.ref[jnt]);
+*/
+
+                            V[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]
+                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    - H_ref.ref[jnt])/dt;
+
+/*
+                            // FIXME: remove this:
+                            ctrl.joint[jnt].correctness = 0.01;
+                            V[jnt] += ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
+                                                                    - H_ref.ref[jnt])/dt;
+*/
+                            dr[jnt] = V[jnt]*dt;
+
+                            H_ref.ref[jnt] += dr[jnt];
+                            V[jnt] = dr[jnt]/dt;
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_POS )
                         {
+//if(jnt==RF1)
+//fprintf(stdout, "Pos:%f\t", ctrl.joint[jnt].position);
+//                            if( ctrl.joint[jnt].acceleration < minAccel )
+//                                ctrl.joint[jnt].acceleration = fabs(minAccel);
+
+                            if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
+                            else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_max;
+
                             dr[jnt] = ctrl.joint[jnt].position - H_ref.ref[jnt]; // Check how far we are from desired position
 
                             ctrl.joint[jnt].velocity = sign(dr[jnt])*fabs(ctrl.joint[jnt].speed); // Set velocity into the correct direction
@@ -325,35 +458,39 @@ void controlLoop()
 
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt]; // Check how far we are from desired velocity
 
-                            adr = sqrt(fabs(2.0*ctrl.joint[jnt].acceleration*dr[jnt]));
-                            if( fabs(V0[jnt]) >= adr ) // Slow down before reaching goal
+                            adr = sqrt(fabs(2.0*ctrl.joint[jnt].acceleration*dr[jnt])); // Slow down before reaching goal
+                            if( fabs(V0[jnt]) >= adr ) 
                                 dV[jnt] = sign(dr[jnt])*adr-V0[jnt];
-
-                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
+                            else if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
                                 dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
                             else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) ) // Make sure the sign is correct
                                 dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
 
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
 
+/*
                             if( fabs(dr[jnt]) > fabs(V[jnt]*dt) && V[jnt]*dr[jnt] >= 0 )
                                 dr[jnt] = V[jnt]*dt;
                             else if( fabs(dr[jnt]) > fabs(V[jnt]*dt) && V[jnt]*dr[jnt] < 0 )
                                 dr[jnt] = -V[jnt]*dt;
+*/
 
-                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
+                            if( fabs(dr[jnt]) > fabs(V[jnt]*dt) || V[jnt]*dr[jnt] < 0 )
+                                dr[jnt] = V[jnt]*dt;
+
+                            V[jnt] = dr[jnt]/dt;
+
+/*                            if( H_ref.ref[jnt]+dr[jnt] < ctrl.joint[jnt].pos_min )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_min;
                             else if( H_ref.ref[jnt]+dr[jnt] > ctrl.joint[jnt].pos_max )
                                 H_ref.ref[jnt] = ctrl.joint[jnt].pos_max;
                             else
-                                H_ref.ref[jnt] += dr[jnt];
+                                H_ref.ref[jnt] += dr[jnt];*/
+                            H_ref.ref[jnt] += dr[jnt];
                         }
                         else if( ctrl.joint[jnt].mode == CTRL_HOME )
                         {
-//                            H_ref.ref[jnt] = 0; 
                             V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
-                            //r[jnt]=0; r0[jnt]=0;
-//                            dr[jnt]=0;
                         }
                         else
                         {
@@ -361,9 +498,9 @@ void controlLoop()
                                 jnt, (int)ctrl.joint[jnt].mode );
                         }
 
-                        timeElapse[jnt] += dt;
-                        V0[jnt] = V[jnt];
-                        C_state.velocity[jnt] = V[jnt];
+//                        timeElapse[jnt] += dt;
+//                        V0[jnt] = V[jnt];
+//                        C_state.velocity[jnt] = V[jnt];
                         reset[jnt]=0;
                     }
 
@@ -399,12 +536,10 @@ void controlLoop()
 
             if(ctrl.active == 1 && C_state.paused==0) 
             {
-
                 presult = ach_put( &chan_hubo_ref, &H_ref, sizeof(H_ref) );
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
                         presult, ach_result_to_string(presult));
-                ach_put( &chan_ctrl_state, &C_state, sizeof(C_state) );
             }
             
         }// end: time test
@@ -413,7 +548,6 @@ void controlLoop()
         else if( dt < 0 )
             fprintf(stderr, "Congratulations! You have traveled backwards"
                             " through time by %f seconds!", -dt);
-        t0 = t;
 
         fflush(stdout);
         fflush(stderr);
@@ -456,7 +590,10 @@ int main(int argc, char **argv)
     r = ach_open(&chan_hubo_lf_ctrl, HUBO_CHAN_LF_CTRL_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
-    r = ach_open(&chan_hubo_aux_ctrl, HUBO_CHAN_AUX_CTRL_NAME, NULL);
+    r = ach_open(&chan_hubo_bod_ctrl, HUBO_CHAN_BOD_CTRL_NAME, NULL);
+    daemon_assert( ACH_OK == r, __LINE__ );
+    
+    r = ach_open(&chan_hubo_nck_ctrl, HUBO_CHAN_NCK_CTRL_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
     r = ach_open(&chan_hubo_board_cmd, HUBO_CHAN_BOARD_CMD_NAME, NULL);
@@ -473,15 +610,14 @@ int main(int argc, char **argv)
 
 int setCtrlDefaults( struct hubo_control *ctrl )
 {
-    // TODO: Make this into something that parses default.ctrl table files
-
     struct hubo_arm_control ractrl;
     struct hubo_arm_control lactrl;
     struct hubo_leg_control rlctrl;
     struct hubo_leg_control llctrl;
     struct hubo_fin_control rfctrl;
     struct hubo_fin_control lfctrl;
-    struct hubo_aux_control auxctrl;
+    struct hubo_bod_control bodctrl;
+    struct hubo_nck_control nckctrl;
 
 	memset( ctrl, 0, sizeof(struct hubo_control) );
 	memset( &ractrl, 0, sizeof(struct hubo_arm_control) );
@@ -490,7 +626,8 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	memset( &llctrl, 0, sizeof(struct hubo_leg_control) );
 	memset( &rfctrl, 0, sizeof(struct hubo_fin_control) );
 	memset( &lfctrl, 0, sizeof(struct hubo_fin_control) );
-	memset( &auxctrl, 0, sizeof(struct hubo_aux_control) );
+	memset( &bodctrl, 0, sizeof(struct hubo_bod_control) );
+    memset( &nckctrl, 0, sizeof(struct hubo_nck_control) );
 
 	FILE *ptr_file;
 
@@ -531,7 +668,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	size_t jntNameCheck = 0;
 	char buff[1024];
     char name[4];
-    int jointSort[7];
+    char type[3];
 
 	// read in each non-commented line of the config file corresponding to each joint
 	while (fgets(buff, sizeof(buff), ptr_file) != NULL)
@@ -551,17 +688,20 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (7 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf",
+		if (9 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%s",
 			name,
 			&tempJC.speed,
 			&tempJC.acceleration,
+            &tempJC.correctness,
 			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
-            &tempJC.timeOut ) ) // check that all values are found
+            &tempJC.timeOut,
+            type ) ) // check that all values are found
 		{
+
 			// check to make sure jointName is valid
-			size_t x; int i;
+			size_t x; int i; jntNameCheck = 0;
 			for (x = 0; x < sizeof(jointNameStrings)/sizeof(jointNameStrings[0]); x++) {
 				if (0 == strcmp(name, jointNameStrings[x])) {
 					i = jointNameValues[x];
@@ -572,52 +712,80 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 			// if joint name is invalid print error and return -1
 			if (jntNameCheck != 1) {
-				fprintf(stderr, "joint name '%s' is incorrect\n", name);
+				fprintf(stderr, "Joint name '%s' is incorrect\n", name);
 				return -1; // parsing failed
 			}
             else
             {
-                for(int k=0; k<ARM_JOINT_COUNT; k++)
-                    if( leftarmjoints[k]==i )
-                        memcpy( &lactrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<ARM_JOINT_COUNT; k++)
-                    if( rightarmjoints[k]==i )
-                        memcpy( &ractrl.joint[k], &tempJC, sizeof(tempJC) );
+                if( strcmp(type, "LA") == 0 )
+                {
+                    memcpy( &lactrl.joint[lactrl.count], &tempJC, sizeof(tempJC) );
+                    lactrl.jointIndices[lactrl.count] = i;
+                    lactrl.count++;
+                }
                 
-                for(int k=0; k<LEG_JOINT_COUNT; k++)
-                    if( leftlegjoints[k]==i )
-                        memcpy( &llctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<LEG_JOINT_COUNT; k++)
-                    if( rightlegjoints[k]==i )
-                        memcpy( &rlctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<FIN_JOINT_COUNT; k++)
-                    if( leftfinjoints[k]==i )
-                        memcpy( &lfctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-                for(int k=0; k<FIN_JOINT_COUNT; k++)
-                    if( rightfinjoints[k]==i )
-                        memcpy( &rfctrl.joint[k], &tempJC, sizeof(tempJC) );                        
-
-                for(int k=0; k<AUX_JOINT_COUNT; k++)
-                    if( auxjoints[k]==i )
-                        memcpy( &auxctrl.joint[k], &tempJC, sizeof(tempJC) );
-
-            } // end: jntNameCheck
+                else if( strcmp(type, "RA") == 0 )
+                {
+                    memcpy( &ractrl.joint[ractrl.count], &tempJC, sizeof(tempJC) );
+                    ractrl.jointIndices[ractrl.count] = i;
+                    ractrl.count++;
+                }
+                
+                else if( strcmp(type, "LL") == 0 )
+                {
+                    memcpy( &llctrl.joint[llctrl.count], &tempJC, sizeof(tempJC) );
+                    llctrl.jointIndices[llctrl.count] = i;
+                    llctrl.count++;
+                }
+                
+                else if( strcmp(type, "RL") == 0 )
+                {
+                    memcpy( &rlctrl.joint[rlctrl.count], &tempJC, sizeof(tempJC) );
+                    rlctrl.jointIndices[rlctrl.count] = i;
+                    rlctrl.count++;
+                }
+                
+                else if( strcmp(type, "LF") == 0 )
+                {
+                    memcpy( &lfctrl.joint[lfctrl.count], &tempJC, sizeof(tempJC) );
+                    lfctrl.jointIndices[lfctrl.count] = i;
+                    lfctrl.count++;
+                }
+                
+                else if( strcmp(type, "RF") == 0 )
+                {
+                    memcpy( &rfctrl.joint[rfctrl.count], &tempJC, sizeof(tempJC) );
+                    rfctrl.jointIndices[rfctrl.count] = i;
+                    rfctrl.count++;
+                }
+                
+                else if( strcmp(type, "BD") == 0 )
+                {
+                    memcpy( &bodctrl.joint[bodctrl.count], &tempJC, sizeof(tempJC) );
+                    bodctrl.jointIndices[bodctrl.count] = i;
+                    bodctrl.count++;
+                }
+                
+                else if( strcmp(type, "NK") == 0 )
+                {
+                    memcpy( &nckctrl.joint[nckctrl.count], &tempJC, sizeof(tempJC) );
+                    nckctrl.jointIndices[nckctrl.count] = i;
+                    nckctrl.count++;
+                }
+                
+            } // end: if (jnkNameCheck != 1)
 		} // end: sscanf
 	} // end: fgets
 
 	fclose(ptr_file);	// close file stream
-
     ach_put( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl) );
     ach_put( &chan_hubo_la_ctrl, &lactrl, sizeof(lactrl) );
     ach_put( &chan_hubo_rl_ctrl, &rlctrl, sizeof(rlctrl) ); 
     ach_put( &chan_hubo_ll_ctrl, &llctrl, sizeof(llctrl) );
     ach_put( &chan_hubo_rf_ctrl, &rfctrl, sizeof(rfctrl) );
     ach_put( &chan_hubo_lf_ctrl, &lfctrl, sizeof(lfctrl) );
-    ach_put( &chan_hubo_aux_ctrl, &auxctrl, sizeof(auxctrl) );
+    ach_put( &chan_hubo_bod_ctrl, &bodctrl, sizeof(bodctrl) );
+    ach_put( &chan_hubo_nck_ctrl, &nckctrl, sizeof(nckctrl) );
 
     return 0;
 

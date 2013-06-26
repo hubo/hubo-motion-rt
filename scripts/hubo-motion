@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh  
 
 ### BEGIN INIT INFO
 # Provides:             hubo-daemon control-daemon
@@ -38,10 +38,21 @@ HUBO_RA_CTRL_CHAN='hubo-RA-control'
 HUBO_LA_CTRL_CHAN='hubo-LA-control'
 HUBO_RF_CTRL_CHAN='hubo-RF-control'
 HUBO_LF_CTRL_CHAN='hubo-LF-control'
-HUBO_AUX_CTRL_CHAN='hubo-AUX-control'
+HUBO_BOD_CTRL_CHAN='hubo-BOD-control'
+HUBO_NCK_CTRL_CHAN='hubo-NCK-control'
 HUBO_CTRL_STATE_CHAN='ctrl-d-state'
 HUBO_MANIP_CMD_CHAN='manip-cmd'
-HUBO_ZMP_CHAN='hubo-zmp-traj'
+HUBO_MANIP_STATE_CHAN='manip-state'
+HUBO_MANIP_PARAM_CHAN='manip-param'
+HUBO_MANIP_TRAJ_CHAN='manip-traj'
+HUBO_MANIP_OVR_CHAN='manip-override'
+HUBO_TRAJ_STATE_CHAN='hubo-traj-state'
+HUBO_FULLBODY_TRAJ_CHAN='hubo-traj'
+HUBO_ZMP_CMD_CHAN='hubo-zmp-cmd'
+HUBO_ZMP_TRAJ_CHAN='hubo-zmp-traj'
+HUBO_BAL_CMD_CHAN='balance-cmd'
+HUBO_BAL_STATE_CHAN='balance-state'
+HUBO_BAL_PARAM_CHAN='balance-param'
 LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
@@ -75,28 +86,49 @@ Ach()
 		sudo ach -U $HUBO_LA_CTRL_CHAN
 		sudo ach -U $HUBO_RF_CTRL_CHAN
 		sudo ach -U $HUBO_LF_CTRL_CHAN
-		sudo ach -U $HUBO_AUX_CTRL_CHAN
+        sudo ach -U $HUBO_BOD_CTRL_CHAN
+        sudo ach -U $HUBO_NCK_CTRL_CHAN
         sudo ach -U $HUBO_CTRL_STATE_CHAN
-        sudo ach -U $HUBO_ZMP_CHAN
+        sudo ach -U $HUBO_MANIP_CMD_CHAN
+        sudo ach -U $HUBO_MANIP_STATE_CHAN
+        sudo ach -U $HUBO_MANIP_PARAM_CHAN
+        sudo ach -U $HUBO_MANIP_TRAJ_CHAN
+        sudo ach -U $HUBO_MANIP_OVR_CHAN
+        sudo ach -U $HUBO_ZMP_TRAJ_CHAN
+        sudo ach -U $HUBO_ZMP_CMD_CHAN
+        sudo ach -U $HUBO_BAL_CMD_CHAN
+        sudo ach -U $HUBO_BAL_STATE_CHAN
+        sudo ach -U $HUBO_BAL_PARAM_CHAN
 
 	;;	
 
 	*)
 
-		sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
-		sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
-		sudo ach -1 -C $HUBO_AUX_CTRL_CHAN      -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 6000 -o 666
+        sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
+        sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BOD_CTRL_CHAN      -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_NCK_CTRL_CHAN      -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_ZMP_CHAN           -m 3  -n 1000000 -o 666
-
+        sudo ach -1 -C $HUBO_MANIP_STATE_CHAN   -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN   -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_TRAJ_CHAN    -m 3  -n 1000000 -o 666
+        sudo ach -1 -C $HUBO_MANIP_OVR_CHAN     -m 10 -n 1000 -o 666
+        sudo ach -1 -C $HUBO_ZMP_TRAJ_CHAN      -m 3  -n 1000000 -o 666
+        sudo ach -1 -C $HUBO_ZMP_CMD_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_FULLBODY_TRAJ_CHAN -m 3  -n 1000000 -o 666
+        sudo ach -1 -C $HUBO_TRAJ_STATE_CHAN    -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BAL_CMD_CHAN       -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BAL_STATE_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_BAL_PARAM_CHAN     -m 10 -n 3000 -o 666
+        
 	;;
 	esac
 }
@@ -147,6 +179,13 @@ StopHubo()
 	esac
 }
 
+StartMotionDaemons()
+{
+	sudo control-daemon
+    sudo manip-daemon
+    sudo balance-daemon
+}
+
 StartHubo()
 {
 	case "$2" in
@@ -155,8 +194,7 @@ StartHubo()
 		echo 'This will switch all the CAN'
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
-		echo 'hubo-daemon, control-daemon,'
-        echo ' and start up the tech-console.'
+		echo 'hubo-daemon and control-daemon.'
 		echo
 	;;
 
@@ -173,8 +211,13 @@ StartHubo()
         sudo ifconfig can3 up
 
         sudo hubo-daemon
-		sudo control-daemon
-		sudo tech-console
+
+	StartMotionDaemons
+
+        echo
+        echo 'Now please run hubo_init from your remote computer!'
+        echo
+        echo
 	;;
 	esac
 }
@@ -195,7 +238,7 @@ DartHubo()
 	*)
 		Ach
 
-		sudo control-daemon
+		StartMotionDaemons
                 echo 'Ach has been started and the'
                 echo 'control daemon is running.'
                 echo 'Run HuboAchTab to begin'
