@@ -1886,10 +1886,10 @@ bool Hubo_Control::huboArmIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     double C2, C4, C5, C6;
     
     // Parameters
-    double l1 = 214.5/1000.0;
-    double l2 = 179.14/1000.0;
-    double l3 = 181.59/1000.0;
-    double l4 = 3.00*25.4/1000.0;
+    double l1 = 230/1000.0; // y-axis Distance from neck to shoulder
+    double l2 = 300/1000.0; // Bicep length
+    double l3 = 300/1000.0; // Forearm length
+    double l4 = 130.5/1000.0; // Distance from wrist to palm
     
 
     limits <<
