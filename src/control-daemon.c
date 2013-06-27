@@ -446,6 +446,7 @@ void controlLoop()
 //                            if( ctrl.joint[jnt].acceleration < minAccel )
 //                                ctrl.joint[jnt].acceleration = fabs(minAccel);
 
+                            // Constrain ourselves to the dynamic joint limits
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
                             else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
