@@ -19,7 +19,7 @@
 # Last updated: 04/26/2013
 # Contact the author for support or questions regarding operation.
 
-HUBO_BITRATE=0x0014 # 1 Mbit/s
+#HUBO_BITRATE=0x0014 # 1 Mbit/s
 #HUBO_BITRATE=0x001C #	500 kbit/s
 #HUBO_BITRATE=0x011C #	250 kbit/s
 #HUBO_BITRATE=0x031C #	125 kbit/s
@@ -202,15 +202,15 @@ StartHubo()
 	
 		Ach
 
-        sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
-        sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
+#        sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
+#        sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
 
-        sudo ifconfig can0 up
-        sudo ifconfig can1 up
-        sudo ifconfig can2 up
-        sudo ifconfig can3 up
+#        sudo ifconfig can0 up
+#        sudo ifconfig can1 up
+#        sudo ifconfig can2 up
+#        sudo ifconfig can3 up
 
-        sudo hubo-daemon
+        sudo hubo-ach daemon drc
 
 	StartMotionDaemons
 
