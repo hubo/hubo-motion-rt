@@ -1866,7 +1866,9 @@ bool Hubo_Control::huboArmIK(ArmVector &q, const Eigen::Isometry3d B, ArmVector 
     
     for(int i=0; i<6; i++)
         q[i] = q6[i];
-    
+
+    for(int i=6; i<q.size(); i++)
+        q[i] = 0;
     return valid;
 }
 
@@ -2303,6 +2305,9 @@ bool Hubo_Control::huboLegIK(LegVector &q, const Eigen::Isometry3d B, LegVector 
     
     for(int i=0; i<6; i++)
         q[i] = q6[i];
+
+    for(int i=6; i<q.size(); i++)
+        q[i] = 0;
     
     return valid;
 }
