@@ -23,7 +23,7 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "include/hubo-zmp.h" )
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
-                              "include/manip-daemon.h" )
+                              "include/manip.h" )
 
 add_library(libdaemonizer SHARED ${daemonizer_source})
 link_libraries(libdaemonizer)
