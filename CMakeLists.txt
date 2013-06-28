@@ -13,7 +13,7 @@ link_libraries(-lm -lrt -lach -lhuboparams)
 
 file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
-file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h")
+file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h" "tables/control.table")
 
 file(GLOB hubo_control_source "src/Hubo_Control.cpp" "include/Hubo_Control.h" )
 

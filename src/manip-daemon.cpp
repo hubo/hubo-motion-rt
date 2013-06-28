@@ -259,7 +259,7 @@ manip_error_t handle_halt(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_ma
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
 {
     ArmVector zeroAngles; zeroAngles.setZero();
-    ArmVector armAngles, armStates;
+    ArmVector armAngles, armStates; armAngles.setZero();
     Vector3d trans, angles;
     for(int i=0; i<3; i++)
     {
@@ -286,6 +286,7 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
         cmd.m_mode[side] = MC_READY;
     state.mode_state[side] = cmd.m_mode[side];
 
+    // If arm is too far from where it should be
     if( (arm - armStates).norm() < cmd.stopNorm )
         state.mode_state[side] = MC_HALT;
 
@@ -296,7 +297,7 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
 {
     // Local variables
     ArmVector zeroAngles; zeroAngles.setZero();
-    ArmVector armAngles, armStates;
+    ArmVector armAngles, armStates; armAngles.setZero();
     Vector3d trans, angles;
 
     // Set position terms
@@ -334,7 +335,7 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
         cmd.m_mode[side] = MC_READY;
     state.mode_state[side] = cmd.m_mode[side];
 
-    // If   
+    // If the arm is too far from where it should be, we stop
     if( (arm - armStates).norm() < cmd.stopNorm )
         state.mode_state[side] = MC_HALT;
 

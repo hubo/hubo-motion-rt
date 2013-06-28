@@ -20,7 +20,7 @@ NK2     0.75        0.4         0.50        3.0             -1.571      1.571   
 # LEFT ARM JOINTS
 #name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
 LSP     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA      
-LSR     1.00        0.8         0.50        3.0             -0.3        2.0         0.5     LA      
+LSR     1.00        0.8         0.50        3.0              0.0        2.3         0.5     LA
 LSY     1.00        0.8         0.50        3.0             -2.25       2.0         0.5     LA      
 LEB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     LA      
 LWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA     
@@ -30,7 +30,7 @@ LWR     1.00        0.8         0.50        3.0             -1.5        1.5     
 # RIGHT ARM JOINTS
 #name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
 RSP     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
-RSR     1.00        0.8         0.50        3.0             -2.0        0.3         0.5     RA      
+RSR     1.00        0.8         0.50        3.0             -2.3        0.0         0.5     RA
 RSY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
 REB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     RA      
 RWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
