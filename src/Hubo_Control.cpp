@@ -2216,12 +2216,19 @@ void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     Vector6d offset; offset.setZero();
     
     // Parameters
-    double l1 = (79.5+107)/1000.0;
-    double l2 = 88.43/1000.0;
-    double l3 = (289.47-107)/1000.0;
-    double l4 = 300.03/1000.0;
-    double l5 = 300.38/1000.0;
-    double l6 = 94.97/1000.0;
+//    double l1 = (79.5+107)/1000.0;
+//    double l2 = 88.43/1000.0;
+//    double l3 = (289.47-107)/1000.0;
+//    double l4 = 300.03/1000.0;
+//    double l5 = 300.38/1000.0;
+//    double l6 = 94.97/1000.0;
+
+    double l1 = 0;
+    double l2 = 0.0885;
+    double l3 = 0.16452;
+    double l4 = 0.33008;
+    double l5 = 0.32995;
+    double l6 = 0.119063;
 
     // Denavit-Hartenberg parameters 
     Vector6d t, f, r, d;
@@ -2333,12 +2340,19 @@ bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     double C2, C4, C5, C6;
     
     // Parameters
-    double l1 = (79.5+107)/1000.0;
-    double l2 = 88.43/1000.0;
-    double l3 = (289.47-107)/1000.0;
-    double l4 = 300.03/1000.0;
-    double l5 = 300.38/1000.0;
-    double l6 = 94.97/1000.0;
+//    double l1 = (79.5+107)/1000.0;
+//    double l2 = 88.43/1000.0;
+//    double l3 = (289.47-107)/1000.0;
+//    double l4 = 300.03/1000.0;
+//    double l5 = 300.38/1000.0;
+//    double l6 = 94.97/1000.0;
+
+    double l1 = 0;
+    double l2 = 0.0885;
+    double l3 = 0.16452;
+    double l4 = 0.33008;
+    double l5 = 0.32995;
+    double l6 = 0.119063;
 
     // Transformation from Neck frame to Waist frame
     neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
