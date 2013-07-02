@@ -1601,20 +1601,9 @@ double Hubo_Control::getFz(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Control::getRightFootFz( bool calibrated )
-{
-    if( calibrated )    
-        return getFz(HUBO_FT_R_FOOT) + afc[RIGHT];
-    else
-        return getFz(HUBO_FT_R_FOOT);
-}
-double Hubo_Control::getLeftFootFz( bool calibrated )
-{
-    if( calibrated )
-        return getFz(HUBO_FT_L_FOOT) + afc[LEFT];
-    else
-        return getFz(HUBO_FT_L_FOOT);
-}
+double Hubo_Control::getRightHandFz(){ return getFz(HUBO_FT_R_HAND); }
+double Hubo_Control::getRightFootFz(){ return getFz(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootFz(){ return getFz(HUBO_FT_L_FOOT); }
 
 
 // ~* Accelerometers

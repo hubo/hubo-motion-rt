@@ -44,7 +44,6 @@
 void Walker::flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 			nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-    
      
     state.ankle_roll_compliance[LEFT] -= gains.decay_gain[LEFT]*state.ankle_roll_compliance[LEFT];
     state.ankle_roll_compliance[RIGHT] -= gains.decay_gain[RIGHT]*state.ankle_roll_compliance[RIGHT];
