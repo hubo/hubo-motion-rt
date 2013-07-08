@@ -1596,7 +1596,8 @@ double Hubo_Control::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
 // Fz
 double Hubo_Control::getFz(hubo_sensor_index_t sensor)
 {
-    if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT )
+    if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT
+        || sensor==HUBO_FT_R_HAND || sensor==HUBO_FT_L_HAND )
         return H_State.ft[sensor].f_z;
     else
         return 0;
