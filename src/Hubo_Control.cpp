@@ -1602,6 +1602,7 @@ double Hubo_Control::getFz(hubo_sensor_index_t sensor)
         return 0;
 }
 double Hubo_Control::getRightHandFz(){ return getFz(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandFz(){ return getFz(HUBO_FT_L_HAND); }
 double Hubo_Control::getRightFootFz(){ return getFz(HUBO_FT_R_FOOT); }
 double Hubo_Control::getLeftFootFz(){ return getFz(HUBO_FT_L_FOOT); }
 
