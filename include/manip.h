@@ -210,3 +210,59 @@ typedef struct hubo_manip_traj {
     
 }__attribute__((packed)) hubo_manip_traj_t;
 
+#ifdef __cplusplus
+std::ostream& operator<<(std::ostream& stream, const hubo_manip_pose_t& pose)
+{
+	stream << "[ ";
+	for (int i = 0; i < 7; i++)
+	{
+		stream << pose.data[i];
+		if (2 == i)
+		{
+			stream << "; ";
+		}
+		else if (6 == i)
+		{
+			// Do nothing
+		}
+		else
+		{
+			stream << ", ";
+		}
+	}
+	stream << " ]";
+
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cmd)
+{
+	for (int i = 0; i < NUM_ARMS; i++)
+	{
+		stream << "Arm " << i << ":" << std::endl;
+		stream << "\tGoal ID: " << cmd.goalID[i] << std::endl;
+		stream << "\tMode: " << cmd.m_mode[i] << std::endl;
+		stream << "\tControl: " << cmd.m_ctrl[i] << std::endl;
+		stream << "\tGrasp: " << cmd.m_grasp[i] << std::endl;
+		stream << "\tInterrupt: " << cmd.interrupt[i] << std::endl;
+		stream << "\tPose: " << cmd.pose[i] << std::endl;
+
+		stream << "\tJoints: [ ";
+		for (int j = 0; j < ARM_JOINT_COUNT; j++)
+		{
+			stream << cmd.arm_angles[i][j];
+			if (j < ARM_JOINT_COUNT - 1)
+			{
+				stream << ", ";
+			}
+		}
+		stream << " ]" << std::endl;
+	}
+	
+	stream << "waistAngle: " << cmd.waistAngle << std::endl;
+	stream << "stopNorm: " << cmd.stopNorm << std::endl;
+	stream << "convergeNorm: " << cmd.convergeNorm << std::endl;
+
+	return stream;
+}
+#endif
