@@ -1574,10 +1574,10 @@ double Hubo_Control::getMx(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Control::getRightHandMx() { getMx(HUBO_FT_R_HAND); }
-double Hubo_Control::getLeftHandMx()  { getMx(HUBO_FT_L_HAND); }
-double Hubo_Control::getRightFootMx() { getMx(HUBO_FT_R_FOOT); }
-double Hubo_Control::getLeftFootMx()  { getMx(HUBO_FT_L_FOOT); }
+double Hubo_Control::getRightHandMx() { return getMx(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandMx()  { return getMx(HUBO_FT_L_HAND); }
+double Hubo_Control::getRightFootMx() { return getMx(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootMx()  { return getMx(HUBO_FT_L_FOOT); }
 
 // My
 double Hubo_Control::getMy(hubo_sensor_index_t sensor)
@@ -1588,10 +1588,10 @@ double Hubo_Control::getMy(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Control::getRightHandMy() { getMy(HUBO_FT_R_HAND); }
-double Hubo_Control::getLeftHandMy()  { getMy(HUBO_FT_L_HAND); }
-double Hubo_Control::getRightFootMy() { getMy(HUBO_FT_R_FOOT); }
-double Hubo_Control::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
+double Hubo_Control::getRightHandMy() { return getMy(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandMy()  { return getMy(HUBO_FT_L_HAND); }
+double Hubo_Control::getRightFootMy() { return getMy(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootMy()  { return getMy(HUBO_FT_L_FOOT); }
 
 // Fz
 double Hubo_Control::getFz(hubo_sensor_index_t sensor)
