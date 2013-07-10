@@ -34,6 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef MANIP_H
+#define MANIP_H
 
 #include <Hubo_Control.h>
 
@@ -265,4 +267,6 @@ std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cmd)
 
 	return stream;
 }
-#endif
+#endif // __cplusplus
+
+#endif // MANIP_H
