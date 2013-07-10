@@ -213,7 +213,7 @@ typedef struct hubo_manip_traj {
 }__attribute__((packed)) hubo_manip_traj_t;
 
 #ifdef __cplusplus
-std::ostream& operator<<(std::ostream& stream, const hubo_manip_pose_t& pose)
+static std::ostream& operator<<(std::ostream& stream, const hubo_manip_pose_t& pose)
 {
 	stream << "[ ";
 	for (int i = 0; i < 7; i++)
@@ -237,7 +237,7 @@ std::ostream& operator<<(std::ostream& stream, const hubo_manip_pose_t& pose)
 	return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cmd)
+static std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cmd)
 {
 	for (int i = 0; i < NUM_ARMS; i++)
 	{
