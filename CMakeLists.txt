@@ -13,7 +13,7 @@ link_libraries(-lm -lrt -lach -lhuboparams -lRobotKin)
 
 file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
-file(GLOB drc_hubo_kin_source "src/DrcHuboKin.cpp" "include/DrcHuboKin.cpp")
+file(GLOB drc_hubo_kin_source "src/DrcHuboKin.cpp" "include/DrcHuboKin.h")
 
 file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h" "tables/control.table")
 
@@ -23,6 +23,7 @@ file(GLOB hubo_control_source "src/Hubo_Control.cpp" "include/Hubo_Control.h")
 file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "src/Walker.cpp"
                                 "include/balance-daemon.h"
+                                "include/Walker.h"
                                 "include/hubo-zmp.h" )
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"

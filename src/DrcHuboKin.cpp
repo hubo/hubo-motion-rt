@@ -29,14 +29,48 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
 }
 
-RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d B, LegVector qPrev)
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeTorque)
+{
+
+}
+
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeTorque, const ArmVector &jointAngles)
+{
+
+}
+
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B){ armIK(side, q, B, q); }
+
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B, const ArmVector &qPrev)
+{
+    VectorXd jointVals;
+    jointVals.resize(7);
+    for(int i=0; i<7; i++)
+        jointVals(i) = qPrev(i);
+
+    RobotKin::rk_result_t result;
+    if(side==LEFT)
+        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B);
+    else
+        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B);
+
+    for(int i=0; i<7; i++)
+        q(i) = jointVals(i);
+
+    for(int i=7; i<ARM_JOINT_COUNT; i++)
+        q(i) = 0;
+
+    return result;
+}
+
+RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d B, const LegVector &qPrev)
 {
     // FIXME: Clean up all the slop in this function and test it
 
-    Eigen::ArrayXXd qAll(6,8);
+    Eigen::ArrayXXd qAll(LEG_JOINT_COUNT,8);
 
     // Declarations
-    Eigen::Isometry3d neck, neckInv, waist, waistInv, BInv, foot, footInv;
+    Eigen::Isometry3d waist, waistInv, BInv, foot, footInv;
     Eigen::MatrixXd limits(6,2);
     Vector6d offset; offset.setZero();
     double nx, sx, ax, px;
@@ -57,26 +91,27 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 
     // Parameters
     // TODO: Consider removing some of these
-    double l1 = (79.5+107)/1000.0;      // Neck to waist Z
-    double l2 = fabs(tempLinkage.joint(0).respectToFixed().translation()[1]); //88.43/1000.0;           // Waist to hip  Y
-    double l3 = fabs(tempLinkage.joint(1).respectToLinkage().translation()[2]);//(289.47-107)/1000.0;   // Waist to hip  Z
+//    double l1 = (79.5+107)/1000.0;      // Neck to waist Z
+    double l2 = fabs(tempLinkage.joint(1).respectToRobot().translation()[1]); //88.43/1000.0;           // Waist to hip  Y
+    double l3 = fabs(tempLinkage.joint(1).respectToRobot().translation()[2]); //(289.47-107)/1000.0;   // Waist to hip  Z
     double l4 = fabs(tempLinkage.joint(3).respectToFixed().translation()[2]); //300.03/1000.0;          // Hip to knee   Z
     double l5 = fabs(tempLinkage.joint(4).respectToFixed().translation()[2]); //300.38/1000.0;          // Knee to ankle Z
-    double l6 = 94.97/1000.0;           // Ankle to foot Z
+    double l6 = fabs(tempLinkage.tool().respectToFixed().translation()[2]);           // Ankle to foot Z
 
     // Transformation from Neck frame to Waist frame
-    neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
-    neck(1,0) = 0; neck(1,1) =  1; neck(1,2) = 0; neck(1,3) =   0;
-    neck(2,0) = 0; neck(2,1) =  0; neck(2,2) = 1; neck(2,3) = -l1;
-    neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
+//    neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
+//    neck(1,0) = 0; neck(1,1) =  1; neck(1,2) = 0; neck(1,3) =   0;
+//    neck(2,0) = 0; neck(2,1) =  0; neck(2,2) = 1; neck(2,3) = -l1;
+//    neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
 
-//    limits <<
-//        H_Leg_Ctrl[side].joint[0].pos_min, H_Leg_Ctrl[side].joint[0].pos_max,
-//        H_Leg_Ctrl[side].joint[1].pos_min, H_Leg_Ctrl[side].joint[1].pos_max,
-//        H_Leg_Ctrl[side].joint[2].pos_min, H_Leg_Ctrl[side].joint[2].pos_max,
-//        H_Leg_Ctrl[side].joint[3].pos_min, H_Leg_Ctrl[side].joint[3].pos_max,
-//        H_Leg_Ctrl[side].joint[4].pos_min, H_Leg_Ctrl[side].joint[4].pos_max,
-//        H_Leg_Ctrl[side].joint[5].pos_min, H_Leg_Ctrl[side].joint[5].pos_max;
+    limits <<
+            tempLinkage.joint(0).min(), tempLinkage.joint(0).max(),
+            tempLinkage.joint(1).min(), tempLinkage.joint(1).max(),
+            tempLinkage.joint(2).min(), tempLinkage.joint(2).max(),
+            tempLinkage.joint(3).min(), tempLinkage.joint(3).max(),
+            tempLinkage.joint(4).min(), tempLinkage.joint(4).max(),
+            tempLinkage.joint(5).min(), tempLinkage.joint(5).max();
+
 
     if (side == RIGHT) {
         // Transformation from Waist frame to right hip yaw frame
@@ -84,17 +119,7 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) = -l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-/*
-                limits <<
-                -1.80,   0.0,
-                -0.58,   0.0,
-                -1.30,   1.30,
-                0.0,     2.50,
-                -1.26,   1.80,
-                -0.23,   0.31;
-*/
-        // Set offsets
-        //        offset(1) = limits(1,1);
+
 
     } else {
         // Transformation from Waist frame to left hip yaw frame
@@ -102,40 +127,29 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) =  l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
-/*
-                limits <<
-                0.0,     1.80,
-                0.0,     0.58,
-                -1.30,   1.30,
-                0.0,     2.50,
-                -1.26,   1.80,
-                -0.31,   0.23;
-*/        // Set offsets
-        //        offset(1) = limits(1,0);
     }
 
     // Rotation of -90 about y to make x forward, y left, z up
-//    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =1; foot(0,3) = 0;
-//    foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
-//    foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
-//    foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;
+    foot(0,0) = 0;  foot(0,1) =  0; foot(0,2) = 1;  foot(0,3) = 0;
+    foot(1,0) = 0;  foot(1,1) =  1; foot(1,2) = 0;  foot(1,3) = 0;
+    foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0;  foot(2,3) = -l6;
+    foot(3,0) = 0;  foot(3,1) =  0; foot(3,2) = 0;  foot(3,3) = 1;
 
-    neckInv = neck.inverse();
     waistInv = waist.inverse();
-//    footInv = foot.inverse();
+    footInv = foot.inverse();
 
     // Variables
-    BInv = (neckInv*waistInv*B).inverse();
+    BInv = (waistInv*B*footInv).inverse();
 
     nx = BInv(0,0); sx = BInv(0,1); ax = BInv(0,2); px = BInv(0,3);
     ny = BInv(1,0); sy = BInv(1,1); ay = BInv(1,2); py = BInv(1,3);
     nz = BInv(2,0); sz = BInv(2,1); az = BInv(2,2); pz = BInv(2,3);
 
     m <<
-    1,  1,  1,
-    1,  1, -1,
-    1, -1,  1,
-    1, -1, -1,
+     1,  1,  1,
+     1,  1, -1,
+     1, -1,  1,
+     1, -1, -1,
     -1,  1,  1,
     -1,  1, -1,
     -1, -1,  1,
@@ -181,6 +195,8 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         qAll(3,i) = q4;
         qAll(4,i) = q5;
         qAll(5,i) = q6;
+        for(int extra=6; extra<LEG_JOINT_COUNT; extra++)
+            qAll(extra,i);
     }
 
     // Set to offsets
