@@ -9,13 +9,16 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 set(CMAKE_C_FLAGS "-std=gnu99")
 
 #find_package(ach)
-link_libraries(-lm -lrt -lach -lhuboparams)
+link_libraries(-lm -lrt -lach -lhuboparams -lRobotKin)
 
 file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
+file(GLOB drc_hubo_kin_source "src/DrcHuboKin.cpp" "include/DrcHuboKin.cpp")
+
 file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h")
 
-file(GLOB hubo_control_source "src/Hubo_Control.cpp" "include/Hubo_Control.h" )
+file(GLOB hubo_control_source "src/Hubo_Control.cpp" "include/Hubo_Control.h")
+
 
 file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "src/Walker.cpp"
@@ -33,8 +36,10 @@ add_executable(control-daemon ${control_daemon_source})
 add_library(libhuboctrl SHARED ${hubo_control_source})
 link_libraries(libhuboctrl)
 
+add_library(libdrchubokin SHARED ${drc_hubo_kin_source})
+link_libraries(libdrchubokin)
+
 add_executable(balance-daemon ${balance_daemon_source})
 
 add_executable(manip-daemon ${manip_daemon_source})
-
 

@@ -525,9 +525,10 @@ void controlLoop()
                     C_state.status[jnt] = 0;
                 }
 
-                if( H_ref.ref[jnt] != H_ref.ref[jnt] && fail[jnt]==0 )
+                if( H_ref.ref[jnt] != H_ref.ref[jnt] )
                 {
                     fprintf( stderr, "JOINT FROZEN! You have requested a NaN for joint #%d!\n", jnt );
+                    H_ref.ref[jnt] = stored_ref.ref[jnt];
                     fail[jnt] = 1;
                     C_state.status[jnt] = 1;
                 }                    

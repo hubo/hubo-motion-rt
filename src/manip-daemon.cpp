@@ -264,7 +264,7 @@ manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state, 
     for(int i=0; i<3; i++)
     {
         trans(i) = cmd.pose[side].data[i];
-        angles(i) = cmd.pose[side].data[i];
+        angles(i) = cmd.pose[side].data[i+3];
     }
     
     Eigen::Isometry3d B;
