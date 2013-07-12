@@ -1574,10 +1574,10 @@ double Hubo_Control::getMx(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Control::getRightHandMx() { getMx(HUBO_FT_R_HAND); }
-double Hubo_Control::getLeftHandMx()  { getMx(HUBO_FT_L_HAND); }
-double Hubo_Control::getRightFootMx() { getMx(HUBO_FT_R_FOOT); }
-double Hubo_Control::getLeftFootMx()  { getMx(HUBO_FT_L_FOOT); }
+double Hubo_Control::getRightHandMx() { return getMx(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandMx()  { return getMx(HUBO_FT_L_HAND); }
+double Hubo_Control::getRightFootMx() { return getMx(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootMx()  { return getMx(HUBO_FT_L_FOOT); }
 
 // My
 double Hubo_Control::getMy(hubo_sensor_index_t sensor)
@@ -1588,33 +1588,24 @@ double Hubo_Control::getMy(hubo_sensor_index_t sensor)
     else
         return 0;
 }
-double Hubo_Control::getRightHandMy() { getMy(HUBO_FT_R_HAND); }
-double Hubo_Control::getLeftHandMy()  { getMy(HUBO_FT_L_HAND); }
-double Hubo_Control::getRightFootMy() { getMy(HUBO_FT_R_FOOT); }
-double Hubo_Control::getLeftFootMy()  { getMy(HUBO_FT_L_FOOT); }
+double Hubo_Control::getRightHandMy() { return getMy(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandMy()  { return getMy(HUBO_FT_L_HAND); }
+double Hubo_Control::getRightFootMy() { return getMy(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootMy()  { return getMy(HUBO_FT_L_FOOT); }
 
 // Fz
 double Hubo_Control::getFz(hubo_sensor_index_t sensor)
 {
-    if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT )
+    if( sensor==HUBO_FT_R_FOOT || sensor==HUBO_FT_L_FOOT
+        || sensor==HUBO_FT_R_HAND || sensor==HUBO_FT_L_HAND )
         return H_State.ft[sensor].f_z;
     else
         return 0;
 }
-double Hubo_Control::getRightFootFz( bool calibrated )
-{
-    if( calibrated )    
-        return getFz(HUBO_FT_R_FOOT) + afc[RIGHT];
-    else
-        return getFz(HUBO_FT_R_FOOT);
-}
-double Hubo_Control::getLeftFootFz( bool calibrated )
-{
-    if( calibrated )
-        return getFz(HUBO_FT_L_FOOT) + afc[LEFT];
-    else
-        return getFz(HUBO_FT_L_FOOT);
-}
+double Hubo_Control::getRightHandFz(){ return getFz(HUBO_FT_R_HAND); }
+double Hubo_Control::getLeftHandFz(){ return getFz(HUBO_FT_L_HAND); }
+double Hubo_Control::getRightFootFz(){ return getFz(HUBO_FT_R_FOOT); }
+double Hubo_Control::getLeftFootFz(){ return getFz(HUBO_FT_L_FOOT); }
 
 
 // ~* Accelerometers
@@ -1838,6 +1829,9 @@ bool Hubo_Control::huboArmIK(ArmVector &q, const Eigen::Isometry3d B, ArmVector 
     
     for(int i=0; i<6; i++)
         q[i] = q6[i];
+
+    for(int i=6; i<ARM_JOINT_COUNT; i++)
+        q[i] = 0;
     
     return valid;
 }
@@ -1866,7 +1860,9 @@ bool Hubo_Control::huboArmIK(ArmVector &q, const Eigen::Isometry3d B, ArmVector 
     
     for(int i=0; i<6; i++)
         q[i] = q6[i];
-    
+
+    for(int i=6; i<q.size(); i++)
+        q[i] = 0;
     return valid;
 }
 
@@ -2212,12 +2208,19 @@ void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     Vector6d offset; offset.setZero();
     
     // Parameters
-    double l1 = (79.5+107)/1000.0;
-    double l2 = 88.43/1000.0;
-    double l3 = (289.47-107)/1000.0;
-    double l4 = 300.03/1000.0;
-    double l5 = 300.38/1000.0;
-    double l6 = 94.97/1000.0;
+//    double l1 = (79.5+107)/1000.0;
+//    double l2 = 88.43/1000.0;
+//    double l3 = (289.47-107)/1000.0;
+//    double l4 = 300.03/1000.0;
+//    double l5 = 300.38/1000.0;
+//    double l6 = 94.97/1000.0;
+
+    double l1 = 0;
+    double l2 = 0.0885;
+    double l3 = 0.16452;
+    double l4 = 0.33008;
+    double l5 = 0.32995;
+    double l6 = 0.119063;
 
     // Denavit-Hartenberg parameters 
     Vector6d t, f, r, d;
@@ -2304,6 +2307,9 @@ bool Hubo_Control::huboLegIK(LegVector &q, const Eigen::Isometry3d B, LegVector 
     
     for(int i=0; i<6; i++)
         q[i] = q6[i];
+
+    for(int i=6; i<LEG_JOINT_COUNT; i++)
+        q[i] = 0;
     
     return valid;
 }
@@ -2331,7 +2337,7 @@ bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     double l3 = (289.47-107)/1000.0;    // Waist to hip  Z
     double l4 = 300.03/1000.0;          // Hip to knee   Z
     double l5 = 300.38/1000.0;          // Knee to ankle Z
-    double l6 = 94.97/1000.0;           // Ankle to foot Z
+    double l6 = 0.119063;           // Ankle to foot Z
 
     // Transformation from Neck frame to Waist frame
     neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;

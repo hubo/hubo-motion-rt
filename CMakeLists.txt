@@ -15,7 +15,7 @@ file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
 file(GLOB drc_hubo_kin_source "src/DrcHuboKin.cpp" "include/DrcHuboKin.cpp")
 
-file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h")
+file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h" "tables/control.table")
 
 file(GLOB hubo_control_source "src/Hubo_Control.cpp" "include/Hubo_Control.h")
 
@@ -26,7 +26,7 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "include/hubo-zmp.h" )
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
-                              "include/manip-daemon.h" )
+                              "include/manip.h" )
 
 add_library(libdaemonizer SHARED ${daemonizer_source})
 link_libraries(libdaemonizer)
@@ -42,4 +42,5 @@ link_libraries(libdrchubokin)
 add_executable(balance-daemon ${balance_daemon_source})
 
 add_executable(manip-daemon ${manip_daemon_source})
+
 

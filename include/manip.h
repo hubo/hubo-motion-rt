@@ -34,6 +34,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef MANIP_H
+#define MANIP_H
 
 #include <Hubo_Control.h>
 
@@ -61,14 +63,14 @@ typedef enum {
     MC_ANGLES,
     MC_TRAJ
     
-} manip_mode_t;
+}__attribute__((packed)) manip_mode_t;
 
 typedef enum {
 
     OVR_SOVEREIGN = 0,
     OVR_ACQUIESCENT
 
-} override_t;
+}__attribute__((packed)) override_t;
 
 typedef enum {
     
@@ -79,7 +81,7 @@ typedef enum {
     MC_RELEASE_NOW,
     MC_RELEASE_AT_END
     
-} manip_grasp_t;
+}__attribute__((packed)) manip_grasp_t;
 
 typedef enum {
     
@@ -87,7 +89,7 @@ typedef enum {
     MC_FORCE,
     MC_CURRENT
     
-} manip_ctrl_t;
+}__attribute__((packed)) manip_ctrl_t;
 
 typedef enum {
     
@@ -96,7 +98,7 @@ typedef enum {
     MC_MID,
     MC_END
     
-} manip_traj_chain_t;
+}__attribute__((packed)) manip_traj_chain_t;
 
 typedef enum {
     
@@ -105,13 +107,13 @@ typedef enum {
     MC_INVALID_TRANSITION,
     MC_BROKEN_CHAIN
     
-} manip_error_t;
+}__attribute__((packed)) manip_error_t;
 
 typedef struct manip_override {
 
     override_t m_override;
 
-} manip_override_t;
+}__attribute__((packed)) manip_override_t;
 
 /**
  * \union manip_pose_t
@@ -140,7 +142,7 @@ typedef union
 			};
 		};
 	};
-} hubo_manip_pose_t;
+}__attribute__((packed)) hubo_manip_pose_t;
 
 
 typedef struct hubo_manip_state {
@@ -152,7 +154,7 @@ typedef struct hubo_manip_state {
     hubo_manip_pose_t pose[NUM_ARMS];
     override_t override;
     
-} hubo_manip_state_t;
+}__attribute__((packed)) hubo_manip_state_t;
 
 
 typedef struct hubo_manip_cmd {
@@ -170,7 +172,7 @@ typedef struct hubo_manip_cmd {
     double stopNorm;
     double convergeNorm;
     
-} hubo_manip_cmd_t;
+}__attribute__((packed)) hubo_manip_cmd_t;
 
 
 typedef struct hubo_manip_param {
@@ -191,7 +193,7 @@ typedef struct hubo_manip_param {
     double current_D[NUM_ARMS][ARM_JOINT_COUNT];
     double current_I[NUM_ARMS][ARM_JOINT_COUNT];
     
-} hubo_manip_param_t;
+}__attribute__((packed)) hubo_manip_param_t;
 
 typedef struct hubo_manip_traj {
     
@@ -208,5 +210,63 @@ typedef struct hubo_manip_traj {
     
     unsigned int count;
     
-} hubo_manip_traj_t;
+}__attribute__((packed)) hubo_manip_traj_t;
 
+#ifdef __cplusplus
+static std::ostream& operator<<(std::ostream& stream, const hubo_manip_pose_t& pose)
+{
+	stream << "[ ";
+	for (int i = 0; i < 7; i++)
+	{
+		stream << pose.data[i];
+		if (2 == i)
+		{
+			stream << "; ";
+		}
+		else if (6 == i)
+		{
+			// Do nothing
+		}
+		else
+		{
+			stream << ", ";
+		}
+	}
+	stream << " ]";
+
+	return stream;
+}
+
+static std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cmd)
+{
+	for (int i = 0; i < NUM_ARMS; i++)
+	{
+		stream << "Arm " << i << ":" << std::endl;
+		stream << "\tGoal ID: " << cmd.goalID[i] << std::endl;
+		stream << "\tMode: " << cmd.m_mode[i] << std::endl;
+		stream << "\tControl: " << cmd.m_ctrl[i] << std::endl;
+		stream << "\tGrasp: " << cmd.m_grasp[i] << std::endl;
+		stream << "\tInterrupt: " << cmd.interrupt[i] << std::endl;
+		stream << "\tPose: " << cmd.pose[i] << std::endl;
+
+		stream << "\tJoints: [ ";
+		for (int j = 0; j < ARM_JOINT_COUNT; j++)
+		{
+			stream << cmd.arm_angles[i][j];
+			if (j < ARM_JOINT_COUNT - 1)
+			{
+				stream << ", ";
+			}
+		}
+		stream << " ]" << std::endl;
+	}
+	
+	stream << "waistAngle: " << cmd.waistAngle << std::endl;
+	stream << "stopNorm: " << cmd.stopNorm << std::endl;
+	stream << "convergeNorm: " << cmd.convergeNorm << std::endl;
+
+	return stream;
+}
+#endif // __cplusplus
+
+#endif // MANIP_H

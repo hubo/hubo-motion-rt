@@ -734,18 +734,28 @@ public:
      * Returns the FT-sensor reading of force along the z-axis for "sensor"
      *
      * "sensor" can take on the values:
+     * \li HUBO_FT_R_HAND
+     * \li HUBO_FT_L_HAND
      * \li HUBO_FT_R_FOOT
      * \li HUBO_FT_L_FOOT
     */
     double getFz( hubo_sensor_index_t sensor );
     /**
+     * Extension of getFz() where sensor = HUBO_FT_R_HAND
+    */
+    double getRightHandFz();
+    /**
+     * Extension of getFz() where sensor = HUBO_FT_L_HAND
+    */
+    double getLeftHandFz();
+    /**
      * Extension of getFz() where sensor = HUBO_FT_R_FOOT
     */
-    double getRightFootFz( bool calibrated=false );
+    double getRightFootFz();
     /**
      * Extension of getFz() where sensor = HUBO_FT_L_FOOT
     */
-    double getLeftFootFz( bool calibrated=false );
+    double getLeftFootFz();
     // ~* Accelerometers
     // Tilt X
     /**
