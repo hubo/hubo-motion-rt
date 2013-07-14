@@ -267,6 +267,24 @@ static std::ostream& operator<<(std::ostream& stream, const hubo_manip_cmd_t& cm
 
 	return stream;
 }
+
+static std::ostream& operator<<(std::ostream& stream, const hubo_manip_state_t& state)
+{
+	stream << "Override: " << state.override << std::endl;
+	for (int i = 0; i < NUM_ARMS; i++)
+	{
+		stream << "Arm " << i << ":" << std::endl;
+		stream << "\tGoal ID: " << state.goalID[i] << std::endl;
+		stream << "\tMode: " << state.mode_state[i] << std::endl;
+		stream << "\tGrasp: " << state.grasp_state[i] << std::endl;
+		stream << "\tPose: " << state.pose[i] << std::endl;
+
+		stream << "\tError: " << state.error[i] << std::endl;
+
+	}
+	
+	return stream;
+}
 #endif // __cplusplus
 
 #endif // MANIP_H
