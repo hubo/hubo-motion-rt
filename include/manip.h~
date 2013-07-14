@@ -283,6 +283,10 @@ static std::ostream& operator<<(std::ostream& stream, const hubo_manip_state_t& 
 
 	}
 	
+	stream << "waistAngle: " << cmd.waistAngle << std::endl;
+	stream << "stopNorm: " << cmd.stopNorm << std::endl;
+	stream << "convergeNorm: " << cmd.convergeNorm << std::endl;
+
 	return stream;
 }
 #endif // __cplusplus
