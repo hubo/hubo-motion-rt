@@ -2,6 +2,10 @@
 #include "DrcHuboKin.h"
 
 
+using namespace std;
+using namespace Eigen;
+using namespace RobotKin;
+
 inline double mod(double x, double y)
 {
     if (0 == y)
