@@ -36,6 +36,7 @@
  */
 
 #include "balance-daemon.h"
+#include "DrcHuboKin.h"
 #include "Walker.h"
 #include "Hubo_Control.h"
 #include "manip.h"
@@ -78,6 +79,11 @@ void moveHips(Hubo_Control &hubo, std::vector<LegVector> &legJointVels, const ba
 int main(int argc, char **argv)
 {
     Hubo_Control hubo("balance-daemon", 35);
+    DrcHuboKin kin;
+
+
+
+
     //Hubo_Control hubo;
 
     hubo.storeAllDefaults();

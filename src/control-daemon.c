@@ -143,7 +143,8 @@ void controlLoop()
         daemon_assert( sizeof(H_ref) == fs, __LINE__ );
     }
 
-    setJointParams( &H_param, &H_state);
+    hubo_pwm_gains_t gains;
+    setJointParams( &H_param, &H_state, &gains);
     if(setCtrlDefaults( &ctrl )==-1)
         return;
 
