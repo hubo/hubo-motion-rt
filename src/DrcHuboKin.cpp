@@ -87,7 +87,7 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
     double S2, S4, S6;
     double C2, C4, C5, C6;
 
-    /*RobotKin::*/Linkage tempLinkage;
+    RobotKin::Linkage tempLinkage;
     if(side==LEFT)
         tempLinkage = linkage("LeftLeg");
     else

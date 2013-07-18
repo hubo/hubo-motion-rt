@@ -43,13 +43,14 @@ file(GLOB manip_daemon_source "src/manip-daemon.cpp"
                               "include/manip.h" )
 
 add_library(huboctrl SHARED ${hubo_control_source})
-link_libraries(huboctrl)
+#link_libraries(huboctrl)
 
 add_library(drchubokin SHARED ${drc_hubo_kin_source})
-link_libraries(drchubokin)
+#link_libraries(drchubokin)
+target_link_libraries(drchubokin RobotKin)
 
 add_executable(balance-daemon ${balance_daemon_source})
-target_link_libraries(balance-daemon m rt ach huboparams huboctrl daemonizer RobotKin drchubokin)
+target_link_libraries(balance-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
 #add_executable(manip-daemon ${manip_daemon_source})
 #target_link_libraries(control-daemon m rt ach huboparams daemonizer huboctrl drchubokin RobotKin)
