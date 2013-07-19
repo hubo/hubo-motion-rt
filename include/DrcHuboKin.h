@@ -28,6 +28,9 @@ public:
 
     void updateJoints(Hubo_Control& hubo);
 
+    ArmVector armRestValues[2];
+    LegVector legRestValues[2];
+
 };
 
 
