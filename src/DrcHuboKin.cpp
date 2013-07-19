@@ -41,11 +41,26 @@ DrcHuboKin::DrcHuboKin(string filename)
 
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
 {
+
+}
+
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
+{
     VectorXd torques;
     if(side==RIGHT)
         linkage("RightArm").gravityJointTorques(torques);
     else
         linkage("LeftArm").gravityJointTorques(torques);
+
+
+    MatrixXd J;
+    if(side==RIGHT)
+        linkage("RightArm").jacobian(J, linkage("RightArm").tool().respectToLinkage().translation(), &linkage("RightArm"));
+    else
+        linkage("LeftArm").jacobian(J, linkage("LeftArm").tool().respectToLinkage().translation(), &linkage("LeftArm"));
+
+    torques += J.transpose()*eeWrench;
+
 
     for(int i=0; i<7; i++)
         jointTorque[i] = torques[i];
@@ -53,21 +68,23 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     for(int i=7; i<ARM_JOINT_COUNT; i++)
         jointTorque[i] = 0;
 
-    MatrixXd J;
-
-    if(side==RIGHT)
-        linkage("RightArm").jacobian(J, linkage("RightArm").tool().respectToLinkage().translation(), &linkage("RightArm"));
-    else
-        linkage("LeftArm").jacobian(J, linkage("LeftArm").tool().respectToLinkage().translation(), &linkage("LeftArm"));
-
     return RK_SOLVED;
 }
 
-RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
+TRANSFORM DrcHuboKin::handFK(int side)
 {
+    if(side==RIGHT)
+        return linkage("RightArm").tool().respectToRobot();
+    else
+        return linkage("LeftArm").tool().respectToRobot();
+}
 
-
-
+TRANSFORM DrcHuboKin::footFK(int side)
+{
+    if(side==RIGHT)
+        return linkage("RightArm").tool().respectToRobot();
+    else
+        return linkage("LeftArm").tool().respectToRobot();
 }
 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B){ armIK(side, q, B, q); }
