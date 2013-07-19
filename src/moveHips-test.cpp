@@ -10,9 +10,9 @@
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo(false);
+    Hubo_Control hubo;
     //DrcHuboKin kin;
-//    hubo.update(false);
+    hubo.update();
 
     std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointVels(2);
     std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointAngs(2);
@@ -22,7 +22,6 @@ int main(int argc, char **argv)
     for(int side=0; side<2; side++)
     {
         hubo.getLegAngles(side, legJointAngs[side]);
-        legJointAngs[side] << 0,0,0,0,0, 0,0,0,0,0;
         //footTF[side] = kin.linkage("LeftLeg").tool().respectToWorld();
         hubo.huboLegFK(footTF[side], legJointAngs[side], side);
         if(LEFT == side)
@@ -31,9 +30,9 @@ int main(int argc, char **argv)
             std::cout << "RIGHT:";
         std::cout << "\nPrevious Angles = " << legJointAngs[side].transpose();
         std::cout << "\nFoot TF = \n" << footTF[side].matrix() << "\n\n";
-        footTF[side](2,3) += 0.2;
+        footTF[side](2,3) += 0.02;
         hubo.huboLegIK(legJointAngsNext[side], footTF[side], legJointAngs[side], side);
-        //hubo.setLegAngles(side, legJointAngsNext[side]);
+        hubo.setLegAngles(side, legJointAngsNext[side]);
     }
 
     for(int side=0; side<2; side++)
@@ -46,29 +45,62 @@ int main(int argc, char **argv)
         std::cout << "\nFoot TF = \n" << footTF[side].matrix() << "\n\n";
     }
 
-//    hubo.sendControls();
+    hubo.sendControls();
+    hubo.update();
 
     char c;
     std::cout << "Press any key to MOVE the hips\n";
     c = getchar();
+    hubo.update();
 
     Eigen::Vector3d hipVelocity;
 
-    hipVelocity << 0.1, 0.1, 0.0;
+    double startTime = hubo.getTime();
+    double ptime = hubo.getTime();
+    double relativeTime = 0;
+    double dt = 0;
+    int counter = 0; int counterMax = 40;
+    double timeout = 2.0;
 
-    //---------------------------
-    //   LEG JOINT VELOCITIES
-    //---------------------------
-    for(int side=0; side<2; side++)
+    while(!daemon_sig_quit)
     {
-        hubo.hipVelocityIK(legJointVels[side], hipVelocity, side);
-        hubo.setLegVels(side, legJointVels[side]);
+        hubo.update();
+        dt = hubo.getTime() - ptime;
+        ptime = hubo.getTime();
+        relativeTime = ptime - startTime;
+        if(relativeTime > timeout)
+            break;
+
+        counter++;
+
+        hipVelocity << 0.001, 0.001, 0.0;
+
+        //---------------------------
+        //   LEG JOINT VELOCITIES
+        //---------------------------
+        if(dt > 0)
+        {
+            for(int side=0; side<2; side++)
+            {
+                hubo.hipVelocityIK(legJointVels[side], hipVelocity, side);
+                hubo.setLegVels(side, legJointVels[side]);
+            }
+
+/*            if(counter > counterMax)
+            {
+                for(int side=0; side<2; side++)
+                {
+                    hubo.getLegVels(side, legJointVels[side]);
+                    if(LEFT == side)
+                        std::cout << "LEFT";
+                    else if(RIGHT == side)
+                        std::cout << "RIGHT";
+                    std::cout << "\nlegVels = " << legJointVels[side].transpose() << "\n\n";
+                }
+            }
+*/            hubo.sendControls();
+        }
     }
-
-//    hubo.sendControls();
-
-    std::cout << "Press any key to STOP the hips\n";
-    c = getchar();
 
     for(int side=0; side<2; side++)
     {
@@ -76,7 +108,17 @@ int main(int argc, char **argv)
         hubo.setLegVels(side, legJointVels[side]);
     }
 
-//    hubo.sendControls();
+    hubo.sendControls();
+    hubo.update();
 
+    for(int side=0; side<2; side++)
+    {
+        hubo.getLegVels(side, legJointVels[side]);
+        if(LEFT == side)
+            std::cout << "LEFT";
+        else if(RIGHT == side)
+            std::cout << "RIGHT";
+        std::cout << "\nlegVels = " << legJointVels[side].transpose() << "\n\n";
+    }
     return 0;
 }
