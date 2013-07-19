@@ -96,8 +96,6 @@ void Hubo_Control::controlInit(bool live)
     for(int i=0; i<8; i++)
         ctrlOn[i] = false;
 
-    if(!live)
-        return; // Don't bother trying to read channels if we're not live
 
     int r = ach_open( &chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL );
     assert( ACH_OK == r );
@@ -137,9 +135,6 @@ void Hubo_Control::controlInit(bool live)
 
     size_t fs;
     
-    
-    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
-    ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
 
     ach_status_t checkCtrl;
 
@@ -271,6 +266,13 @@ void Hubo_Control::controlInit(bool live)
         localMap[ nckjoints[i] ] = i;
     }
     
+    if(!live)
+        return; // Don't bother trying to read the state channel if we're not live
+
+
+    ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
+    ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
+
 }
 
 
