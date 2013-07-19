@@ -2286,17 +2286,18 @@ void Hubo_Control::huboLegFK(Eigen::Isometry3d &B, Vector6d &q, int side) {
     }
 
     // Rotation of -90 about y to make x forward, y left, z up
-//    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =1; foot(0,3) = 0;
- //   foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
-  //  foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
-   // foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
+    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =-1; foot(0,3) = 0;
+    foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
+    foot(2,0) = 1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
+    foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
 
     // Calculate forward kinematics
     B = waist*neck;
     for (int i = 0; i < 6; i++) {
         DH2HG(T, t(i)+q(i)+offset(i), f(i), r(i), d(i));
-        B = B*T;//*foot;
+        B = B*T;
     }
+    B = B*foot;
 }
 
 bool Hubo_Control::huboLegIK(LegVector &q, const Eigen::Isometry3d B, LegVector qPrev, int side)
@@ -2395,17 +2396,17 @@ bool Hubo_Control::huboLegIK(Vector6d &q, const Eigen::Isometry3d B, Vector6d qP
     }
 
     // Rotation of -90 about y to make x forward, y left, z up
-//    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =1; foot(0,3) = 0;
-//    foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
-//    foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
-//    foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
+    foot(0,0) = 0; foot(0,1) =  0; foot(0,2) =-1; foot(0,3) = 0;
+    foot(1,0) = 0; foot(1,1) =  1; foot(1,2) = 0; foot(1,3) = 0;
+    foot(2,0) = 1; foot(2,1) =  0; foot(2,2) = 0; foot(2,3) = 0;
+    foot(3,0) = 0; foot(3,1) =  0; foot(3,2) = 0; foot(3,3) = 1;   
 
     neckInv = neck.inverse();
     waistInv = waist.inverse();
-//    footInv = foot.inverse();
+    footInv = foot.inverse();
     
     // Variables
-    BInv = (neckInv*waistInv*B).inverse();
+    BInv = (neckInv*waistInv*B*footInv).inverse();
     
     nx = BInv(0,0); sx = BInv(0,1); ax = BInv(0,2); px = BInv(0,3);
     ny = BInv(1,0); sy = BInv(1,1); ay = BInv(1,2); py = BInv(1,3);
