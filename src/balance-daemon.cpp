@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     Hubo_Control hubo("balance-daemon", 35);
 //    DrcHuboKin kin;
 
-
+    kin.linkage("LeftLeg").tool().respectToRobot();
 
 
 //    Hubo_Control hubo;
