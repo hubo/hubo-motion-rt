@@ -58,8 +58,6 @@ int main(int argc, char **argv)
     DrcHuboKin kin;
 
     kin.linkage("LeftLeg").tool().respectToRobot();
-
-
     //Hubo_Control hubo;
 
     hubo.storeAllDefaults();
