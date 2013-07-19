@@ -77,11 +77,11 @@ void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocato
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo("balance-daemon", 35);
+//    Hubo_Control hubo("balance-daemon", 35);
     //DrcHuboKin kin;
 
 
-//    Hubo_Control hubo;
+    Hubo_Control hubo;
 
     hubo.storeAllDefaults();
 
@@ -214,9 +214,9 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Get leg joint velocities based that move the 
     // hips in the x-y plane to counter falling
-    moveHips( hubo, legJointVels, gains, dt );
+    //moveHips( hubo, legJointVels, gains, dt );
 
-    // Temp so I can verify within the moveHips() function
+    // FIXME Temp so I can verify within the moveHips() function
     // but not affect the actual values in here.
     for(int side=0; side<2; side++)
         legJointVels[side].setZero();
@@ -263,8 +263,8 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     //---------------------------
     //       P & D Gains
     //---------------------------
-    double kP = gains.single_support_hip_nudge_kp;
-    double kD = gains.single_support_hip_nudge_kd;
+    double kP = gains.double_support_hip_nudge_kp;
+    double kD = gains.double_support_hip_nudge_kd;
     // Proportional gain matrix for ankle roll and pitch
     Eigen::Matrix3d shiftGainsKp;
     shiftGainsKp << kP,  0, 0,
@@ -338,7 +338,7 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     //---------------------------
     //       PRINT OUT
     //---------------------------
-    if(false)
+    if(true)
     {
         std::cout 
                   << "\nMyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()

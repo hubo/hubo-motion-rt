@@ -19,9 +19,12 @@ int main(int argc, char **argv)
     std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointAngsNext(2);
     std::vector<Eigen::Isometry3d, Eigen::aligned_allocator<Eigen::Isometry3d> > footTF(2);
 
+    //------------------------
+    //     RAISE FEET
+    //------------------------
     for(int side=0; side<2; side++)
     {
-        hubo.getLegAngles(side, legJointAngs[side]);
+        legJointAngs[side] << 0,0,0,0,0, 0,0,0,0,0;
         //footTF[side] = kin.linkage("LeftLeg").tool().respectToWorld();
         hubo.huboLegFK(footTF[side], legJointAngs[side], side);
         if(LEFT == side)
@@ -53,6 +56,9 @@ int main(int argc, char **argv)
     c = getchar();
     hubo.update();
 
+    //-------------------------
+    //        MOVE HIPS
+    //-------------------------
     Eigen::Vector3d hipVelocity;
 
     double startTime = hubo.getTime();
@@ -60,7 +66,7 @@ int main(int argc, char **argv)
     double relativeTime = 0;
     double dt = 0;
     int counter = 0; int counterMax = 40;
-    double timeout = 2.0;
+    double timeout = 4.0;
 
     while(!daemon_sig_quit)
     {
@@ -73,7 +79,7 @@ int main(int argc, char **argv)
 
         counter++;
 
-        hipVelocity << 0.001, 0.001, 0.0;
+        hipVelocity << 0.02, 0.02, 0.0;
 
         //---------------------------
         //   LEG JOINT VELOCITIES
@@ -111,14 +117,20 @@ int main(int argc, char **argv)
     hubo.sendControls();
     hubo.update();
 
+    std::cout << "Press any key to PRINT feet poses\n";
+    c = getchar();
+
     for(int side=0; side<2; side++)
     {
-        hubo.getLegVels(side, legJointVels[side]);
+        hubo.getLegAngleStates(side, legJointAngsNext[side]);
+        hubo.huboLegFK(footTF[side], legJointAngsNext[side], side);
         if(LEFT == side)
-            std::cout << "LEFT";
+            std::cout << "LEFT:";
         else if(RIGHT == side)
-            std::cout << "RIGHT";
-        std::cout << "\nlegVels = " << legJointVels[side].transpose() << "\n\n";
+            std::cout << "RIGHT:";
+        std::cout << "\nModified Angles = " << legJointAngsNext[side].transpose();
+        std::cout << "\nFoot TF = \n" << footTF[side].matrix() << "\n\n";
     }
+
     return 0;
 }
