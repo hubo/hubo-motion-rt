@@ -41,14 +41,14 @@ extern "C" {
 #include "daemonizer.h"
 }
 
-Hubo_Control::Hubo_Control()
+Hubo_Control::Hubo_Control(bool live)
 {
-    controlInit();
+    controlInit(live);
 }
 
 Hubo_Control::Hubo_Control(const char *daemon_name, int priority)
 {
-    controlInit();
+    controlInit(true);
     daemonize(daemon_name, priority);
 }
 
@@ -69,7 +69,7 @@ Hubo_Control::~Hubo_Control()
     daemon_close();
 }
 
-void Hubo_Control::controlInit()
+void Hubo_Control::controlInit(bool live)
 {
     kneeSingularityThreshold = 0.2;
     kneeSingularityDanger = 0.15;
@@ -95,6 +95,9 @@ void Hubo_Control::controlInit()
 
     for(int i=0; i<8; i++)
         ctrlOn[i] = false;
+
+    if(!live)
+        return; // Don't bother trying to read channels if we're not live
 
     int r = ach_open( &chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL );
     assert( ACH_OK == r );

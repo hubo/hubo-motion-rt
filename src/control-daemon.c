@@ -197,7 +197,7 @@ void controlLoop()
 
     double t0 = H_state.time;
     double t = H_state.time, dt, err;
-    fprintf(stderr, "Start time:%f\n", H_state.time); 
+    fprintf(stdout, "Start time:%f\n", H_state.time);
     dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
     fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
