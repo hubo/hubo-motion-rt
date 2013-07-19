@@ -38,19 +38,19 @@ RWP     1.00        0.8         0.50        3.0             -1.4        1.2     
 RWR     1.00        0.8         0.50        3.0             -1.5        1.5         0.5     RA
 
 # LEFT LEG JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-LHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     LL      
-LHR     0.8         0.6         0.50        6.0             0.00        0.58        0.5     LL      
-LHY     0.8         0.6         0.50        6.0             0.00        1.80        0.5     LL      
+#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type
+LHY     0.8         0.6         0.50        6.0             0.00        1.80        0.5     LL
+LHR     0.8         0.6         0.50        6.0             0.00        0.58        0.5     LL
+LHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     LL
 LKN     0.8         0.6         0.50        6.0             0.00        2.50        0.5     LL      
 LAP     0.8         0.6         0.50        6.0             -1.26       1.80        0.5     LL      
 LAR     0.8         0.6         0.50        6.0             -0.31       0.23        0.5     LL      
 
 # RIGHT LEG JOINTS
 #name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-RHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     RL      
-RHR     0.8         0.6         0.50        6.0             -0.58       0.00        0.5     RL      
-RHY     0.8         0.6         0.50        6.0             -1.80       0.00        0.5     RL      
+RHY     0.8         0.6         0.50        6.0             -1.80       0.00        0.5     RL
+RHR     0.8         0.6         0.50        6.0             -0.58       0.00        0.5     RL
+RHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     RL
 RKN     0.8         0.6         0.50        6.0             0.00        2.50        0.5     RL      
 RAP     0.8         0.6         0.50        6.0             -1.26       1.80        0.5     RL      
 RAR     0.8         0.6         0.50        6.0             -0.23       0.31        0.5     RL      

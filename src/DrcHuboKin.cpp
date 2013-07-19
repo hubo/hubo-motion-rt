@@ -56,13 +56,16 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     MatrixXd J;
 
     if(side==RIGHT)
-
+        linkage("RightArm").jacobian(J, linkage("RightArm").tool().respectToLinkage().translation(), &linkage("RightArm"));
+    else
+        linkage("LeftArm").jacobian(J, linkage("LeftArm").tool().respectToLinkage().translation(), &linkage("LeftArm"));
 
     return RK_SOLVED;
 }
 
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
 {
+
 
 
 }
