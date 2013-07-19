@@ -4,9 +4,9 @@
  * as hipVelocityIK
 */
 
+//#include "DrcHuboKin.h"
 #include "Hubo_Control.h"
 #include <iostream>
-//#include "DrcHuboKin.h"
 
 int main(int argc, char **argv)
 {

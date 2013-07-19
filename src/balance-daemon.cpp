@@ -40,7 +40,6 @@
 #include "Walker.h"
 #include "Hubo_Control.h"
 #include "manip.h"
-#include <Eigen/StdVector>
 
 ach_channel_t bal_cmd_chan;
 ach_channel_t bal_state_chan;
@@ -79,9 +78,7 @@ void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocato
 int main(int argc, char **argv)
 {
     Hubo_Control hubo("balance-daemon", 35);
-//    DrcHuboKin kin;
-
-    kin.linkage("LeftLeg").tool().respectToRobot();
+    //DrcHuboKin kin;
 
 
 //    Hubo_Control hubo;

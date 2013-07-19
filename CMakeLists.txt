@@ -52,6 +52,9 @@ target_link_libraries(drchubokin RobotKin)
 add_executable(balance-daemon ${balance_daemon_source})
 target_link_libraries(balance-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
+#add_executable(moveHips-test "src/moveHips-test.cpp")
+#target_link_libraries(moveHips-test m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
+
 #add_executable(manip-daemon ${manip_daemon_source})
 #target_link_libraries(control-daemon m rt ach huboparams daemonizer huboctrl drchubokin RobotKin)
 
