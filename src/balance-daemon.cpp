@@ -40,7 +40,7 @@
 #include "Walker.h"
 #include "Hubo_Control.h"
 #include "manip.h"
-
+#include <Eigen/StdVector>
 
 ach_channel_t bal_cmd_chan;
 ach_channel_t bal_state_chan;
@@ -73,18 +73,18 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
  * \param dt Cycle time.
  * \return void
 */
-void moveHips(Hubo_Control &hubo, std::vector<LegVector> &legJointVels, const balance_gains_t &gains, const double dt); 
+void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels, const balance_gains_t &gains, const double dt); 
 
 
 int main(int argc, char **argv)
 {
-//    Hubo_Control hubo("balance-daemon", 35);
+    Hubo_Control hubo("balance-daemon", 35);
 //    DrcHuboKin kin;
 
 
 
 
-    Hubo_Control hubo;
+//    Hubo_Control hubo;
 
     hubo.storeAllDefaults();
 
@@ -211,7 +211,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Initialize LegVectors for leg joint velocities,
     // which get passed into the hipVelocityIK() function
-    std::vector<LegVector> legJointVels(2);
+    std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointVels(2);
     for(int side=0; side<2; side++)
         legJointVels[side].setZero();
 
@@ -260,7 +260,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 }
 
 
-void moveHips( Hubo_Control &hubo, std::vector<LegVector> &legJointVels,
+void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
                 const balance_gains_t &gains, const double dt )
 {
     //---------------------------
