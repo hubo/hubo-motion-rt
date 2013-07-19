@@ -33,6 +33,12 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
 }
 
+DrcHuboKin::DrcHuboKin(string filename)
+    : Robot(filename)
+{
+
+}
+
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
 {
     VectorXd torques;
@@ -47,6 +53,9 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     for(int i=7; i<ARM_JOINT_COUNT; i++)
         jointTorque[i] = 0;
 
+    MatrixXd J;
+
+    if(side==RIGHT)
 
 
     return RK_SOLVED;
