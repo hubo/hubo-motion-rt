@@ -117,7 +117,7 @@ public:
     /**
      * Constructor for the Hubo_Control class.
     */
-    Hubo_Control(); /// Use daemonize(const char *daemon_name) after calling this constructor
+    Hubo_Control(bool live=true); /// Use daemonize(const char *daemon_name) after calling this constructor
     /**
      * Constructor for the Hubo_Control class that daemonizes with the name specificied by the parameter.
     */
@@ -968,7 +968,7 @@ public:
 
 protected:
 
-    void controlInit();
+    void controlInit(bool live);
 
     ach_channel_t chan_hubo_ref;
     ach_channel_t chan_hubo_board_cmd;

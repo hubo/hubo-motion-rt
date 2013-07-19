@@ -33,13 +33,28 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
 }
 
-RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeTorque)
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
 {
+    VectorXd torques;
+    if(side==RIGHT)
+        linkage("RightArm").gravityJointTorques(torques);
+    else
+        linkage("LeftArm").gravityJointTorques(torques);
 
+    for(int i=0; i<7; i++)
+        jointTorque[i] = torques[i];
+
+    for(int i=7; i<ARM_JOINT_COUNT; i++)
+        jointTorque[i] = 0;
+
+
+
+    return RK_SOLVED;
 }
 
-RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeTorque, const ArmVector &jointAngles)
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
 {
+
 
 }
 
