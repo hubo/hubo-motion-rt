@@ -32,11 +32,15 @@ DrcHuboKin::DrcHuboKin()
     joint("REP").name("REB");
     joint("LEP").name("LEB");
 
-    armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0;
-    armRestValues[LEFT]  <<  20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0;
+    armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
+            0, 0, 0;
+    armRestValues[LEFT]  <<  20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
+            0, 0, 0;
 
-    legRestValues[RIGHT] << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0;
-    legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0;
+    legRestValues[RIGHT] << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
+            0, 0, 0, 0;
+    legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
+            0, 0, 0, 0;
 }
 
 DrcHuboKin::DrcHuboKin(string filename)
@@ -133,9 +137,9 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Iso
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
-        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B, restVals);
+        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B);
     else
-        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B, restVals);
+        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B);
 
     for(int i=0; i<7; i++)
         q(i) = jointVals(i);
