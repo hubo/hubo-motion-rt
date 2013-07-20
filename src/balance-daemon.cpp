@@ -228,16 +228,20 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
     double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR + legJointVels[RIGHT](KN);
 
     double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()
+//                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  FOR CORRECT F/T DIRECTIONS
+                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelL/2;
     double rollL  = gains.straightening_roll_gain[LEFT]*hubo.getAngleX()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();
+//                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  FOR CORRECT F/T DIRECTIONS
+                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  //FOR REVERSED F/T DIRECTIONS
     
     double pitchR = gains.straightening_pitch_gain[RIGHT]*hubo.getAngleY()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()
+//                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  FOR CORRECT F/T DIRECTIONS
+                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelR/2;
     double rollR  = gains.straightening_roll_gain[RIGHT]*hubo.getAngleX()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();
+//                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  FOR CORRECT F/T DIRECTIONS
+                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  //FOR REVERSED F/T DIRECTIONS
 
     
     hubo.setJointVelocity( LAP, pitchL + legJointVels[LEFT](AP));
