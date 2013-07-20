@@ -208,9 +208,9 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Initialize LegVectors for leg joint velocities,
     // which get passed into the hipVelocityIK() function
-//    std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointVels(2);
-//    for(int side=0; side<2; side++)
-//        legJointVels[side].setZero();
+    std::vector<LegVector, Eigen::aligned_allocator<LegVector> > legJointVels(2);
+    for(int side=0; side<2; side++)
+        legJointVels[side].setZero();
 
     // Get leg joint velocities based that move the 
     // hips in the x-y plane to counter falling
@@ -218,14 +218,14 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // FIXME Temp so I can verify within the moveHips() function
     // but not affect the actual values in here.
-//    for(int side=0; side<2; side++)
-//        legJointVels[side].setZero();
+    for(int side=0; side<2; side++)
+        legJointVels[side].setZero();
 
     double kneeAngleErrorL = knee - hubo.getJointAngle( LKN );
     double kneeAngleErrorR = knee - hubo.getJointAngle( RKN );
 
-    double kneeVelL = gains.spring_gain[LEFT]*kneeAngleErrorL;// + legJointVels[LEFT](KN);
-    double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR;// + legJointVels[RIGHT](KN);
+    double kneeVelL = gains.spring_gain[LEFT]*kneeAngleErrorL + legJointVels[LEFT](KN);
+    double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR + legJointVels[RIGHT](KN);
 
     double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
                     + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()
@@ -240,32 +240,19 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
                     + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();
 
     
-    hubo.setJointVelocity( LAP, pitchL );// + legJointVels[LEFT](AP));
-    hubo.setJointVelocity( LAR, rollL );// + legJointVels[LEFT](AR));
+    hubo.setJointVelocity( LAP, pitchL + legJointVels[LEFT](AP));
+    hubo.setJointVelocity( LAR, rollL + legJointVels[LEFT](AR));
     hubo.setJointVelocity( LKN, kneeVelL );
-    hubo.setJointVelocity( LHP, -kneeVelL/2.0 );// + legJointVels[LEFT](HP));
-//    hubo.setJointVelocity( LHR, legJointVels[LEFT](HR));
+    hubo.setJointVelocity( LHP, -kneeVelL/2.0 + legJointVels[LEFT](HP));
+    hubo.setJointVelocity( LHR, legJointVels[LEFT](HR));
 
-    hubo.setJointVelocity( RAP, pitchR );// + legJointVels[RIGHT](AP));
-    hubo.setJointVelocity( RAR, rollR );// + legJointVels[RIGHT](AR));
+    hubo.setJointVelocity( RAP, pitchR + legJointVels[RIGHT](AP));
+    hubo.setJointVelocity( RAR, rollR + legJointVels[RIGHT](AR));
     hubo.setJointVelocity( RKN, kneeVelR );
-    hubo.setJointVelocity( RHP, -kneeVelR/2.0 );// + legJointVels[RIGHT](HP));
-//    hubo.setJointVelocity( LHR, legJointVels[RIGHT](HR));
+    hubo.setJointVelocity( RHP, -kneeVelR/2.0 + legJointVels[RIGHT](HP));
+    hubo.setJointVelocity( LHR, legJointVels[RIGHT](HR));
 
     hubo.sendControls();
-
-    std::cout << "L = " << hubo.getLeftFootMx() << ", " << hubo.getLeftFootMy()
-              << "\tGL = " << gains.straightening_roll_gain[LEFT] << ", " << gains.straightening_pitch_gain[LEFT]
-              << ", " << gains.flattening_gain[LEFT]
-
-              << "\nR = " << hubo.getRightFootMx() << ", " << hubo.getRightFootMy()
-              << "\tGR = " << gains.straightening_roll_gain[RIGHT] << ", " << gains.straightening_pitch_gain[RIGHT]
-              << ", " << gains.flattening_gain[RIGHT]
-
-              << "\nVL = " << rollL << ", " << pitchL << ", " << kneeVelL
-              << "\nVR = " << rollR << ", " << pitchR << ", " << kneeVelR
-              << std::endl;
-
 }
 
 
@@ -327,12 +314,20 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     //---------------------------
     Eigen::Vector3d hipVelocity;//!< New hip velocity to counter falling 
 
-    // Check if we're on the ground, if not set instantaneous feet offset
-    // to zero so integrated feet offset doesn't change, but we still apply it.
+    // Skew matrix to convert torque rotation to hip velocity direction.
+    // Positive torque about x-axis should translate to negative y velocity
+    // Postiive torque about y-axis should translate to positive x velocity
+    Eigen::Matrix3d skew; 
+    skew << 0, 1, 0,
+           -1, 0, 0,
+            0, 0, 0;
+
+    // Check if we're on the ground, if not set hipVelocity to zero.
+    // If we are, apply torque error time a gain to our hip velocity.
 //    const double forceThreshold = 20; // Newtons
 //    if(hubo.getLeftFootFz() + hubo.getRightFootFz() > forceThreshold)
 //    {
-        hipVelocity = (shiftGainsKp * (yawRot[LEFT]*torqueErr[LEFT] + yawRot[RIGHT]*torqueErr[RIGHT])/2);
+        hipVelocity = (shiftGainsKp * (yawRot[LEFT]*skew*torqueErr[LEFT] + yawRot[RIGHT]*skew*torqueErr[RIGHT])/2);
 //                                 - (shiftGainsKd * (yawRot[LEFT]*(torqueErr[LEFT] - state.prevTorqueErr[LEFT])
 //                                    + yawRot[RIGHT]*(torqueErr[RIGHT] - state.prevTorqueErr[RIGHT]))/2/dt);
 //    }
