@@ -23,6 +23,14 @@ public:
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench=Vector6d::Zero());
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);
 
+    void updateArmJoints(int side, const ArmVector& jointValues);
+    void updateLegJoints(int side, const LegVector& jointValues);
+
+    void updateJoints(Hubo_Control& hubo);
+
+    ArmVector armRestValues[2];
+    LegVector legRestValues[2];
+
 };
 
 

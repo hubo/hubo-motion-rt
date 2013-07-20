@@ -80,7 +80,6 @@ int main(int argc, char **argv)
 //    Hubo_Control hubo("balance-daemon", 35);
     //DrcHuboKin kin;
 
-
     Hubo_Control hubo;
 
     hubo.storeAllDefaults();
@@ -214,12 +213,12 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Get leg joint velocities based that move the 
     // hips in the x-y plane to counter falling
-//    moveHips( hubo, legJointVels, gains, dt );
+    moveHips( hubo, legJointVels, gains, dt );
 
     // FIXME Temp so I can verify within the moveHips() function
     // but not affect the actual values in here.
-    for(int side=0; side<2; side++)
-        legJointVels[side].setZero();
+//    for(int side=0; side<2; side++)
+//        legJointVels[side].setZero();
 
     double kneeAngleErrorL = knee - hubo.getJointAngle( LKN );
     double kneeAngleErrorR = knee - hubo.getJointAngle( RKN );
@@ -228,22 +227,21 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
     double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR + legJointVels[RIGHT](KN);
 
     double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
-//                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  FOR CORRECT F/T DIRECTIONS
-                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  //FOR REVERSED F/T DIRECTIONS
+                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()    //FOR CORRECT F/T DIRECTIONS
+//                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelL/2;
     double rollL  = gains.straightening_roll_gain[LEFT]*hubo.getAngleX()
-//                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  FOR CORRECT F/T DIRECTIONS
-                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  //FOR REVERSED F/T DIRECTIONS
+                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();    //FOR CORRECT F/T DIRECTIONS
+//                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  //FOR REVERSED F/T DIRECTIONS
     
     double pitchR = gains.straightening_pitch_gain[RIGHT]*hubo.getAngleY()
-//                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  FOR CORRECT F/T DIRECTIONS
-                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  //FOR REVERSED F/T DIRECTIONS
+                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()    //FOR CORRECT F/T DIRECTIONS
+//                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelR/2;
     double rollR  = gains.straightening_roll_gain[RIGHT]*hubo.getAngleX()
-//                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  FOR CORRECT F/T DIRECTIONS
-                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  //FOR REVERSED F/T DIRECTIONS
+                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();    //FOR CORRECT F/T DIRECTIONS
+//                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  //FOR REVERSED F/T DIRECTIONS
 
-    
     hubo.setJointVelocity( LAP, pitchL + legJointVels[LEFT](AP));
     hubo.setJointVelocity( LAR, rollL + legJointVels[LEFT](AR));
     hubo.setJointVelocity( LKN, kneeVelL );
@@ -284,7 +282,7 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     //    HIP YAW ROTATIONS
     //---------------------------
     // Get rotation matrix for each hip yaw
-    std::vector< Eigen::Matrix3d, Eigen::aligned_allocator<Eigen::Matrix3d> > yawRot(2);
+    Eigen::Matrix3d yawRot[2];
     yawRot[LEFT] = Eigen::AngleAxisd(hubo.getJointAngle(LHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
     yawRot[RIGHT]= Eigen::AngleAxisd(hubo.getJointAngle(RHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
 
@@ -305,13 +303,13 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     // If we are leaning left, causing a positive torque about x, and our desired torque is zero,
     // 0 - M = -M, so we have a negative hip velocity term, which will nudge our hips to the right and
     // reduce the torque to zero.
-    torqueErr[LEFT](0) = desiredForceTorque[LEFT](0) - hubo.getLeftFootMx();
-    torqueErr[LEFT](1) = hubo.getLeftFootMy() - desiredForceTorque[LEFT](1);
-    torqueErr[LEFT](2) = desiredForceTorque[LEFT](3);
+    torqueErr[LEFT].x() = desiredForceTorque[LEFT].x() - hubo.getLeftFootMx();
+    torqueErr[LEFT].y() = desiredForceTorque[LEFT].y() - hubo.getLeftFootMy();
+    torqueErr[LEFT].z() = desiredForceTorque[LEFT].z();
     
-    torqueErr[RIGHT](0) = desiredForceTorque[RIGHT](0) - hubo.getRightFootMx();
-    torqueErr[RIGHT](1) = hubo.getRightFootMy() - desiredForceTorque[RIGHT](1);
-    torqueErr[RIGHT](2) = desiredForceTorque[RIGHT](2);
+    torqueErr[RIGHT].x() = desiredForceTorque[RIGHT].x() - hubo.getRightFootMx();
+    torqueErr[RIGHT].y() = desiredForceTorque[RIGHT].y() - hubo.getRightFootMy();
+    torqueErr[RIGHT].z() = desiredForceTorque[RIGHT].z();
 
     //---------------------------
     //       HIP VELOCITY
@@ -322,8 +320,8 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     // Positive torque about x-axis should translate to negative y velocity
     // Postiive torque about y-axis should translate to positive x velocity
     Eigen::Matrix3d skew; 
-    skew << 0, 1, 0,
-           -1, 0, 0,
+    skew << 0,-1, 0,
+            1, 0, 0,
             0, 0, 0;
 
     // Check if we're on the ground, if not set hipVelocity to zero.
@@ -352,10 +350,10 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     if(true)
     {
         std::cout 
-                  << "\nMyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
-                  << "\nMxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
-                  << "\nTe: " << torqueErr[LEFT].transpose() << ", " << torqueErr[RIGHT].transpose()
-                  << "\nhipVel: " << hipVelocity.transpose()
+//                  << "MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
+//                  << "\tMxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
+//                  << "Te: " << torqueErr[LEFT].transpose() << ", " << torqueErr[RIGHT].transpose()
+                  << "hipVel: " << hipVelocity.transpose()
                   << "\nqVel[L]: " << legJointVels[LEFT].transpose()
                   << "\nqVel[R]: " << legJointVels[RIGHT].transpose()
                   << "\n";

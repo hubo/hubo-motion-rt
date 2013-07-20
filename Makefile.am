@@ -12,7 +12,7 @@ init_d_SCRIPTS = scripts/hubo-motion
 # installed under $prefix/include/
 include_HEADERS = include/Hubo_Control.h include/control-daemon.h include/daemonizer.h include/manip.h include/motion-trajectory.h include/balance-daemon.h include/hubo-zmp.h
 
-bin_PROGRAMS = control-daemon manip-daemon balance-daemon trajectory-run moveHips-test
+bin_PROGRAMS = control-daemon manip-daemon balance-daemon trajectory-run moveHips-test hipVelocityIK-test
 
 hubo_ctrldir = /usr/lib
 hubo_ctrl_LTLIBRARIES = libhuboctrl.la libdaemonizer.la #libhubowalker.la 
@@ -42,3 +42,6 @@ balance_daemon_LDADD = $(motionlibs)
 
 moveHips_test_SOURCES = src/moveHips-test.cpp
 moveHips_test_LDADD = $(motionlibs)
+
+hipVelocityIK_test_SOURCES = src/hipVelocityIK-test.cpp
+hipVelocityIK_test_LDADD = $(motionlibs)

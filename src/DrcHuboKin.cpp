@@ -31,20 +31,25 @@ DrcHuboKin::DrcHuboKin()
     joint("RKP").name("RKN");
     joint("REP").name("REB");
     joint("LEP").name("LEB");
+
+    armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
+            0, 0, 0;
+    armRestValues[LEFT]  <<  20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
+            0, 0, 0;
+
+    legRestValues[RIGHT] << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
+            0, 0, 0, 0;
+    legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
+            0, 0, 0, 0;
 }
 
 DrcHuboKin::DrcHuboKin(string filename)
-    : Robot(filename)
+    : Robot(filename, "drchubo")
 {
 
 }
 
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
-{
-
-}
-
-RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
 {
     VectorXd torques;
     if(side==RIGHT)
@@ -71,6 +76,37 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     return RK_SOLVED;
 }
 
+RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
+{
+    updateArmJoints(side, jointAngles);
+}
+
+void DrcHuboKin::updateJoints(Hubo_Control &hubo)
+{
+    for(int i=0; i<nJoints(); i++)
+        setJointValue(jointNames[i], hubo.getJointAngleState(i));
+}
+
+void DrcHuboKin::updateArmJoints(int side, const ArmVector &jointValues)
+{
+    if(side==RIGHT)
+        for(int i=0; i<linkage("RightArm").nJoints(); i++)
+            linkage("RightArm").setJointValue(i, jointValues[i]);
+    else
+        for(int i=0; i<linkage("LeftArm").nJoints(); i++)
+            linkage("LeftArm").setJointValue(i, jointValues[i]);
+}
+
+void DrcHuboKin::updateLegJoints(int side, const LegVector &jointValues)
+{
+    if(side==RIGHT)
+        for(int i=0; i<linkage("RightArm").nJoints(); i++)
+            linkage("RightArm").setJointValue(i, jointValues[i]);
+    else
+        for(int i=0; i<linkage("LeftArm").nJoints(); i++)
+            linkage("LeftArm").setJointValue(i, jointValues[i]);
+}
+
 TRANSFORM DrcHuboKin::handFK(int side)
 {
     if(side==RIGHT)
@@ -87,14 +123,17 @@ TRANSFORM DrcHuboKin::footFK(int side)
         return linkage("LeftArm").tool().respectToRobot();
 }
 
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B){ armIK(side, q, B, q); }
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B){ return armIK(side, q, B, q); }
 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B, const ArmVector &qPrev)
 {
-    VectorXd jointVals;
-    jointVals.resize(7);
+    VectorXd jointVals, restVals;
+    jointVals.resize(7); restVals.resize(7);
     for(int i=0; i<7; i++)
+    {
         jointVals(i) = qPrev(i);
+        restVals(i)  = armRestValues[side](i);
+    }
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
