@@ -190,16 +190,16 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
     double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR;
 
     double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()
+                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMy()      //FIXME (-) is for reverse signs on the boards
                     - kneeVelL/2;
     double rollL  = gains.straightening_roll_gain[LEFT]*hubo.getAngleX()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();
+                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMx()      //FIXME (-) is for reverse signs on the boards;
     
     double pitchR = gains.straightening_pitch_gain[RIGHT]*hubo.getAngleY()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()
+                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMy(     //FIXME (-) is for reverse signs on the boards)
                     - kneeVelR/2;
     double rollR  = gains.straightening_roll_gain[RIGHT]*hubo.getAngleX()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();
+                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMx()    //FIXME (-) is for reverse signs on the boards;
 
     
     hubo.setJointVelocity( LAP, pitchL );
