@@ -72,7 +72,8 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
  * \param dt Cycle time.
  * \return void
 */
-void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels, const balance_gains_t &gains, const double dt); 
+void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
+                balance_cmd_t &cmd, const balance_gains_t &gains, const double dt); 
 
 
 int main(int argc, char **argv)
@@ -195,7 +196,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
     hubo.setJointAngleMax( RHP, 0 );
 
 
-    double L1 = 2*0.3002;
+    double L1 = 0.33008 + 0.32995; //2*0.3002;
     double L2 = 0.28947 + 0.0795;
     
     if( cmd.height-L2 > L1 )
@@ -213,12 +214,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Get leg joint velocities based that move the 
     // hips in the x-y plane to counter falling
-    moveHips( hubo, legJointVels, gains, dt );
-
-    // FIXME Temp so I can verify within the moveHips() function
-    // but not affect the actual values in here.
-//    for(int side=0; side<2; side++)
-//        legJointVels[side].setZero();
+    moveHips( hubo, legJointVels, cmd, gains, dt );
 
     double kneeAngleErrorL = knee - hubo.getJointAngle( LKN );
     double kneeAngleErrorR = knee - hubo.getJointAngle( RKN );
@@ -228,19 +224,15 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
                     + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()    //FOR CORRECT F/T DIRECTIONS
-//                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelL/2;
     double rollL  = gains.straightening_roll_gain[LEFT]*hubo.getAngleX()
                     + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();    //FOR CORRECT F/T DIRECTIONS
-//                    - gains.flattening_gain[LEFT]*hubo.getLeftFootMx();  //FOR REVERSED F/T DIRECTIONS
     
     double pitchR = gains.straightening_pitch_gain[RIGHT]*hubo.getAngleY()
                     + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()    //FOR CORRECT F/T DIRECTIONS
-//                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMy()  //FOR REVERSED F/T DIRECTIONS
                     - kneeVelR/2;
     double rollR  = gains.straightening_roll_gain[RIGHT]*hubo.getAngleX()
                     + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();    //FOR CORRECT F/T DIRECTIONS
-//                    - gains.flattening_gain[RIGHT]*hubo.getRightFootMx();  //FOR REVERSED F/T DIRECTIONS
 
     hubo.setJointVelocity( LAP, pitchL + legJointVels[LEFT](AP));
     hubo.setJointVelocity( LAR, rollL + legJointVels[LEFT](AR));
@@ -252,14 +244,14 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
     hubo.setJointVelocity( RAR, rollR + legJointVels[RIGHT](AR));
     hubo.setJointVelocity( RKN, kneeVelR );
     hubo.setJointVelocity( RHP, -kneeVelR/2.0 + legJointVels[RIGHT](HP));
-    hubo.setJointVelocity( LHR, legJointVels[RIGHT](HR));
+    hubo.setJointVelocity( RHR, legJointVels[RIGHT](HR));
 
     hubo.sendControls();
 }
 
 
 void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
-                const balance_gains_t &gains, const double dt )
+                balance_cmd_t &cmd, const balance_gains_t &gains, const double dt )
 {
     //---------------------------
     //       P & D Gains
@@ -292,7 +284,10 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     // Averaged torque error in ankles (roll and pitch) (yaw is always zero)
     Eigen::Vector3d desiredForceTorque[2];
     for(int side; side<2; side++)
+    {
         desiredForceTorque[side].setZero();
+        desiredForceTorque[side].y() = -cmd.com_x_offset*25*9.81; // torque about y-axis = com_x_offset * weight.
+    }
 
     // Ankle torque error XYZ (ie. Roll/Pitch/Yaw), but just setting Z to zero.
     Vector3d torqueErr[2];
@@ -347,7 +342,7 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     //---------------------------
     //       PRINT OUT
     //---------------------------
-    if(true)
+    if(false)
     {
         std::cout 
 //                  << "MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()

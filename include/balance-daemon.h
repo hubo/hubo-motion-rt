@@ -107,6 +107,7 @@ typedef struct balance_cmd {
     balance_mode_t cmd_request;
     
     double height;
+    double com_x_offset;
 
 } balance_cmd_t;
 

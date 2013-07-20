@@ -72,10 +72,10 @@ Hubo_Control::~Hubo_Control()
 void Hubo_Control::controlInit(bool live)
 {
     kneeSingularityThreshold = 0.2;
-    kneeSingularityDanger = 0.15;
+    kneeSingularityDanger = 0.1;//0.15;
     kneeSingularitySpeed = 0.1;
 
-    shinLength = 0.26;
+    shinLength = 0.32995;
 
     memset( &H_Ref,   0, sizeof(H_Ref)   );
     memset( &H_Cmd,   0, sizeof(H_Cmd)   );
