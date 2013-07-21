@@ -20,7 +20,7 @@ inline double wrapToPi(double fAng)
 }
 
 DrcHuboKin::DrcHuboKin()
-    : Robot("/etc/hubo-ach/drchubo.urdf", "drchubo")
+    : Robot("/etc/hubo-ach/drchubo-v2.urdf", "drchubo")
 {
     linkage("Body_RSP").name("RightArm");
     linkage("Body_LSP").name("LeftArm");
