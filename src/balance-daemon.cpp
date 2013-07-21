@@ -36,7 +36,7 @@
  */
 
 #include "balance-daemon.h"
-//#include "DrcHuboKin.h"
+#include "DrcHuboKin.h"
 #include "Walker.h"
 #include "Hubo_Control.h"
 #include "manip.h"
@@ -60,7 +60,7 @@ ach_channel_t manip_state_chan;
  * \param dt Cycle time.
  * \return void
 */
-void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gains, double dt);
+void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt);
 
 /**
  * \brief Takes the torque in the ankles and drives them to zero by
@@ -72,16 +72,16 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
  * \param dt Cycle time.
  * \return void
 */
-void moveHips(Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
+void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
                 balance_cmd_t &cmd, const balance_gains_t &gains, const double dt); 
 
 
 int main(int argc, char **argv)
 {
-//    Hubo_Control hubo("balance-daemon", 35);
-    //DrcHuboKin kin;
+    Hubo_Control hubo("balance-daemon", 35);
+    DrcHuboKin kin;
 
-    Hubo_Control hubo;
+    //Hubo_Control hubo;
 
     hubo.storeAllDefaults();
 
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
         
         if( BAL_LEGS_ONLY == cmd.cmd_request )
         {
-            staticBalance(hubo, cmd, gains, dt);
+            staticBalance(hubo, kin, cmd, gains, dt);
         }
         else if( BAL_ZMP_WALKING == cmd.cmd_request )
         {
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                 ovr.m_override = OVR_ACQUIESCENT;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
 
-                staticBalance(hubo, cmd, gains, dt);
+                staticBalance(hubo, kin, cmd, gains, dt);
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 
 
 
-void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
+void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
 {
 
     hubo.setJointNominalAcceleration( LKN, 0.6 );
@@ -214,7 +214,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 
     // Get leg joint velocities based that move the 
     // hips in the x-y plane to counter falling
-    moveHips( hubo, legJointVels, cmd, gains, dt );
+    moveHips( hubo, kin, legJointVels, cmd, gains, dt );
 
     double kneeAngleErrorL = knee - hubo.getJointAngle( LKN );
     double kneeAngleErrorR = knee - hubo.getJointAngle( RKN );
@@ -250,7 +250,7 @@ void staticBalance(Hubo_Control &hubo, balance_cmd_t &cmd, balance_gains_t &gain
 }
 
 
-void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
+void moveHips( Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
                 balance_cmd_t &cmd, const balance_gains_t &gains, const double dt )
 {
     //---------------------------
@@ -286,7 +286,7 @@ void moveHips( Hubo_Control &hubo, std::vector<LegVector, Eigen::aligned_allocat
     for(int side; side<2; side++)
     {
         desiredForceTorque[side].setZero();
-        desiredForceTorque[side].y() = -cmd.com_x_offset*25*9.81; // torque about y-axis = com_x_offset * weight.
+        desiredForceTorque[side].y() = -cmd.com_x_offset*kin.mass()*9.81; // torque about y-axis = com_x_offset * weight.
     }
 
     // Ankle torque error XYZ (ie. Roll/Pitch/Yaw), but just setting Z to zero.
