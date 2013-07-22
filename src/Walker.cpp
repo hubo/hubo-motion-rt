@@ -132,8 +132,11 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-    int side;    //!< variable for stance leg
+    //-------------------------
+    //      STANCE TYPE
+    //-------------------------
     // Figure out if we're in single or double support stance and which leg
+    int side;    //!< variable for stance leg
     if(SINGLE_LEFT == elem.stance)
         side = LEFT;
     else if(SINGLE_RIGHT == elem.stance)
@@ -141,6 +144,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     else
         side = 100;
 
+    //-------------------------
+    //          GAINS
+    //-------------------------
     Eigen::Vector3d spring_gain, damping_gain;
     spring_gain.setZero(); damping_gain.setZero();
 
@@ -152,6 +158,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
               << "\nM = " << impCtrl.m_M
               << std::endl;
 
+    //-------------------------
+    //    COPY JOINT ANGLES
+    //-------------------------
     // Store leg joint angels for current trajectory timestep
     Vector6d qPrev[2];
     qPrev[LEFT](HY) = elem.angles[LHY],
@@ -168,20 +177,18 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     qPrev[RIGHT](AP) = elem.angles[RAP],
     qPrev[RIGHT](AR) = elem.angles[RAR];
 
-    // Skew matrix for torque reaction logic
-    Eigen::Matrix3d skew; 
-    skew << 0, 1, 0,
-           -1, 0, 0,
-            0, 0, 1;
 
+    //-------------------------
+    //        HIP YAWS
+    //-------------------------
     // Get rotation matrix for each hip yaw
     Eigen::Matrix3d yawRot[2];
     yawRot[LEFT] = Eigen::AngleAxisd(hubo.getJointAngle(LHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
     yawRot[RIGHT]= Eigen::AngleAxisd(hubo.getJointAngle(RHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
 
-    // New joint angles for both legs
-    Vector6d qNew[2];
-
+    //-------------------------
+    //        FOOT TFs
+    //-------------------------
     // Determine how much we need to nudge to hips over to account for
     // error in ankle torques about the x- and y- axes.
     // If Roll torque is positive (ie. leaning left) we want hips to go right (ie. negative y-direction)
@@ -193,6 +200,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
     std::cout << "foot is supposedly at " << footTF[LEFT].translation().transpose() << "\n";
 
+    //-------------------------
+    //   FORCE/TORQUE ERROR
+    //-------------------------
     // Averaged torque error in ankles (roll and pitch) (yaw is always zero)
     //FIXME The version below is has elem.torques negative b/c hubomz computes reaction torque at ankle
     // instead of torque at F/T sensor
@@ -206,6 +216,15 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
     forceTorqueErr[RIGHT](2) = (elem.forces[RIGHT][2] - hubo.getRightFootFz());
 
+    // Skew matrix for torque reaction logic
+    Eigen::Matrix3d skew; 
+    skew << 0, 1, 0,
+           -1, 0, 0,
+            0, 0, 1;
+
+    //------------------------
+    //  IMPEDANCE CONTROLLER
+    //------------------------
     // Check if we're on the ground, if not set instantaneous feet offset
     // to zero so integrated feet offset doesn't change, but we still apply it.
     const double forceThreshold = 0;//20; // Newtons
@@ -224,12 +243,18 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     // Decay the dFeetOffset
 //    state.dFeetOffset -= gains.decay_gain[LEFT]*state.dFeetOffset;
 
+    //------------------------
+    //    CAP BODY OFFSET
+    //------------------------
     const double dFeetOffsetTol = 0.06;
     double n = state.dFeetOffset.norm();
     if (n > dFeetOffsetTol) {
       state.dFeetOffset *= dFeetOffsetTol/n;
     }
 
+    //------------------------
+    //    ADJUST FEET TFs
+    //------------------------
     // Pretranslate feet TF by integrated feet error translation vector
     Eigen::Isometry3d tempFootTF[2];
     tempFootTF[LEFT] = footTF[LEFT].pretranslate(state.dFeetOffset.block<3,1>(0,0));
@@ -240,12 +265,20 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
               << "\ntempFootTF[LEFT]: " << tempFootTF[LEFT].translation().transpose()
               << std::endl;
 
+    //------------------------
+    //   GET NEW LEG ANGLES
+    //------------------------
     // Run IK on the adjusted feet TF to get new joint angles
     bool ok = false;
     // Check IK for each new foot TF. If either fails, use previous feet TF
+    // New joint angles for both legs
+    Vector6d qNew[2];
     ok = hubo.huboLegIK(qNew[LEFT], tempFootTF[LEFT], qPrev[LEFT], LEFT);
     if(ok)
+    {
         ok = hubo.huboLegIK(qNew[RIGHT], tempFootTF[RIGHT], qPrev[RIGHT], RIGHT);
+        state.prevdFeetOffset = state.dFeetOffset;
+    }
     else // use previous integrated feet offset to get joint angles
     {
         std::cout << "IK Failed in impedance controller. Using previous feet TF.\n";
@@ -259,6 +292,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     hubo.huboLegFK( footTF[LEFT], qNew[LEFT], LEFT ); 
     std::cout << "now foot is supposedly at " << footTF[LEFT].translation().transpose() << "\n";
 
+    //----------------------
+    //   DEBUG PRINT OUT
+    //----------------------
     if(true)
     {
         std::cout //<< " K: " << kP
@@ -274,6 +310,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
                   << "\n";
     }
 
+    //-----------------------
+    //   SET JOINT ANGLES
+    //-----------------------
     // Set leg joint angles for current timestep of trajectory
     {
         elem.angles[LHY] = qNew[LEFT](HY);
@@ -645,7 +684,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
-    //complyKnee( hubo, nextElem, state, gains, dt );
+    complyKnee( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 //    double vel, accel;
 
@@ -691,7 +730,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
 
-    hubo.sendControls();
+ // hubo.sendControls();
 }
 
 
