@@ -77,6 +77,7 @@ INSTALL(TARGETS daemonizer
 
 # Install Headers
 INSTALL(FILES include/Hubo_Control.h 
+              include/daemonizer.h
               include/control-daemon.h 
               include/balance-daemon.h
               include/manip.h

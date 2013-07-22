@@ -221,7 +221,8 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     skew << 0, 1, 0,
            -1, 0, 0,
             0, 0, 1;
-
+    skew(0,1) = 0;
+    skew(1,0) = 0;
     //------------------------
     //  IMPEDANCE CONTROLLER
     //------------------------
