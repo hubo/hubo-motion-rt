@@ -24,7 +24,7 @@ set(CMAKE_C_FLAGS "-std=gnu99")
 set( CMAKE_VERBOSE_MAKEFILE true )
 
 #link_libraries(m rt ach huboparams)
-
+set(urdfdom_DIR "/opt/ros/groovy/share/urdfdom/cmake/")
 find_package( urdfdom REQUIRED )
 
 file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
