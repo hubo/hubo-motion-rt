@@ -31,13 +31,6 @@ file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
 file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h" "tables/control.table")
 
-add_library(daemonizer SHARED ${daemonizer_source})
-#link_libraries(daemonizer)
-
-add_executable(control-daemon ${control_daemon_source})
-target_link_libraries(control-daemon m rt ach huboparams daemonizer)
-
-
 #link_libraries(RobotKin)
 
 file(GLOB drc_hubo_kin_source "src/DrcHuboKin.cpp" "include/DrcHuboKin.h")
@@ -55,6 +48,12 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
                               "include/manip.h" )
+
+add_library(daemonizer SHARED ${daemonizer_source})
+#link_libraries(daemonizer)
+
+add_executable(control-daemon ${control_daemon_source})
+target_link_libraries(control-daemon m rt ach huboparams daemonizer)
 
 add_library(huboctrl SHARED ${hubo_control_source})
 #link_libraries(huboctrl)
