@@ -6,18 +6,6 @@ using namespace std;
 using namespace Eigen;
 using namespace RobotKin;
 
-inline double mod(double x, double y)
-{
-    if (0 == y)
-        return x;
-
-    return x - y * floor(x/y);
-}
-
-inline double wrapToPi(double fAng)
-{
-    return mod(fAng + M_PI, 2*M_PI) - M_PI;
-}
 
 DrcHuboKin::DrcHuboKin()
     : Robot("/etc/hubo-ach/drchubo-v2.urdf", "drchubo")
