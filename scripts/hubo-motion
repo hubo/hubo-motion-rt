@@ -121,7 +121,7 @@ Ach()
         sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN   -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_MANIP_TRAJ_CHAN    -m 3  -n 1000000 -o 666
         sudo ach -1 -C $HUBO_MANIP_OVR_CHAN     -m 10 -n 1000 -o 666
-        sudo ach -1 -C $HUBO_ZMP_TRAJ_CHAN      -m 3  -n 1000000 -o 666
+        sudo ach -1 -C $HUBO_ZMP_TRAJ_CHAN      -m 3  -n 8000000 -o 666
         sudo ach -1 -C $HUBO_ZMP_CMD_CHAN       -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_FULLBODY_TRAJ_CHAN -m 3  -n 1000000 -o 666
         sudo ach -1 -C $HUBO_TRAJ_STATE_CHAN    -m 10 -n 3000 -o 666

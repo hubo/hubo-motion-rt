@@ -76,7 +76,7 @@ static const char* walkStateStrings[NUM_OF_WALKSTATES+2] = {"WALKING_FORWARD", "
 /// ZMP trajectory constants
 enum {
   ZMP_TRAJ_FREQ_HZ = 200,   //!< frequency in Hertz of the zmp trajectory
-  ZMP_MAX_TRAJ_SIZE = 2000  //!< maximum size of the zmp trajectory
+  ZMP_MAX_TRAJ_SIZE = 8000  //!< maximum size of the zmp trajectory
 };
 
 /**
