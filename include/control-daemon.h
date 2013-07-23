@@ -69,6 +69,7 @@
 
 
 
+
 typedef enum {
     CTRL_OFF    = 0,
     CTRL_POS,
@@ -78,6 +79,28 @@ typedef enum {
     CTRL_RESET,
     CTRL_PASS
 } hubo_ctrl_mode_t;
+
+typedef struct hubo_conversion_tables
+{
+    // TODO: Make #defines or enums for these array sizes
+    // 10 is the max number of PWM to Amp relationships that we support
+    //    -- The first entry (0) is zeroed, and PWM control is not allowed for those joints
+    //    -- (Currently we are only using 2 types)
+    // 100 is the max number of tabulated entries that we currently support
+    //    -- (Currently we only go up to 24)
+    amp_duty_t table[10];
+
+    // The type of table to use for
+    size_t type[HUBO_JOINT_COUNT];
+
+    size_t count;
+} hubo_conversion_tables_t;
+
+typedef struct hubo_amp_duty
+{
+    double amp[100];
+    double duty[100];
+} hubo_amp_duty_t;
 
 
 typedef struct hubo_joint_control {

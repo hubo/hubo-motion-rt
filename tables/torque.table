@@ -1,0 +1,29 @@
+# File: torque.table
+# This file contains default joint factors for converting desired torques
+# to PWM commands for the DRC-Hubo. The values in this table are based
+# off of work by RAINBOW lab and the code written by Dr. Inhyeok Kim.
+
+
+#JointName  DutyAmpTable    Kt (mNm/A)
+
+LSP         1               0.0276
+LSR         1               0.0276
+
+LSY         2               0.0255
+LEB         2               0.0255
+LWY         2               0.0258
+LWP         2               0.0258      # I will use this number until we confirm if the one below is correct
+# LWP         2               0.0530      # This is the number given in RAINBOW code
+
+LWR         3               0.030
+
+
+RSP         1               0.0276
+RSR         1               0.0276
+
+RSY         2               0.0255
+REB         2               0.0255
+RWY         2               0.0258
+RWP         2               0.0258
+
+RWR         3               0.030

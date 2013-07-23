@@ -111,9 +111,9 @@ TRANSFORM DrcHuboKin::footFK(int side)
         return linkage("LeftArm").tool().respectToRobot();
 }
 
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B){ return armIK(side, q, B, q); }
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target){ return armIK(side, q, target, q); }
 
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const Eigen::Isometry3d B, const ArmVector &qPrev)
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM B, const ArmVector &qPrev)
 {
     VectorXd jointVals, restVals;
     jointVals.resize(7); restVals.resize(7);

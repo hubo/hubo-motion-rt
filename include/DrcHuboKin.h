@@ -17,8 +17,8 @@ public:
 
     RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d B, const LegVector &qPrev);
 
-    RobotKin::rk_result_t armIK(int side, ArmVector &q, const Eigen::Isometry3d B, const ArmVector &qPrev);
-    RobotKin::rk_result_t armIK(int side, ArmVector &q, const Eigen::Isometry3d B);
+    RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, const ArmVector &qPrev);
+    RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target);
 
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench=Vector6d::Zero());
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);

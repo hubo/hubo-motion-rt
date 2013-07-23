@@ -49,11 +49,15 @@ ach_channel_t chan_hubo_bod_ctrl;
 ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
-static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
+static char *ctrlFileLocation    = "/etc/hubo-ach/control.table";
+static char *ampdutyFileLocation = "/etc/hubo-ach/amp-duty.table";
+static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
 
 
 void controlLoop();
 int setCtrlDefaults( struct hubo_control *ctrl );
+int setConversionTables( struct hubo_conversion_tables *conversion);
+double getGearReduction(hubo_param_t *h, int jnt);
 
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
@@ -117,6 +121,8 @@ void controlLoop()
     struct hubo_param H_param;
     struct hubo_ctrl_state C_state;
 
+    struct hubo_converstion_tables conversion;
+
     memset( &H_ref,   0, sizeof(H_ref)   );
     memset( &H_cmd,   0, sizeof(H_cmd)   );
     memset( &H_state, 0, sizeof(H_state) );
@@ -131,6 +137,7 @@ void controlLoop()
     memset( &nckctrl, 0, sizeof(nckctrl) );
     memset( &H_param, 0, sizeof(H_param) );
     memset( &C_state, 0, sizeof(C_state) );
+    memset( &conversion,  0, sizeof(conversion)  );
 
     size_t fs;
     int result = ach_get( &chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST );
@@ -146,6 +153,9 @@ void controlLoop()
     hubo_pwm_gains_t gains;
     setJointParams( &H_param, &H_state, &gains);
     if(setCtrlDefaults( &ctrl )==-1)
+        return;
+
+    if(setConversionTables(&conversion)==-1)
         return;
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -648,6 +658,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
     memset( &tempJC, 0, sizeof(tempJC) );
 
 
+    // TODO: Just use the hubo.h jointNames[] array instead
 	// array of joint name values from header file hubo.h
 	uint16_t jointNameValues[] =
 			{WST, NKY, NK1, NK2,
@@ -800,5 +811,24 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 
 
+int setConversionTables( struct hubo_conversion_tables *conversion)
+{
+    memset(conversion, 0, sizeof(*conversion));
+
+
+    FILE *ptr_file;
+
+    if(!(ptr_file==fopen(amp-duty.table)))
+    {
+
+    }
+}
+
+
+
+double getGearReduction(hubo_param_t *h, int jnt)
+{
+    return h->joint[jnt].driven/h->joint[jnt].drive*h->joint[jnt].harmonic;
+}
 
 
