@@ -132,6 +132,7 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
+    counter++;
     //-------------------------
     //      STANCE TYPE
     //-------------------------
@@ -152,11 +153,6 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
     spring_gain.z() = gains.spring_gain[LEFT];
     damping_gain.z() = gains.damping_gain[LEFT];
-
-    std::cout << "K = " << spring_gain.transpose()
-              << "\nQ = " << damping_gain.transpose()
-              << "\nM = " << impCtrl.m_M
-              << std::endl;
 
     //-------------------------
     //    COPY JOINT ANGLES
@@ -198,7 +194,8 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     hubo.huboLegFK( footTF[LEFT], qPrev[LEFT], LEFT ); 
     hubo.huboLegFK( footTF[RIGHT], qPrev[RIGHT], RIGHT );
 
-    std::cout << "foot is supposedly at " << footTF[LEFT].translation().transpose() << "\n";
+    if(counter > 40)
+        std::cout << " now " << footTF[LEFT](2,3);
 
     //-------------------------
     //   FORCE/TORQUE ERROR
@@ -210,17 +207,17 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
     forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
     forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
-    forceTorqueErr[LEFT](2) = (elem.forces[LEFT][2] - hubo.getLeftFootFz());;
+    forceTorqueErr[LEFT](2) = (-elem.forces[LEFT][2] - hubo.getLeftFootFz()); //FIXME should be positive
     
     forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
     forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
-    forceTorqueErr[RIGHT](2) = (elem.forces[RIGHT][2] - hubo.getRightFootFz());
+    forceTorqueErr[RIGHT](2) = (-elem.forces[RIGHT][2] - hubo.getRightFootFz()); //FIXME should be positive
 
     // Skew matrix for torque reaction logic
     Eigen::Matrix3d skew; 
     skew << 0, 1, 0,
            -1, 0, 0,
-            0, 0, 1;
+            0, 0, 1; //FIXME should be negative
     skew(0,1) = 0;
     skew(1,0) = 0;
     //------------------------
@@ -261,11 +258,6 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     tempFootTF[LEFT] = footTF[LEFT].pretranslate(state.dFeetOffset.block<3,1>(0,0));
     tempFootTF[RIGHT] = footTF[RIGHT].pretranslate(state.dFeetOffset.block<3,1>(0,0));
 
-    std::cout << "These should be different\n"
-              << "footTF[LEFT]: " << footTF[LEFT].translation().transpose()
-              << "\ntempFootTF[LEFT]: " << tempFootTF[LEFT].translation().transpose()
-              << std::endl;
-
     //------------------------
     //   GET NEW LEG ANGLES
     //------------------------
@@ -291,11 +283,14 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     }
 
     hubo.huboLegFK( footTF[LEFT], qNew[LEFT], LEFT ); 
-    std::cout << "now foot is supposedly at " << footTF[LEFT].translation().transpose() << "\n";
+    if(counter > 40)
+        std::cout << " aft " << footTF[LEFT](2,3);
 
     //----------------------
     //   DEBUG PRINT OUT
     //----------------------
+    if(counter > 40)
+    {
     if(true)
     {
         std::cout //<< " K: " << kP
@@ -303,14 +298,15 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
                   //<< " TdR: " << -elem.torque[RIGHT][0] << ", " << -elem.torque[RIGHT][1]
                   //<< " MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
                   //<< " MxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
-                  //<< " Te: " << torqueErr.transpose()
+                  << " mFz: " << hubo.getLeftFootFz()
+                  << " dFz: " << -elem.forces[LEFT][2]
+                  << " FTe: " << forceTorqueErr[LEFT].z()
                   //<< " Fte: " << instantaneousFeetOffset.transpose()
-                  //<< " qDfL: " << (qNew[LEFT] - qPrev[LEFT]).transpose()
-                  << " FeetE: " << state.dFeetOffset.transpose()
-                  << "\tqDfR: " << qNew[RIGHT].transpose()
+                  << " FeetE: " << state.dFeetOffset(2)
+                  << " qDfL: " << (qNew[LEFT] - qPrev[LEFT]).transpose()
                   << "\n";
     }
-
+    }
     //-----------------------
     //   SET JOINT ANGLES
     //-----------------------
@@ -330,6 +326,8 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         elem.angles[RAP] = qNew[RIGHT](AP);
         elem.angles[RAR] = qNew[RIGHT](AR);
     }
+    if(counter > 40)
+        counter = 0;
 }
 
 
@@ -342,7 +340,8 @@ Walker::Walker(double maxInitTime, double jointSpaceTolerance, double jointVelCo
         keepWalking(true),
         hubo(),
         kin(),
-        impCtrl(kin.mass())
+        impCtrl(kin.mass()),
+        counter(0)
 {
     ach_status_t r = ach_open( &zmp_chan, HUBO_CHAN_ZMP_TRAJ_NAME, NULL );
     if( r != ACH_OK )
@@ -721,7 +720,6 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 //        if( i == RHY || i == RHR || i == RHP || i == RKN || i == RAR || i==RAP )
 //            std::cout << "(" << vel << ":" << accel << ")" << "\t";
     }
-    std::cout << std::endl;
 
 //    hubo.setJointAngle( RSR, nextElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
 //    hubo.setJointAngle( LSR, nextElem.angles[LSR] + hubo.getJointAngleMin(LSR) );

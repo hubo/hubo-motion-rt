@@ -75,8 +75,8 @@ Eigen::Matrix<double,6,1> ImpedanceController::impedanceEq(const Eigen::Matrix<d
     B << 0, 0, 0, dForceTorque/m_M;
 
     dFeetDot = A*dFeet + B;
-    std::cout << "A:\n" << A << "\nB:\n" << B << "\ndFeet: "
-              << dFeet << "\ndFeetDot: " << dFeetDot << "\ndForceTorque: " << dForceTorque << std::endl;
+//    std::cout << "A:\n" << A << "\nB:\n" << B << "\ndFeet: "
+//              << dFeet << "\ndFeetDot: " << dFeetDot << "\ndForceTorque: " << dForceTorque << std::endl;
 
     return dFeetDot;
 };
