@@ -37,6 +37,7 @@
 #include "control-daemon.h"
 
 ach_channel_t chan_hubo_ref;
+ach_channel_t chan_hubo_pwm;
 ach_channel_t chan_hubo_board_cmd;
 ach_channel_t chan_hubo_state;
 ach_channel_t chan_hubo_ra_ctrl;
@@ -55,7 +56,7 @@ static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
 
 
 void controlLoop();
-int setCtrlDefaults();
+int setCtrlDefaults(hubo_param_t *H_param);
 int setConversionTables( struct hubo_conversion_tables *conversion);
 double getGearReduction(hubo_param_t *h, int jnt);
 
@@ -119,6 +120,7 @@ void controlLoop()
     struct hubo_bod_control bodctrl;
     struct hubo_nck_control nckctrl;
     struct hubo_ctrl_state C_state;
+    struct hubo_param h;
 
     struct hubo_conversion_tables conversion;
 
@@ -135,6 +137,7 @@ void controlLoop()
     memset( &bodctrl, 0, sizeof(bodctrl) );
     memset( &nckctrl, 0, sizeof(nckctrl) );
     memset( &C_state, 0, sizeof(C_state) );
+    memset( &h,       0, sizeof(h)       );
     memset( &conversion,  0, sizeof(conversion)  );
 
     size_t fs;
@@ -149,7 +152,7 @@ void controlLoop()
     }
 
     hubo_pwm_gains_t gains;
-    if(setCtrlDefaults( &ctrl )==-1)
+    if(setCtrlDefaults( &h )==-1)
         return;
 
     if(setConversionTables(&conversion)==-1)
@@ -189,6 +192,16 @@ void controlLoop()
     double dtMax = 0.1;
     double errorFactor = 10;
     double timeElapse[HUBO_JOINT_COUNT];
+    double amp=0;
+    double ampUpper;
+    double ampLower;
+    double dutyUpper;
+    double dutyLower;
+    int tableType=0;
+
+
+    int torqueWarning[HUBO_JOINT_COUNT];
+
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
@@ -200,7 +213,7 @@ void controlLoop()
         dr[i] = 0;  dV[i] = 0;
         V[i] = 0;   V0[i] = 0;
         V0_actual[i] = 0;
-        fail[i] = 0;
+        fail[i] = 0; torqueWarning[i] = 0;
     }
 
     double minAccel = 0.1; // FIXME: Replace this with user-defined parameter
@@ -373,7 +386,38 @@ void controlLoop()
                     }
                     else
                     {
+                        // These torque calculations are based off of
+                        // Dr. Inhyeok Kim's RAINBOW code
+                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
 
+                        tableType = conversion.type[jnt];
+                        int c = 0;
+
+                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1]
+                                <= amp)
+                            c = conversion.table[tableType].count-2;
+                        else
+                            for(c=0; c<conversion.table[tableType].count-1; c++)
+                                if(conversion.table[tableType].amp[c] <= amp
+                                        && amp < conversion.table[tableType].amp[c+1])
+                                    break;
+
+                        if(tableType != 0)
+                        {
+                            ampLower  = conversion.table[tableType].amp[c];
+                            ampUpper  = conversion.table[tableType].amp[c+1];
+                            dutyLower = conversion.table[tableType].duty[c];
+                            dutyUpper = conversion.table[tableType].duty[c+1];
+
+                            gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
+                                    (dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower;
+                        }
+                        else
+                        {
+                            if(torqueWarning[jnt]==0)
+                                fprintf(stderr, "You are requesting torque mode for a joint that does not support it! (%s)\n", jointNames[jnt]);
+                            torqueWarning[jnt]=1;
+                        }
                     }
                 }
                 else
@@ -571,6 +615,10 @@ void controlLoop()
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
                         presult, ach_result_to_string(presult));
+                presult = ach_put( &chan_hubo_pwm, &gains, sizeof(gains) );
+                if(presult != ACH_OK)
+                    fprintf(stderr, "Error sending pwm command! (%d) %s\n",
+                        presult, ach_result_to_string(presult));
             }
             
         }// end: time test
@@ -600,6 +648,9 @@ int main(int argc, char **argv)
     daemonize( "control-daemon", 49 );
    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
+    daemon_assert( ACH_OK == r, __LINE__ );
+
+    r = ach_open(&chan_hubo_pwm, HUBO_CHAN_PWM_GAINS_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
     r = ach_open(&chan_hubo_state, HUBO_CHAN_STATE_NAME, NULL);
@@ -661,7 +712,7 @@ int main(int argc, char **argv)
 }
 
 
-int setCtrlDefaults()
+int setCtrlDefaults(hubo_param_t *H_param)
 {
     struct hubo_arm_control ractrl;
     struct hubo_arm_control lactrl;
@@ -683,13 +734,12 @@ int setCtrlDefaults()
 
 
 
-    struct hubo_param H_param;
     struct hubo_state H_state;
     struct hubo_pwm_gains gains;
     memset( &H_param, 0, sizeof(H_param) );
     memset( &H_state, 0, sizeof(H_state) );
     memset( &gains,   0, sizeof(gains)   );
-    setJointParams( &H_param, &H_state, &gains);
+    setJointParams( H_param, &H_state, &gains);
 
 
 	FILE *ptr_file;

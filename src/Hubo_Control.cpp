@@ -469,13 +469,13 @@ ctrl_flag_t Hubo_Control::resetJointStatus( int joint, bool send )
 ctrl_flag_t Hubo_Control::setPositionControl(int joint)
 { return setJointAngle( joint, H_State.joint[joint].pos ); }
 
-void Hubo_Control::setAllTrajectoryCorrectness(double correctness)
+void Hubo_Control::setAllTrajCorrectness(double correctness)
 {
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        setJointTrajectoryCorrectness(i, correctness);
+        setJointTrajCorrectness(i, correctness);
 }
 
-ctrl_flag_t Hubo_Control::setJointTrajectoryCorrectness(int joint, double correctness)
+ctrl_flag_t Hubo_Control::setJointTrajCorrectness(int joint, double correctness)
 {
     if( joint < HUBO_JOINT_COUNT )
     {
@@ -512,6 +512,48 @@ ctrl_flag_t Hubo_Control::setJointTrajectoryCorrectness(int joint, double correc
 
     return SUCCESS;
 }
+
+ctrl_flag_t Hubo_Control::setArmTraj(int side, ArmVector angles, ArmVector vels, bool send)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            setJointAngle(armjoints[side][i], angles[i], false);
+
+    else
+        return BAD_SIDE;
+
+    if(send)
+        sendControls();
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setLeftArmTraj(ArmVector angles, ArmVector vels, bool send)
+{ return setArmTraj(LEFT, angles, vels, send); }
+
+ctrl_flag_t Hubo_Control::setRightArmTraj(ArmVector angles, ArmVector vels, bool send)
+{ return setArmTraj(RIGHT, angles, vels, send); }
+
+ctrl_flag_t Hubo_Control::setLegTraj(int side, ArmVector angles, ArmVector vels, bool send)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Leg_Ctrl[side].count; i++)
+            setJointAngle(legjoints[side][i], angles[i], false);
+
+    else
+        return BAD_SIDE;
+
+    if(send)
+        sendControls();
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setLeftLegTraj(LegVector angles, LegVector vels, bool send)
+{ return setLegTraj(LEFT, angles, vels, send); }
+
+ctrl_flag_t Hubo_Control::setRightLegTraj(LegVector angles, LegVector vels, bool send)
+{ return setLegTraj(RIGHT, angles, vels, send); }
 
 ctrl_flag_t Hubo_Control::setJointTraj( int joint, double radians, double vel, bool send )
 {

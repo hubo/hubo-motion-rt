@@ -166,17 +166,43 @@ public:
      * to how far the trajectory will deviate from the velocity profile in order to
      * get to the position profile.
     */
-    ctrl_flag_t setJointTrajectoryCorrectness( int joint, double correctness );
+    ctrl_flag_t setJointTrajCorrectness( int joint, double correctness );
     /**
      * Sets the desired correctness metric for a trajectory. The 'correctness' refers
      * to how far the trajectory will deviate from the velocity profile in order to
      * get to the position profile.
     */
-    void setAllTrajectoryCorrectness(double correctness );
+    void setAllTrajCorrectness(double correctness );
     /**
      * Sets joint-space trajectory values for a joint (position, velocity)
     */
     ctrl_flag_t setJointTraj(int joint, double radians, double vel, bool send=false );
+    /**
+     * Sets a joint-space trajectory waypoint for all the arms angles on the specified
+     * side.
+     */
+    ctrl_flag_t setArmTraj(int side, ArmVector angles, ArmVector vels, bool send);
+    /**
+     * Sets a joint-space trajectory waypoint for all angles on the Left Arm.
+     */
+    ctrl_flag_t setLeftArmTraj(ArmVector angles, ArmVector vels, bool send);
+    /**
+     * Sets a joint-space trajectory waypoint for all angles on the Right Arm.
+     */
+    ctrl_flag_t setRightArmTraj(ArmVector angles, ArmVector vels, bool send);
+    /**
+     * Sets a joint-space trajectory waypoint for all the leg angles on the specified
+     * side.
+     */
+    ctrl_flag_t setLegTraj(int side, ArmVector angles, ArmVector vels, bool send);
+    /**
+     * Sets a joint-space trajectory waypoint for all angles on the Left Leg.
+     */
+    ctrl_flag_t setLeftLegTraj(LegVector angles, LegVector vels, bool send);
+    /**
+     * Sets a joint-space trajectory waypoint for all angles on the Left Leg.
+     */
+    ctrl_flag_t setRightLegTraj(LegVector angles, LegVector vels, bool send);
     /**
      * Sets joint angle for the joint to specified radian value. If send is true then 
      * the command will be sent to the motor board immediately, otherwise it won't.

@@ -477,8 +477,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
 //    hubo.setJointAngle( RSR, nextElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
 //    hubo.setJointAngle( LSR, nextElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
-    hubo.setJointTraj( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
-    hubo.setJointTraj( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
+    hubo.setJointTraj( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR), 0 );
+    hubo.setJointTraj( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR), 0 );
 
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
