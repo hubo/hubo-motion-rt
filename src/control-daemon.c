@@ -1121,9 +1121,6 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
         } // end: if(sscanf)
     } // end: while(fgets)
 
-
-
-
 }
 
 

@@ -600,8 +600,121 @@ ctrl_flag_t Hubo_Control::setJointTraj( int joint, double radians, double vel, b
     return SUCCESS;
 }
 
+ctrl_flag_t Hubo_Control::setJointCompliance(int joint, bool on)
+{
+    hubo_compliance_mode_t comp;
+    if(on)
+        comp = CTRL_COMP_ON;
+    else
+        comp = CTRL_COMP_OFF;
 
 
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].comp_mode = comp; break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].comp_mode = comp; break;
+        }
+    }
+}
+
+ctrl_flag_t Hubo_Control::setJointCompliance(int joint, bool on, double Kp, double Kd)
+{
+    hubo_compliance_mode_t comp;
+    if(on)
+        comp = CTRL_COMP_ON;
+    else
+        comp = CTRL_COMP_OFF;
+
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].comp_mode = comp;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].Kp = Kp;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].Kd = Kd;
+                break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].comp_mode = comp;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].Kp = Kp;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].Kd = Kd;
+                break;
+            // NOTE: Compliance is currently not supported in any other joints
+        }
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setArmCompliance(int side, bool on)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            setJointCompliance(i, on);
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setArmCompliance(int side, bool on, ArmVector Kp, ArmVector Kd)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            setJointCompliance(i, on, Kp[i], Kd[i]);
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+
+
+ctrl_flag_t Hubo_Control::setJointTorque(int joint, double torque)
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque = torque;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_ON;
+                H_Arm_Ctrl[RIGHT].active=1; ctrlOn[CtrlRA] = true; break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque = torque;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_ON;
+                H_Arm_Ctrl[LEFT].active=1; ctrlOn[CtrlLA] = true; break;
+            // NOTE: Torque mode is not currently supported on any other joints
+        }
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setArmTorques(int side, ArmVector torques)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            setJointTorque(i, torques[i]);
+
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setLeftArmTorques(ArmVector torques)
+{ return setArmTorques(LEFT, torques); }
+
+ctrl_flag_t Hubo_Control::setRightArmTorques(ArmVector torques)
+{ return setArmTorques(RIGHT, torques); }
 
 ctrl_flag_t Hubo_Control::setJointAngle(int joint, double radians, bool send)
 {
