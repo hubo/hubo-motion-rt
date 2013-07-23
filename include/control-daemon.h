@@ -67,7 +67,10 @@
 #define     HUBO_CHAN_NCK_CTRL_NAME     "hubo-NCK-control"// Neck control channel
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
-
+enum{
+    MAX_AMP_DUTY_TABLE_TYPES = 10,
+    MAX_AMP_DUTY_TABLE_SIZE = 100
+};
 
 
 typedef enum {
@@ -80,27 +83,44 @@ typedef enum {
     CTRL_PASS
 } hubo_ctrl_mode_t;
 
+
+typedef enum {
+    CTRL_TORQUE_OFF = 0,
+    CTRL_TORQUE_ON
+} hubo_torque_mode_t;
+
+typedef enum {
+    CTRL_COMP_OFF = 0,
+    CTRL_COMP_ON
+} hubo_compliance_mode_t;
+
+
+typedef enum {
+    CTRL_TABLE_DUTY,
+    CTRL_TABLE_AMP
+} ctrl_table_t;
+
+typedef struct hubo_amp_duty
+{
+    double amp[MAX_AMP_DUTY_TABLE_SIZE];
+    double duty[MAX_AMP_DUTY_TABLE_SIZE];
+    size_t count;
+} hubo_amp_duty_t;
+
 typedef struct hubo_conversion_tables
 {
-    // TODO: Make #defines or enums for these array sizes
     // 10 is the max number of PWM to Amp relationships that we support
     //    -- The first entry (0) is zeroed, and PWM control is not allowed for those joints
     //    -- (Currently we are only using 2 types)
     // 100 is the max number of tabulated entries that we currently support
     //    -- (Currently we only go up to 24)
-    amp_duty_t table[10];
+    hubo_amp_duty_t table[MAX_AMP_DUTY_TABLE_TYPES];
 
     // The type of table to use for
+    double Kt[HUBO_JOINT_COUNT];
     size_t type[HUBO_JOINT_COUNT];
 
-    size_t count;
 } hubo_conversion_tables_t;
-
-typedef struct hubo_amp_duty
-{
-    double amp[100];
-    double duty[100];
-} hubo_amp_duty_t;
 
 
 typedef struct hubo_joint_control {
@@ -108,6 +128,12 @@ typedef struct hubo_joint_control {
     double speed;
     double velocity;
     double acceleration;
+
+    double torque;
+
+    double Kp;
+    double Kd;
+    double maxPWM;
 
     double correctness;
 // FIXME: Add minimum accel parameter
@@ -119,7 +145,10 @@ typedef struct hubo_joint_control {
 
     double timeOut;
 
-    hubo_ctrl_mode_t mode;
+    hubo_ctrl_mode_t ctrl_mode;
+    hubo_compliance_mode_t comp_mode;
+    hubo_torque_mode_t torque_mode;
+
 } hubo_joint_control_t;
 
 typedef struct hubo_control {

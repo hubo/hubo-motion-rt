@@ -461,24 +461,15 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-          hubo.setJointTraj( i, currentElem.angles[i] );
+
+        vel = (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ;
+        hubo.setJointTraj( i, currentElem.angles[i], vel );
 //        hubo.setJointTraj( i, nextElem.angles[i] );
 //        hubo.setJointAngle( i, nextElem.angles[i] );
 //        hubo.passJointAngle( i, nextElem.angles[i] );
 
-
-        vel = (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ;
-        hubo.setJointVelocity( i, vel );
-//        hubo.setJointNominalSpeed(i, vel);
-//        hubo.setJointNominalSpeed( i, 1*
-//                (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ/2.0 );
-//               (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
-//               (nextElem.angles[i]-currentElem.angles[i])/dt );
-
-
-        accel = (vel-state.V0[i])*ZMP_TRAJ_FREQ_HZ;
         state.V0[i] = vel;
-        hubo.setJointNominalAcceleration( i, 2*accel );
+
         if( i == RHY || i == RHR || i == RHP || i == RKN || i == RAR || i==RAP )
             std::cout << "(" << vel << ":" << accel << ")" << "\t";
     }

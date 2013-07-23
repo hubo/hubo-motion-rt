@@ -29,7 +29,11 @@ find_package( urdfdom REQUIRED )
 
 file(GLOB daemonizer_source "src/daemonizer.c" "include/daemonizer.h")
 
-file(GLOB control_daemon_source "src/control-daemon.c" "include/control-daemon.h" "tables/control.table")
+file(GLOB control_daemon_source "src/control-daemon.c"
+                                "include/control-daemon.h"
+                                "tables/control.table"
+                                "tables/amp-duty.table"
+                                "tables/torque.table")
 
 #link_libraries(RobotKin)
 
@@ -81,7 +85,9 @@ INSTALL(FILES include/Hubo_Control.h
         DESTINATION /usr/local/include/)
 
 # Install Tables
-INSTALL(FILES tables/control.table DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/control.table  DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/amp-duty.table DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/torque.table   DESTINATION /etc/hubo-ach/)
 
 # Install Service
 INSTALL(PROGRAMS scripts/hubo-motion DESTINATION /etc/init.d/)

@@ -79,20 +79,7 @@ void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen:
 int main(int argc, char **argv)
 {
     Hubo_Control hubo("balance-daemon", 35);
-    DrcHuboKin robot;
-
-    // Initialization
-    TRANSFORM tfArm[2], tfLeg[2];
-    tfArm[RIGHT] = robot.linkage("RightArm").tool().respectToRobot();
-    tfArm[LEFT] = robot.linkage("LeftArm").tool().respectToRobot();
-
-    // Each step
-    tfArm[RIGHT].translate(Vector3d(x,y,z));
-    tfArm[LEFT].rotate(AngleAxis(angle,Vector3d(axis_x,axis_y,axis_z)));
-
-    robot.armIK(RIGHT, q, target);
-
-
+    DrcHuboKin kin;
 
     //Hubo_Control hubo;
 

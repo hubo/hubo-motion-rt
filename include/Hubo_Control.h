@@ -162,14 +162,21 @@ public:
     */
     ctrl_flag_t setPositionControl( int joint );
     /**
-     * Sets joint-space trajectory values for a joint (position, velocity, and acceleration)
+     * Sets the desired correctness metric for a trajectory. The 'correctness' refers
+     * to how far the trajectory will deviate from the velocity profile in order to
+     * get to the position profile.
     */
-    ctrl_flag_t setJointTraj( int joint, double radians, double vel, double acc, bool send=false );
+    ctrl_flag_t setJointTrajectoryCorrectness( int joint, double correctness );
     /**
-     * Sets a joint-space trajectory position value for a joint, using the current velocity
-     * and acceleration settings.
+     * Sets the desired correctness metric for a trajectory. The 'correctness' refers
+     * to how far the trajectory will deviate from the velocity profile in order to
+     * get to the position profile.
     */
-    ctrl_flag_t setJointTraj( int joint, double radians, bool send=false );
+    void setAllTrajectoryCorrectness(double correctness );
+    /**
+     * Sets joint-space trajectory values for a joint (position, velocity)
+    */
+    ctrl_flag_t setJointTraj(int joint, double radians, double vel, bool send=false );
     /**
      * Sets joint angle for the joint to specified radian value. If send is true then 
      * the command will be sent to the motor board immediately, otherwise it won't.
