@@ -146,7 +146,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_arm_ctrl_right, &H_Arm_Ctrl[RIGHT], sizeof(H_Arm_Ctrl[RIGHT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -154,7 +155,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_arm_ctrl_left,  &H_Arm_Ctrl[LEFT],  sizeof(H_Arm_Ctrl[LEFT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -162,7 +164,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_leg_ctrl_right, &H_Leg_Ctrl[RIGHT], sizeof(H_Leg_Ctrl[RIGHT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -170,7 +173,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_leg_ctrl_left,  &H_Leg_Ctrl[LEFT],  sizeof(H_Leg_Ctrl[LEFT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -178,7 +182,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_fin_ctrl_right, &H_Fin_Ctrl[RIGHT], sizeof(H_Fin_Ctrl[RIGHT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -186,7 +191,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_fin_ctrl_left,  &H_Fin_Ctrl[LEFT],  sizeof(H_Fin_Ctrl[LEFT]),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -194,7 +200,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_bod_ctrl, &H_Bod_Ctrl, sizeof(H_Bod_Ctrl),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
     clock_gettime( ACH_DEFAULT_CLOCK, &waitTime );
     nanoWait = waitTime.tv_nsec + (int)(quitSec*1E9);
@@ -202,7 +209,8 @@ void Hubo_Control::controlInit(bool live)
     waitTime.tv_nsec = (int)(nanoWait%((int)1E9));
     checkCtrl = ach_get( &chan_hubo_nck_ctrl, &H_Nck_Ctrl, sizeof(H_Nck_Ctrl),
                             &fs, &waitTime, ACH_O_LAST | ACH_O_WAIT );
-    assert( ACH_TIMEOUT != checkCtrl );
+    if(live)
+        assert( ACH_TIMEOUT != checkCtrl );
 
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
