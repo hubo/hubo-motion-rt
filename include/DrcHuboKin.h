@@ -15,7 +15,8 @@ public:
     RobotKin::TRANSFORM handFK(int side);
     RobotKin::TRANSFORM footFK(int side);
 
-    RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d B, const LegVector &qPrev);
+    RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target, const LegVector &qPrev);
+    RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target);
 
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, const ArmVector &qPrev);
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target);

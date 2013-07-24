@@ -141,7 +141,10 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     return result;
 }
 
-RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d B, const LegVector &qPrev)
+RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d target)
+{ return legIK(side, q, target, q); }
+
+RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d target, const LegVector &qPrev)
 {
     // FIXME: Clean up all the slop in this function and test it
 

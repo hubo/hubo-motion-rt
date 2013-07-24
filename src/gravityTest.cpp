@@ -45,6 +45,10 @@ int main(int argc, char **argv)
 
     ArmVector torques;
 
+    std::string filename(argv[1]);
+
+    std::cout << filename << std::endl;
+
     while(true)
     {
         hubo.update(true);
