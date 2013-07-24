@@ -45,6 +45,10 @@ int main(int argc, char **argv)
 
     ArmVector torques;
 
+    LegVector q;
+
+    kin.legIK(LEFT, q, RobotKin::TRANSFORM::Identity());
+
 
     while(true)
     {
@@ -54,7 +58,6 @@ int main(int argc, char **argv)
         kin.armTorques(RIGHT, torques);
 
         std::cout << torques.transpose() << std::endl;
-
 
     }
 

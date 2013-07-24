@@ -14,8 +14,8 @@ public:
     DrcHuboKin();
     DrcHuboKin(std::string filename);
 
-    RobotKin::TRANSFORM handFK(int side);
-    RobotKin::TRANSFORM footFK(int side);
+    RobotKin::TRANSFORM armFK(int side);
+    RobotKin::TRANSFORM legFK(int side);
 
     RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target, const LegVector &qPrev);
     RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target);

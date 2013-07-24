@@ -117,7 +117,7 @@ void DrcHuboKin::updateLegJoints(int side, const LegVector &jointValues)
             linkage("LeftArm").setJointValue(i, jointValues[i]);
 }
 
-TRANSFORM DrcHuboKin::handFK(int side)
+TRANSFORM DrcHuboKin::armFK(int side)
 {
     if(side==RIGHT)
         return linkage("RightArm").tool().respectToRobot();
@@ -125,7 +125,7 @@ TRANSFORM DrcHuboKin::handFK(int side)
         return linkage("LeftArm").tool().respectToRobot();
 }
 
-TRANSFORM DrcHuboKin::footFK(int side)
+TRANSFORM DrcHuboKin::legFK(int side)
 {
     if(side==RIGHT)
         return linkage("RightArm").tool().respectToRobot();
@@ -166,8 +166,11 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d target, const LegVector &qPrev)
 {
     // FIXME: Clean up all the slop in this function and test it
+    Vector6d qA;
+    for(int i=0; i<6; i++)
+        q(i) = qA(i);
 
-    Eigen::ArrayXXd qAll(LEG_JOINT_COUNT,8);
+    Eigen::ArrayXXd qAll(6,8);
 
     // Declarations
     Eigen::Isometry3d waist, waistInv, BInv, foot, footInv;
@@ -295,16 +298,14 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         qAll(3,i) = q4;
         qAll(4,i) = q5;
         qAll(5,i) = q6;
-        for(int extra=6; extra<LEG_JOINT_COUNT; extra++)
-            qAll(extra,i);
     }
 
     // Set to offsets
     for (int i = 0; i < 6; i++) {
         if (side==RIGHT) {
-            q(i) = wrapToPi(q(i) + offset(i));
+            qA(i) = wrapToPi(qA(i) + offset(i));
         } else {
-            q(i) = wrapToPi(q(i) + offset(i));
+            qA(i) = wrapToPi(qA(i) + offset(i));
         }
     }
 
@@ -337,6 +338,7 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         if( withinLim[i] )
             anyWithin = true;
 
+
     // If any solution has all joints within the limits...
     if(anyWithin)
     {
@@ -361,8 +363,10 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         }
         // and take the solution closest to previous solution
         qDiffSum.minCoeff(&minInd);
-        q = qAll.col(minInd);
+        qA = qAll.col(minInd);
     }
+
+
 
     // if no solution has all the joints within the limits...
     else
@@ -370,8 +374,10 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         // then for each solution...
         for(int i=0; i<8; i++)
         {
+
             // create a 6d vector of angles of solution i
             Vector6d qtemp = qAll.col(i).matrix();
+
             // take the min of the angles and the joint upper limits
             qtemp = qtemp.cwiseMin(limits.col(1));
             // then take the max of those angles and the joint lower limits
@@ -380,15 +386,16 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
             Eigen::Isometry3d Btemp;
             // find the pose associated with the temp angles
             //huboLegFK( Btemp, qtemp, side );
+
             if(side==LEFT)
             {
-                for(size_t k=0; k<linkage("LeftLeg").nJoints(); k++)
+                for(size_t k=0; k<6; k++)
                     linkage("LeftLeg").setJointValue(k, qtemp[k]);
                 Btemp = linkage("LeftLeg").tool().respectToLinkage();
             }
             else
             {
-                for(size_t k=0; k<linkage("RightLeg").nJoints(); k++)
+                for(size_t k=0; k<6; k++)
                     linkage("RightLeg").setJointValue(k, qtemp[k]);
                 Btemp = linkage("RightLeg").tool().respectToLinkage();
             }
@@ -397,11 +404,16 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         }
         // find the solution that's closest the previous position
         qDiffSum.minCoeff(&minInd);
-        q = qAll.col(minInd);
+        qA = qAll.col(minInd).matrix();
     }
     // set the final joint angles to the solution closest to the previous solution
     for( int i=0; i<6; i++)
-        q(i) = max( min( q(i), limits(i,1)), limits(i,0) );
+        qA(i) = max( min( qA(i), limits(i,1)), limits(i,0) );
+
+    for(int i=0; i<6; i++)
+        q(i) = qA(i);
+    for(int i=6; i<LEG_JOINT_COUNT; i++)
+        q(i) = 0;
 
     if(anyWithin)
         return RobotKin::RK_SOLVED;
