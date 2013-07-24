@@ -15,9 +15,6 @@ DrcHuboKin::DrcHuboKin()
     linkage("Body_RHY").name("RightLeg");
     linkage("Body_LHY").name("LeftLeg");
 
-    linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
-    linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
-
     joint("LKP").name("LKN");
     joint("RKP").name("RKN");
     joint("REP").name("REB");
@@ -29,6 +26,25 @@ DrcHuboKin::DrcHuboKin()
     joint("RF21").name("RF2");
     joint("LF11").name("LF1");
     joint("LF21").name("LF2");
+
+    updateFrames();
+
+    linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
+    linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
+
+//    TRANSFORM foot = joint("LAR_dummy").respectToFixed();
+//    std::cout << foot.matrix() << std::endl;
+//    TRANSFORM footWorld = joint("LAR_dummy").respectToRobot();
+//    std::cout << footWorld.matrix() << std::endl;
+//    foot.translate(-foot.translation());
+//    foot.rotate(footWorld.rotation().transpose());
+//    linkage("LeftLeg").tool().respectToFixed(foot);
+
+//    foot = joint("RAR_dummy").respectToFixed();
+//    footWorld = joint("RAR_dummy").respectToRobot();
+//    foot.rotate(footWorld.rotation().transpose());
+//    linkage("RightLeg").tool().respectToFixed(foot);
+//    updateFrames();
 
 
     armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
@@ -110,11 +126,11 @@ void DrcHuboKin::updateArmJoints(int side, const ArmVector &jointValues)
 void DrcHuboKin::updateLegJoints(int side, const LegVector &jointValues)
 {
     if(side==RIGHT)
-        for(int i=0; i<linkage("RightArm").nJoints(); i++)
-            linkage("RightArm").setJointValue(i, jointValues[i]);
+        for(int i=0; i<linkage("RightLeg").nJoints(); i++)
+            linkage("RightLeg").setJointValue(i, jointValues[i]);
     else
-        for(int i=0; i<linkage("LeftArm").nJoints(); i++)
-            linkage("LeftArm").setJointValue(i, jointValues[i]);
+        for(int i=0; i<linkage("LeftLeg").nJoints(); i++)
+            linkage("LeftLeg").setJointValue(i, jointValues[i]);
 }
 
 TRANSFORM DrcHuboKin::armFK(int side)
@@ -128,9 +144,9 @@ TRANSFORM DrcHuboKin::armFK(int side)
 TRANSFORM DrcHuboKin::legFK(int side)
 {
     if(side==RIGHT)
-        return linkage("RightArm").tool().respectToRobot();
+        return linkage("RightLeg").tool().respectToRobot();
     else
-        return linkage("LeftArm").tool().respectToRobot();
+        return linkage("LeftLeg").tool().respectToRobot();
 }
 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target){ return armIK(side, q, target, q); }
@@ -199,7 +215,15 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
     double l3 = fabs(tempLinkage.joint(1).respectToRobot().translation()[2]); //(289.47-107)/1000.0;   // Waist to hip  Z
     double l4 = fabs(tempLinkage.joint(3).respectToFixed().translation()[2]); //300.03/1000.0;          // Hip to knee   Z
     double l5 = fabs(tempLinkage.joint(4).respectToFixed().translation()[2]); //300.38/1000.0;          // Knee to ankle Z
-    double l6 = fabs(tempLinkage.tool().respectToFixed().translation()[2]);           // Ankle to foot Z
+    double l6 = fabs(tempLinkage.joint(6).respectToFixed().translation()[2]);           // Ankle to foot Z
+
+//    double l1 = 0;          // Neck to waist Z
+//    double l2 = 0.0885;     // Waist to hip  Y
+//    double l3 = 0.16452;    // Waist to hip  Z
+//    double l4 = 0.33008;    // Hip to knee   Z
+//    double l5 = 0.32995;    // Knee to ankle Z
+//    double l6 = 0.119063;   // Ankle to foot Z
+
 
     // Transformation from Neck frame to Waist frame
 //    neck(0,0) = 1; neck(0,1) =  0; neck(0,2) = 0; neck(0,3) =   0;
@@ -216,27 +240,35 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
             tempLinkage.joint(5).min(), tempLinkage.joint(5).max();
 
 
-    if (side == RIGHT) {
+    if (side == LEFT) {
+        // Transformation from Waist frame to left hip yaw frame
+        waist(0,0) = 0; waist(0,1) = -1; waist(0,2) = 0; waist(0,3) =   0;
+        waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) =  l2;
+        waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
+        waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
+
+//        waist = linkage("LeftLeg").joint(1).respectToRobot();
+
+
+
+    } else {
         // Transformation from Waist frame to right hip yaw frame
         waist(0,0) = 0; waist(0,1) = -1; waist(0,2) = 0; waist(0,3) =   0;
         waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) = -l2;
         waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
         waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
 
+//        waist = linkage("RightLeg").joint(1).respectToRobot();
 
-    } else {
-        // Transformation from Waist frame to left hip yaw frame
-        waist(0,0) = 0; waist(0,1) = -1; waist(0,2) = 0; waist(0,3) =   0;
-        waist(1,0) = 1; waist(1,1) =  0; waist(1,2) = 0; waist(1,3) =  l2;
-        waist(2,0) = 0; waist(2,1) =  0; waist(2,2) = 1; waist(2,3) = -l3;
-        waist(3,0) = 0; waist(3,1) =  0; waist(3,2) = 0; waist(3,3) =   1;
     }
 
     // Rotation of -90 about y to make x forward, y left, z up
-    foot(0,0) = 0;  foot(0,1) =  0; foot(0,2) = 1;  foot(0,3) = 0;
+    foot(0,0) = 0;  foot(0,1) =  0; foot(0,2) =-1;  foot(0,3) = 0;
     foot(1,0) = 0;  foot(1,1) =  1; foot(1,2) = 0;  foot(1,3) = 0;
-    foot(2,0) = -1; foot(2,1) =  0; foot(2,2) = 0;  foot(2,3) = -l6;
+    foot(2,0) = 1;  foot(2,1) =  0; foot(2,2) = 0;  foot(2,3) = 0;
     foot(3,0) = 0;  foot(3,1) =  0; foot(3,2) = 0;  foot(3,3) = 1;
+
+
 
     waistInv = waist.inverse();
     footInv = foot.inverse();
@@ -407,6 +439,9 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         qA = qAll.col(minInd).matrix();
     }
     // set the final joint angles to the solution closest to the previous solution
+
+    std::cout << qAll.matrix() << std::endl;
+
     for( int i=0; i<6; i++)
         qA(i) = max( min( qA(i), limits(i,1)), limits(i,0) );
 
