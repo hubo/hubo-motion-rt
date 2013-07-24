@@ -109,7 +109,7 @@ public:
     balance_state_t bal_state;      //!< Balance state struct
 
     bool keepWalking;   //!< Whether or not to keep walking.
-
+    int counter;
 
 protected:
 

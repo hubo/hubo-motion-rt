@@ -233,6 +233,12 @@ void daemonize(const char *daemon_name, int priority)
         exit( EXIT_FAILURE );
     }
 
+    // Write process PID to lock file
+    FILE* fp;
+    fp = fopen(lockfile, "w");
+    fprintf(fp, "%d", sid);
+    fclose(fp);
+
     struct stat logst = {0};
     if( stat(LOGDIR, &logst) == -1 )
         mkdir(LOGDIR, 0700);
