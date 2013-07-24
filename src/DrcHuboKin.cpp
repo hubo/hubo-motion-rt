@@ -220,7 +220,7 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
     footInv = foot.inverse();
 
     // Variables
-    BInv = (waistInv*B*footInv).inverse();
+    BInv = (waistInv*target*footInv).inverse();
 
     nx = BInv(0,0); sx = BInv(0,1); ax = BInv(0,2); px = BInv(0,3);
     ny = BInv(1,0); sy = BInv(1,1); ay = BInv(1,2); py = BInv(1,3);
@@ -374,7 +374,7 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
                 Btemp = linkage("RightLeg").tool().respectToLinkage();
             }
             // calculate the distance from previous pose to temp pose locations
-            qDiffSum(i) = (Btemp.translation() - B.translation()).norm();
+            qDiffSum(i) = (Btemp.translation() - target.translation()).norm();
         }
         // find the solution that's closest the previous position
         qDiffSum.minCoeff(&minInd);
