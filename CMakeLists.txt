@@ -51,6 +51,8 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
                               "include/manip.h" )
 
+file(GLOB gravityTest_source "src/gravityTest.cpp")
+
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)
 
@@ -69,6 +71,9 @@ target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBR
 
 add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
+
+add_executable(gravityTest ${gravityTest_source})
+target_link_libraries(gravityTest drchubokin huboctrl m rt ach huboparams RobotKin daemonizer)
 
 # Install Libraries
 INSTALL(TARGETS daemonizer

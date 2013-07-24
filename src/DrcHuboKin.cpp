@@ -15,6 +15,9 @@ DrcHuboKin::DrcHuboKin()
     linkage("Body_RHY").name("RightLeg");
     linkage("Body_LHY").name("LeftLeg");
 
+    linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
+    linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
+
     joint("LKP").name("LKN");
     joint("RKP").name("RKN");
     joint("REP").name("REB");
@@ -26,7 +29,7 @@ DrcHuboKin::DrcHuboKin()
             0, 0, 0;
 
     legRestValues[RIGHT] << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
-            0, 0, 0, 0;
+                            0, 0, 0, 0;
     legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
             0, 0, 0, 0;
 }
