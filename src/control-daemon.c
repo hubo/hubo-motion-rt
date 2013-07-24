@@ -152,6 +152,7 @@ void controlLoop()
     }
 
     hubo_pwm_gains_t gains;
+    memset(&gains, 0, sizeof(gains));
     if(setCtrlDefaults( &h )==-1)
         return;
 
@@ -736,7 +737,7 @@ int setCtrlDefaults(hubo_param_t *H_param)
 
     struct hubo_state H_state;
     struct hubo_pwm_gains gains;
-    memset( &H_param, 0, sizeof(H_param) );
+    memset( H_param, 0, sizeof(*H_param) );
     memset( &H_state, 0, sizeof(H_state) );
     memset( &gains,   0, sizeof(gains)   );
     setJointParams( H_param, &H_state, &gains);

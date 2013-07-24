@@ -40,14 +40,11 @@
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo;
+    Hubo_Control hubo(false);
     DrcHuboKin kin;
 
     ArmVector torques;
 
-    std::string filename(argv[1]);
-
-    std::cout << filename << std::endl;
 
     while(true)
     {

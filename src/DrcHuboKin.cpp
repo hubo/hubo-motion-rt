@@ -24,6 +24,13 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
     joint("TSY").name("WST");
 
+    // Note: These are all basically meaningless
+    joint("RF11").name("RF1");
+    joint("RF21").name("RF2");
+    joint("LF11").name("LF1");
+    joint("LF21").name("LF2");
+
+
     armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
             0, 0, 0;
     armRestValues[LEFT]  <<  20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
@@ -75,7 +82,7 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
 
 void DrcHuboKin::updateHubo(Hubo_Control &hubo)
 {
-    for(int i=0; i<nJoints(); i++)
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
         if( !(strcmp(jointNames[i], "RF1")==0
                 || strcmp(jointNames[i], "RF2")==0
                 || strcmp(jointNames[i], "RF3")==0

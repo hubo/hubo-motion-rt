@@ -186,6 +186,28 @@ StartMotionDaemons()
     sudo balance-daemon
 }
 
+CtrlHubo()
+{
+    case "$2" in
+    'help')
+        echo
+        echo 'This will just launch the'
+        echo 'control-daemon to fill in the'
+        echo 'ctrl channels with meaningful'
+        echo 'things.'
+        echo
+    ;;
+
+    *)
+        Ach
+
+        sudo control-daemon
+
+    ;;
+    esac
+
+}
+
 StartHubo()
 {
 	case "$2" in
@@ -194,7 +216,8 @@ StartHubo()
 		echo 'This will switch all the CAN'
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
-		echo 'hubo-daemon and control-daemon.'
+		echo 'hubo-daemon and hubo-motion-rt'
+        echo 'daemons.'
 		echo
 	;;
 
@@ -202,17 +225,9 @@ StartHubo()
 	
 		Ach
 
-#        sudo echo "i $HUBO_BITRATE e" > /dev/pcan0
-#        sudo echo "i $HUBO_BITRATE e" > /dev/pcan1
-
-#        sudo ifconfig can0 up
-#        sudo ifconfig can1 up
-#        sudo ifconfig can2 up
-#        sudo ifconfig can3 up
-
         sudo hubo-ach daemon drc
 
-	StartMotionDaemons
+        StartMotionDaemons
 
         echo
         echo 'Now please run hubo_init from your remote computer!'
@@ -506,6 +521,11 @@ case "$1" in
 	'start' )
 		StartHubo $@
 	;;
+
+# TODO: Make a help field for this
+    'ctrl' )
+        CtrlHubo $@
+    ;;
 
 # Close all channels and processes
 	'stop' )
