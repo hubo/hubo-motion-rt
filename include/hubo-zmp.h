@@ -24,15 +24,13 @@
 #define HUBO_CHAN_WALKER_STATE_NAME "walker-state"
 
 /**
- * \brief Current stance. The first four are set for each
- * timestep of the zmp trajectory. The last three are used
- * to determine which atomic trajectory to used
+ * \brief End effector enum for hands and feet
 */
-enum stance_t {
-  DOUBLE_LEFT  = 0, //!< double support stance, left dominant
-  DOUBLE_RIGHT = 1, //!< double support stance, right dominant
-  SINGLE_LEFT  = 2, //!< single support stance, left dominant
-  SINGLE_RIGHT = 3, //!< single support stance, right dominant
+enum effector_t {
+  EFFECTOR_L_FOOT,
+  EFFECTOR_R_FOOT,
+  EFFECTOR_L_HAND,
+  EFFECTOR_R_HAND
 };
 
 /**
@@ -86,8 +84,10 @@ typedef struct zmp_traj_element {
   double angles[HUBO_JOINT_COUNT]; //!< fully body joint angles for current timestep
   double com[3][3];     //!< XYZ pos/vel/acc of CoM in frame of stance ankle, 10cm up from foot
   double zmp[2];        //!< XY position of zmp in frame of stance ankle
-  double forces[2][3];  //!< right/left predicted normal forces at ankles
-  double torque[2][3];  //!< right/left predicted moments XYZ at ankles
+  double forces[4][3];  //!< right/left predicted normal forces at ankles
+  double torque[4][3];  //!< right/left predicted moments XYZ at ankles
+  effector_t effector_frame;    //!< Frame the end effector is in
+  unsigned char supporting[4];  //!< Supporting limb
   stance_t stance;      //!< current stance of robot
   // TODO: add orientation for IMU
 } zmp_traj_element_t;
