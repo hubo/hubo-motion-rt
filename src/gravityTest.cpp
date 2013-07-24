@@ -42,14 +42,16 @@ int main(int argc, char **argv)
 {
     Hubo_Control hubo(false);
     DrcHuboKin kin;
+    kin.updateHubo(hubo);
+
+
+//    kin.linkage("LeftLeg").printInfo();
 
     ArmVector torques;
 
-    LegVector q;
-
-    kin.legIK(LEFT, q, RobotKin::TRANSFORM::Identity());
 
 
+//    while(false)
     while(true)
     {
         hubo.update(true);
