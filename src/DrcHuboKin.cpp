@@ -72,7 +72,7 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     updateArmJoints(side, jointAngles);
 }
 
-void DrcHuboKin::updateJoints(Hubo_Control &hubo)
+void DrcHuboKin::updateHubo(Hubo_Control &hubo)
 {
     for(int i=0; i<nJoints(); i++)
         setJointValue(jointNames[i], hubo.getJointAngleState(i));

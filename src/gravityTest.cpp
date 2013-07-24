@@ -48,8 +48,7 @@ int main(int argc, char **argv)
     while(true)
     {
         hubo.update(true);
-
-        kin.updateJoints(hubo);
+        kin.updateHubo(hubo);
 
         kin.armTorques(RIGHT, torques);
 

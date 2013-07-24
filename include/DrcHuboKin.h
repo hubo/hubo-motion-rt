@@ -26,7 +26,7 @@ public:
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
 
-    void updateJoints(Hubo_Control& hubo);
+    void updateHubo(Hubo_Control& hubo);
 
     ArmVector armRestValues[2];
     LegVector legRestValues[2];
