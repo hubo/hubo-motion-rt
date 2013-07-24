@@ -111,9 +111,14 @@ typedef enum {
 } ctrl_flag_t;
 
 
+class DrcHuboKin;
+
+
 class Hubo_Control
 {
 public:
+
+    friend class DrcHuboKin;
     /**
      * Constructor for the Hubo_Control class.
     */

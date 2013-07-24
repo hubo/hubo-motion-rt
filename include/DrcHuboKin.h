@@ -9,6 +9,8 @@ class DrcHuboKin : public RobotKin::Robot
 {
 public:
 
+    friend class Hubo_Control;
+
     DrcHuboKin();
     DrcHuboKin(std::string filename);
 
