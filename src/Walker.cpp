@@ -80,7 +80,7 @@ void Walker::flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void Walker::straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
-    if( elem.stance == SINGLE_LEFT )
+    if( elem.effector_frame == EFFECTOR_L_FOOT )
     {
         state.ankle_pitch_resistance[LEFT] += dt*gains.straightening_pitch_gain[LEFT]
                                                 *( hubo.getAngleY() );
@@ -88,7 +88,7 @@ void Walker::straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
                                                 *( hubo.getAngleX() );
     }
 
-    if( elem.stance == SINGLE_RIGHT )
+    if( elem.effector_frame == EFFECTOR_R_FOOT )
     {
         state.ankle_pitch_resistance[RIGHT] += dt*gains.straightening_pitch_gain[RIGHT]
                                                  *( hubo.getAngleY() );
@@ -138,9 +138,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
     //-------------------------
     // Figure out if we're in single or double support stance and which leg
     int side;    //!< variable for stance leg
-    if(SINGLE_LEFT == elem.stance)
+    if((unsigned char*)0x8 == elem.supporting)
         side = LEFT;
-    else if(SINGLE_RIGHT == elem.stance)
+    else if((unsigned char*)"0100" == elem.supporting)
         side = RIGHT;
     else
         side = 100;

@@ -34,6 +34,18 @@ enum effector_t {
 };
 
 /**
+ * \brief Current stance. The first four are set for each
+ * timestep of the zmp trajectory. The last three are used
+ * to determine which atomic trajectory to used
+*/
+enum bipedStance_t {
+  DOUBLE_LEFT  = 0, //!< double support stance, left dominant
+  DOUBLE_RIGHT = 1, //!< double support stance, right dominant
+  SINGLE_LEFT  = 2, //!< single support stance, left dominant
+  SINGLE_RIGHT = 3, //!< single support stance, right dominant
+};
+
+/**
  * \brief Different stance types for atomic trajectories, used
  * for all walk types.
 */
@@ -59,17 +71,30 @@ enum walkState_t {
   ROTATING_RIGHT,       //!< turning-in-place to the right state
   SIDESTEPPING_LEFT,    //!< sidestepping to the left state
   SIDESTEPPING_RIGHT,   //!< sidestepping to the right state
+  GOTO_QUADRUPED,       //!< go from biped stance into quadruped stance
+  GOTO_BIPED,           //!< go from quadruped stance into biped stance
   TURNING_LEFT,         //!< turning left while walking forward/backward state
   TURNING_RIGHT,        //!< turning right while walking forward/backward state
   STOP,                 //!< stopped state
-  NUM_OF_WALKSTATES = 6 //!< number of walk states to get trajectories for
+  NUM_OF_WALKSTATES = 8 //!< number of walk states to get trajectories for
 };
 
 /// String constants for walkState enum
 static const char* walkStateStrings[NUM_OF_WALKSTATES+2] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
                                                         "ROTATING_LEFT", "ROTATING_RIGHT",
                                                         "SIDESTEPPING_LEFT", "SIDESTEPPING_RIGHT",
+                                                        "GOTO_QUADRUPED", "GOTO_BIPED",
                                                         "TURNING_LEFT", "TURNING_RIGHT"};
+
+/**
+ * \brief Walk mode enum
+*/
+enum walkMode_t
+{
+  BIPED_MODE = 0,       //!< Biped walking mode
+  QUADRUPED_MODE,       //!< Quadruped walking mode
+  NUM_OF_WALKMODES = 2
+};
  
 /// ZMP trajectory constants
 enum {
@@ -88,7 +113,7 @@ typedef struct zmp_traj_element {
   double torque[4][3];  //!< right/left predicted moments XYZ at ankles
   effector_t effector_frame;    //!< Frame the end effector is in
   unsigned char supporting[4];  //!< Supporting limb
-  stance_t stance;      //!< current stance of robot
+  bipedStance_t bipedStance;
   // TODO: add orientation for IMU
 } zmp_traj_element_t;
 //}__attribute__((packed)) zmp_traj_element_t;
