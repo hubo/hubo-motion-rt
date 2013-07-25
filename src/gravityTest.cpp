@@ -56,7 +56,9 @@ int main(int argc, char **argv)
     {
         hubo.update(true);
         kin.updateHubo(hubo);
+        hubo.getRightArmAngleStates();
 
+        hubo.setArmTorques()
         kin.armTorques(RIGHT, torques);
 
         std::cout << torques.transpose() << std::endl;

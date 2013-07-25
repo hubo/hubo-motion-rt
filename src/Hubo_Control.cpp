@@ -710,7 +710,7 @@ ctrl_flag_t Hubo_Control::setArmTorques(int side, ArmVector torques)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<H_Arm_Ctrl[side].count; i++)
-            setJointTorque(i, torques[i]);
+            setJointTorque(armjoints[i], torques[i]);
 
     else
         return BAD_SIDE;
