@@ -211,7 +211,7 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=3;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=200;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
