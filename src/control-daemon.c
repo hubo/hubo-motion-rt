@@ -211,7 +211,7 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=3;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=200;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -992,7 +992,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     char *charPointer;
     char buff[2048];
-    char type[5];
+    char type[15];
     size_t tableID = 0;
     size_t currentLine = 0;
     ctrl_table_t tableType;
