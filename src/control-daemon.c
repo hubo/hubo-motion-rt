@@ -54,6 +54,8 @@ static char *ctrlFileLocation    = "/etc/hubo-ach/control.table";
 static char *ampdutyFileLocation = "/etc/hubo-ach/amp-duty.table";
 static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
 
+int simMode;
+
 
 void controlLoop();
 int setCtrlDefaults(hubo_param_t *H_param);
@@ -166,16 +168,19 @@ void controlLoop()
         H_ref.mode[i] = HUBO_REF_MODE_REF; // Make sure that the values are not put through Dan's buffer/filter
 
 
-
-
     memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
 
-    do {
-        struct timespec timeoutCheck;
-        clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
-        timeoutCheck.tv_sec += 1;
-        result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
-    } while( !daemon_sig_quit && result == ACH_TIMEOUT );
+    if(simMode==0)
+    {
+        do {
+            struct timespec timeoutCheck;
+            clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
+            timeoutCheck.tv_sec += 1;
+            result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
+        } while( !daemon_sig_quit && result == ACH_TIMEOUT );
+    }
+    else
+        ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
 
 
     if( ACH_OK != result )
@@ -206,7 +211,7 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=15;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=3;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -221,15 +226,14 @@ void controlLoop()
 
     double t0 = H_state.time;
     double t = H_state.time, dt, err;
-    fprintf(stdout, "Start time:%f\n", H_state.time);
+    fprintf(stdout, "Start time:%f\n", H_state.time); fflush(stdout);
     dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
-    fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
+    fprintf(stdout, "Beginning control loop\n"); fflush(stdout);  fflush(stdout);
 
     // Main control loop
     while( !daemon_sig_quit )
     {
-
         struct timespec recheck;
         clock_gettime( ACH_DEFAULT_CLOCK, &recheck );
         long nanoWait = recheck.tv_nsec + (long)(dt/3.0*1E9);
@@ -237,6 +241,7 @@ void controlLoop()
         recheck.tv_nsec = (long)(nanoWait%((long)1E9));
         sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs,
                              &recheck, ACH_O_WAIT | ACH_O_LAST );
+
         if( ACH_TIMEOUT == sresult || ACH_STALE_FRAMES == sresult )
         {
             memcpy( &H_ref, &stored_ref, sizeof(H_ref) );
@@ -356,10 +361,11 @@ void controlLoop()
             C_state.paused=0;
 
 
-        if( 0 < dt && dt < dtMax && H_state.refWait==0 )
+        if( (0 < dt && dt < dtMax && H_state.refWait==0) || simMode==1 )
         {
             iter++; if(iter>maxi) iter=0;
 
+            if(iter==maxi) fprintf(stdout, "\nPWM: ");
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
@@ -394,8 +400,7 @@ void controlLoop()
                         tableType = conversion.type[jnt];
                         int c = 0;
 
-                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1]
-                                <= amp)
+                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1] <= amp)
                             c = conversion.table[tableType].count-2;
                         else
                             for(c=0; c<conversion.table[tableType].count-1; c++)
@@ -410,8 +415,19 @@ void controlLoop()
                             dutyLower = conversion.table[tableType].duty[c];
                             dutyUpper = conversion.table[tableType].duty[c+1];
 
-                            gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
-                                    (dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower;
+                            gains.joint[jnt].pwmCommand = 100*sign(ctrl.joint[jnt].torque)*
+                                    ((dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower);
+
+                            if(jnt == RSP)
+                            if(iter==maxi) fprintf(stdout, "%f : [%f,%f] [%f,%f] %f (%f)\t",
+                                                   gains.joint[jnt].pwmCommand,
+                                                   dutyLower,
+                                                   dutyUpper,
+                                                   ampLower,
+                                                   ampUpper,
+                                                   amp,
+                                                   ctrl.joint[jnt].torque);
+
                         }
                         else
                         {
@@ -424,15 +440,6 @@ void controlLoop()
                 else
                     H_ref.comply[jnt] = 0;
 
-
-                if( ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
-                {
-                    H_ref.comply[jnt] = 1;
-                    gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
-                    gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
-                }
-                else
-                    gains.joint[jnt].pwmCommand = 0;
 
 
 
@@ -623,7 +630,7 @@ void controlLoop()
             }
             
         }// end: time test
-        else if( dt >= 0.1 )
+        else if( dt >= 0.1 && simMode==0 )
             fprintf(stderr, "Experiencing Delay of %f seconds\n", dt);
         else if( dt < 0 )
             fprintf(stderr, "Congratulations! You have traveled backwards"
@@ -644,9 +651,20 @@ void controlLoop()
 int main(int argc, char **argv)
 {
     // TODO: Parse runtime arguments
+    simMode = 0;
+    int eatTerminal = 0;
 
+    for(int i=1; i<argc; i++)
+    {
+        if( 0 == strcmp(argv[i], "-s") )
+            simMode = 1;
 
-    daemonize( "control-daemon", 49 );
+        if( 0 == strcmp(argv[i], "-t") )
+            eatTerminal = 1;
+    }
+
+    if(eatTerminal != 1)
+        daemonize( "control-daemon", 49 );
    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
@@ -706,6 +724,7 @@ int main(int argc, char **argv)
 //    for(int i=0; i<HUBO_JOINT_COUNT; i++)
 //        fprintf(stdout, "%s:\t%d\t%f\n",jointNames[i],
 //                conversion.type[i], conversion.Kt[i]);
+
 
     controlLoop();
 

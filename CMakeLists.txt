@@ -73,7 +73,7 @@ add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
 add_executable(gravityTest ${gravityTest_source})
-target_link_libraries(gravityTest drchubokin huboctrl m rt ach huboparams RobotKin daemonizer)
+target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
 
 # Install Libraries
 INSTALL(TARGETS daemonizer

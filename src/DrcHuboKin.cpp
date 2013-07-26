@@ -22,10 +22,10 @@ DrcHuboKin::DrcHuboKin()
     joint("TSY").name("WST");
 
     // Note: These are all basically meaningless
-    joint("RF11").name("RF1");
-    joint("RF21").name("RF2");
-    joint("LF11").name("LF1");
-    joint("LF21").name("LF2");
+//    joint("RF11").name("RF1");
+//    joint("RF21").name("RF2");
+//    joint("LF11").name("LF1");
+//    joint("LF21").name("LF2");
 
     updateFrames();
 
@@ -94,6 +94,7 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles)
 {
     updateArmJoints(side, jointAngles);
+    return armTorques(side, jointTorque, eeWrench, jointAngles);
 }
 
 void DrcHuboKin::updateHubo(Hubo_Control &hubo)

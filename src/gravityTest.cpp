@@ -47,21 +47,52 @@ int main(int argc, char **argv)
 
 //    kin.linkage("LeftLeg").printInfo();
 
-    ArmVector torques;
+    ArmVector torques, armAngles;
+
+    armAngles << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+    std::cout << "mass: " << kin.linkage("RightArm").mass("RSP") << std::endl;
+    std::cout << "com:  " << ( kin.linkage("RightArm").centerOfMass("RSP")
+                               - kin.joint("RSR").respectToRobot().translation() ).transpose() << std::endl;
+
+
+    std::cout << std::endl << std::endl;
+    std::cout << "torq: " << kin.joint("RSP").gravityTorque() << std::endl;
+
+//    for(int i=0; i<kin.linkage("RightArm").nChildren(); i++)
+//        kin.linkage("RightArm").childLinkage(i).printInfo();
+
+
+    std::cout << "PARENT" << std::endl;
+    kin.joint("RF11").parentJoint().printInfo();
+
+    RobotKin::Joint& parentJoint = kin.joint("RF1").parentJoint();
+
+
+//    std::cout << "com:  " << kin.linkage("LeftArm").centerOfMass() << std::endl;
+//    std::cout << "mass: " << 9.8*kin.linkage("LeftArm").mass() << std::endl;
 
 
 
-//    while(false)
-    while(true)
+
+    while(false)
+//    while(true)
     {
         hubo.update(true);
         kin.updateHubo(hubo);
-        hubo.getRightArmAngleStates();
 
-        hubo.setArmTorques()
+        armAngles(SP) = -90*M_PI/180;
+//        armAngles(SR) = -90*M_PI/180;
+
+        kin.updateArmJoints(RIGHT, armAngles);
+
         kin.armTorques(RIGHT, torques);
 
+        hubo.setArmTorques(RIGHT, torques);
+
         std::cout << torques.transpose() << std::endl;
+
+        hubo.sendControls();
 
     }
 

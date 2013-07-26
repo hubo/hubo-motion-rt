@@ -167,6 +167,8 @@ StopHubo()
         do
             echo " -- $entry refuses to quit!"
         done
+
+        sudo killall hubo-log
 	
 		Ach close
 
@@ -201,7 +203,7 @@ CtrlHubo()
     *)
         Ach
 
-        sudo control-daemon
+        sudo control-daemon -s -t
 
     ;;
     esac
