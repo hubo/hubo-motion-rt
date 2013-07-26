@@ -992,7 +992,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     char *charPointer;
     char buff[2048];
-    char type[5];
+    char type[15];
     size_t tableID = 0;
     size_t currentLine = 0;
     ctrl_table_t tableType;
