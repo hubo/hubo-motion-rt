@@ -209,6 +209,16 @@ public:
      */
     ctrl_flag_t setRightLegTraj(LegVector angles, LegVector vels, bool send);
     /**
+     * Toggles joint-level friction (back-EMF) compensation in the specified
+     * joint.
+     */
+    ctrl_flag_t setJointAntiFriction(int joint, bool on);
+    /**
+     * Toggles joint-level friction (back-EMF) compensation in the specified
+     * arm.
+     */
+    ctrl_flag_t setArmAntiFriction(int side, bool on);
+    /**
      * Toggles joint-space compliance in the specified joint, using the default
      * gains.
      */

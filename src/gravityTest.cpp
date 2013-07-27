@@ -51,23 +51,28 @@ int main(int argc, char **argv)
 
     int iter=0, maxi=100;
 
-    while(true)
-    {
-        iter++;
-        if(iter>maxi) iter=0;
+    hubo.setJointAntiFriction(LSP, true);
+    hubo.setJointTorque(LSP, 0);
 
-        hubo.update(true);
-        kin.updateHubo(hubo);
+    hubo.sendControls();
 
-        kin.armTorques(LEFT, torques);
+//    while(true)
+//    {
+//        iter++;
+//        if(iter>maxi) iter=0;
 
-        hubo.setArmTorques(LEFT, torques);
+//        hubo.update(true);
+//        kin.updateHubo(hubo);
 
-        if(iter==maxi)
-            std::cout << torques.transpose() << std::endl;
+//        kin.armTorques(LEFT, torques);
 
-//        hubo.sendControls();
+//        hubo.setArmTorques(LEFT, torques);
 
-    }
+//        if(iter==maxi)
+//            std::cout << torques.transpose() << std::endl;
+
+////        hubo.sendControls();
+
+//    }
 
 }

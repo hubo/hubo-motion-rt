@@ -68,8 +68,8 @@
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
 enum{
-    MAX_AMP_DUTY_TABLE_TYPES = 10,
-    MAX_AMP_DUTY_TABLE_SIZE = 100
+    MAX_DUTY_TABLE_TYPES = 10,
+    MAX_DUTY_TABLE_SIZE = 100
 };
 
 
@@ -94,18 +94,24 @@ typedef enum {
     CTRL_COMP_ON
 } hubo_compliance_mode_t;
 
+typedef enum {
+    CTRL_ANTIFRICTION_OFF = 0,
+    CTRL_ANTIFRICTION_ON
+} hubo_friction_mode_t;
 
 typedef enum {
     CTRL_TABLE_DUTY,
+    CTRL_TABLE_TORQUE,
     CTRL_TABLE_AMP
 } ctrl_table_t;
 
-typedef struct hubo_amp_duty
+typedef struct hubo_duty_table
 {
-    double amp[MAX_AMP_DUTY_TABLE_SIZE];
-    double duty[MAX_AMP_DUTY_TABLE_SIZE];
+    double amp[MAX_DUTY_TABLE_SIZE];
+    double torque[MAX_DUTY_TABLE_SIZE];
+    double duty[MAX_DUTY_TABLE_SIZE];
     size_t count;
-} hubo_amp_duty_t;
+} hubo_duty_table_t;
 
 typedef struct hubo_conversion_tables
 {
@@ -114,11 +120,14 @@ typedef struct hubo_conversion_tables
     //    -- (Currently we are only using 2 types)
     // 100 is the max number of tabulated entries that we currently support
     //    -- (Currently we only go up to 24)
-    hubo_amp_duty_t table[MAX_AMP_DUTY_TABLE_TYPES];
+    hubo_duty_table_t table[MAX_DUTY_TABLE_TYPES];
 
     // The type of table to use for
     double Kt[HUBO_JOINT_COUNT];
-    size_t type[HUBO_JOINT_COUNT];
+    double Kf[HUBO_JOINT_COUNT];
+    double fMax[HUBO_JOINT_COUNT];
+
+    size_t dutyType[HUBO_JOINT_COUNT];
 
 } hubo_conversion_tables_t;
 
@@ -148,6 +157,7 @@ typedef struct hubo_joint_control {
     hubo_ctrl_mode_t ctrl_mode;
     hubo_compliance_mode_t comp_mode;
     hubo_torque_mode_t torque_mode;
+    hubo_friction_mode_t friction_mode;
 
 } hubo_joint_control_t;
 

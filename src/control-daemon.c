@@ -51,7 +51,7 @@ ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
 static char *ctrlFileLocation    = "/etc/hubo-ach/control.table";
-static char *ampdutyFileLocation = "/etc/hubo-ach/amp-duty.table";
+static char *ampdutyFileLocation = "/etc/hubo-ach/duty.table";
 static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
 
 int simMode;
@@ -201,9 +201,13 @@ void controlLoop()
     double amp=0;
     double ampUpper;
     double ampLower;
+    double torque=0;
+    double torqueUpper;
+    double torqueLower;
     double dutyUpper;
     double dutyLower;
     int tableType=0;
+    double antifriction=0;
 
 
     int torqueWarning[HUBO_JOINT_COUNT];
@@ -211,7 +215,7 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=200;
+    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=3;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -395,37 +399,63 @@ void controlLoop()
                     {
                         // These torque calculations are based off of
                         // Dr. Inhyeok Kim's RAINBOW code
-                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
+//                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
 
-                        tableType = conversion.type[jnt];
+                        tableType = conversion.dutyType[jnt];
                         int c = 0;
 
-                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1] <= amp)
+//                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1] <= amp)
+//                            c = conversion.table[tableType].count-2;
+//                        else
+//                            for(c=0; c<conversion.table[tableType].count-1; c++)
+//                                if(conversion.table[tableType].amp[c] <= amp
+//                                        && amp < conversion.table[tableType].amp[c+1])
+//                                    break;
+                        torque = fabs(ctrl.joint[jnt].torque);
+
+                        if(conversion.table[tableType].torque[conversion.table[tableType].count-1]
+                                <= torque)
                             c = conversion.table[tableType].count-2;
                         else
                             for(c=0; c<conversion.table[tableType].count-1; c++)
-                                if(conversion.table[tableType].amp[c] <= amp
-                                        && amp < conversion.table[tableType].amp[c+1])
+                                if(conversion.table[tableType].torque[c] <= torque
+                                        && torque < conversion.table[tableType].torque[c+1])
                                     break;
 
                         if(tableType != 0)
                         {
-                            ampLower  = conversion.table[tableType].amp[c];
-                            ampUpper  = conversion.table[tableType].amp[c+1];
-                            dutyLower = conversion.table[tableType].duty[c];
-                            dutyUpper = conversion.table[tableType].duty[c+1];
+//                            ampLower  = conversion.table[tableType].amp[c];
+//                            ampUpper  = conversion.table[tableType].amp[c+1];
+//                            dutyLower = conversion.table[tableType].duty[c];
+//                            dutyUpper = conversion.table[tableType].duty[c+1];
 
-                            gains.joint[jnt].pwmCommand = 100*sign(ctrl.joint[jnt].torque)*
-                                    ((dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower);
+//                            gains.joint[jnt].pwmCommand = 100*sign(ctrl.joint[jnt].torque)*
+//                                    ((dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower);
 
-                            if(jnt == RSP)
-                            if(iter==maxi) fprintf(stdout, "%f : [%f,%f] [%f,%f] %f (%f)\t",
+
+                            torqueLower = conversion.table[tableType].torque[c];
+                            torqueUpper = conversion.table[tableType].torque[c+1];
+                            dutyLower   = conversion.table[tableType].torque[c];
+                            dutyUpper   = conversion.table[tableType].torque[c+1];
+
+                            if(torqueLower == torqueUpper)
+                            {
+                                gains.joint[jnt].pwmCommand = 0;
+                                fprintf(stderr, "ERROR IN DUTY TABLE! Torque entry %d is equal to entry %d!",
+                                        c, c+1);
+                            }
+                            else
+                                gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
+                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower);
+
+
+                            if(jnt == LSP)
+                            if(iter==maxi) fprintf(stdout, "Duty %f : [%f,%f] [%f,%f] : %f Torque\t",
                                                    gains.joint[jnt].pwmCommand,
                                                    dutyLower,
                                                    dutyUpper,
-                                                   ampLower,
-                                                   ampUpper,
-                                                   amp,
+                                                   torqueLower,
+                                                   torqueUpper,
                                                    ctrl.joint[jnt].torque);
 
                         }
@@ -435,6 +465,20 @@ void controlLoop()
                                 fprintf(stderr, "You are requesting torque mode for a joint that does not support it! (%s)\n", jointNames[jnt]);
                             torqueWarning[jnt]=1;
                         }
+
+                    }
+
+                    if(ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON)
+                    {
+                        antifriction = conversion.Kf[jnt]*H_state.joint[jnt].vel;
+                        if(fabs(antifriction) > fabs(conversion.fMax[jnt]))
+                            antifriction = sign(antifriction)*fabs(conversion.fMax[jnt]);
+
+                        gains.joint[jnt].pwmCommand += antifriction;
+
+                        if(jnt==LSP)
+                        if(iter==maxi)
+                        fprintf(stdout, "\t---> %f\t", gains.joint[jnt].pwmCommand);
                     }
                 }
                 else
@@ -708,7 +752,7 @@ int main(int argc, char **argv)
 //    hubo_conversion_tables_t conversion;
 //    setConversionTables(&conversion);
 
-//    for(int i=0; i<MAX_AMP_DUTY_TABLE_TYPES; i++)
+//    for(int i=0; i<MAX_DUTY_TABLE_TYPES; i++)
 //    {
 //        fprintf(stdout, "Table #%d\t Count:%lu\n", i, conversion.table[i].count);
 //        fprintf(stdout, "Duty:\t");
@@ -723,7 +767,7 @@ int main(int argc, char **argv)
 
 //    for(int i=0; i<HUBO_JOINT_COUNT; i++)
 //        fprintf(stdout, "%s:\t%d\t%f\n",jointNames[i],
-//                conversion.type[i], conversion.Kt[i]);
+//                conversion.type[i], conversion.Kf[i]);
 
 
     controlLoop();
@@ -987,7 +1031,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
         return -1;
     }
 
-    hubo_amp_duty_t tempTable;
+    hubo_duty_table_t tempTable;
     memset(&tempTable, 0, sizeof(tempTable));
 
     char *charPointer;
@@ -1035,21 +1079,23 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
             if(fscanf(tableLine, "%lu", &tableID)==1)
             {
-                if(tableID < MAX_AMP_DUTY_TABLE_TYPES)
+                if(tableID < MAX_DUTY_TABLE_TYPES)
                 {
                     size_t entryID=0;
                     double entry = 0;
                     while(fscanf(tableLine, "%lf", &entry)==1)
                     {
-                        if(entryID > MAX_AMP_DUTY_TABLE_SIZE)
+                        if(entryID > MAX_DUTY_TABLE_SIZE)
                         {
                             fprintf(stderr, "Too many entries (%lu) in line %lu! Current max is %d\n"
-                                            " -- You must increase MAX_AMP_DUTY_TABLE_SIZE in control-daemon.h\n",
-                                            entryID, currentLine, MAX_AMP_DUTY_TABLE_SIZE);
+                                            " -- You must increase MAX_DUTY_TABLE_SIZE in control-daemon.h\n",
+                                            entryID, currentLine, MAX_DUTY_TABLE_SIZE);
                         }
 
                         if(tableType==CTRL_TABLE_DUTY)
                             conversion->table[tableID].duty[entryID] = entry;
+                        else if(tableType==CTRL_TABLE_TORQUE)
+                            conversion->table[tableID].torque[entryID] = entry;
                         else if(tableType==CTRL_TABLE_AMP)
                             conversion->table[tableID].amp[entryID] = entry;
                         else
@@ -1059,7 +1105,6 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
                                             tableType, __LINE__-4);
                             return -1;
                         }
-
                         entryID++;
                     }
                     conversion->table[tableID].count = entryID;
@@ -1067,8 +1112,8 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
                 else
                 {
                     fprintf(stderr, "Table ID (%lu) is too high on line %lu! Current max is %d\n"
-                            " -- You must increase MAX_AMP_DUTY_TABLE_TYPES in control-daemon.h\n",
-                            tableID, currentLine, MAX_AMP_DUTY_TABLE_TYPES);
+                            " -- You must increase MAX_DUTY_TABLE_TYPES in control-daemon.h\n",
+                            tableID, currentLine, MAX_DUTY_TABLE_TYPES);
                     return -1;
                 }
             }
@@ -1134,7 +1179,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
             }
             else
             {
-                conversion->type[i] = tempType;
+                conversion->dutyType[i] = tempType;
                 conversion->Kt[i]   = tempKt;
             }
 
