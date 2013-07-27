@@ -52,7 +52,11 @@ int main(int argc, char **argv)
     int iter=0, maxi=100;
 
     hubo.setJointAntiFriction(LSP, true);
+    hubo.setJointAntiFriction(LSR, true);
     hubo.setJointTorque(LSP, 0);
+    hubo.setJointTorque(LSR, 0);
+    hubo.setJointTorque(RSP, 0);
+    hubo.setJointTorque(RSR, 0);
 
     hubo.sendControls();
 

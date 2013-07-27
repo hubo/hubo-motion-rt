@@ -6,7 +6,7 @@
 
 #JointName  DutyTable   Kf      MaxFriction     Kt (mNm/A)
 
-LSP         1           50      3.1             0.0276
+LSP         1           50      3.6             0.0276
 LSR         1           50      2.0             0.0276
 
 LSY         2           50      1.45            0.0255

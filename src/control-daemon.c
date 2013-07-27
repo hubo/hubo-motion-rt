@@ -215,7 +215,8 @@ void controlLoop()
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=3;
+    ach_status_t cresult, rresult, sresult, presult=ACH_OK;
+    int iter=0, maxi=200;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -378,6 +379,8 @@ void controlLoop()
                 if( ctrl.joint[jnt].comp_mode == CTRL_COMP_ON || ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
                 {
                     H_ref.comply[jnt] = 1;
+                    // FIXME: Remove this hack
+                    gains.joint[jnt].maxPWM = 40;
 
                     if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
                     {
@@ -478,8 +481,9 @@ void controlLoop()
 
                         if(jnt==LSP)
                         if(iter==maxi)
-                        fprintf(stdout, "\t---> %f\t", gains.joint[jnt].pwmCommand);
+                        fprintf(stdout, "\t---> (%f) ---> %f\t", H_state.joint[jnt].vel, gains.joint[jnt].pwmCommand);
                     }
+
                 }
                 else
                     H_ref.comply[jnt] = 0;
