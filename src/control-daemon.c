@@ -401,7 +401,7 @@ void controlLoop()
                         // Dr. Inhyeok Kim's RAINBOW code
 //                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
 
-                        tableType = conversion.dutyType[jnt];
+                        tableType = conversion.joint[jnt].dutyType;
                         int c = 0;
 
 //                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1] <= amp)
@@ -450,13 +450,13 @@ void controlLoop()
 
 
                             if(jnt == LSP)
-                            if(iter==maxi) fprintf(stdout, "Duty %f : [%f,%f] [%f,%f] : %f Torque\t",
-                                                   gains.joint[jnt].pwmCommand,
-                                                   dutyLower,
-                                                   dutyUpper,
+                            if(iter==maxi) fprintf(stdout, "Torque %f : [%f,%f] [%f,%f] : %f Duty\t",
+                                                   ctrl.joint[jnt].torque,
                                                    torqueLower,
                                                    torqueUpper,
-                                                   ctrl.joint[jnt].torque);
+                                                   dutyLower,
+                                                   dutyUpper,
+                                                   gains.joint[jnt].pwmCommand);
 
                         }
                         else
@@ -470,9 +470,9 @@ void controlLoop()
 
                     if(ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON)
                     {
-                        antifriction = conversion.Kf[jnt]*H_state.joint[jnt].vel;
-                        if(fabs(antifriction) > fabs(conversion.fMax[jnt]))
-                            antifriction = sign(antifriction)*fabs(conversion.fMax[jnt]);
+                        antifriction = conversion.joint[jnt].kF*H_state.joint[jnt].vel;
+                        if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
+                            antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
 
                         gains.joint[jnt].pwmCommand += antifriction;
 
@@ -749,25 +749,26 @@ int main(int argc, char **argv)
     r = ach_open(&chan_ctrl_state, CTRL_CHAN_STATE, NULL );
     daemon_assert( ACH_OK == r, __LINE__ );
 
-//    hubo_conversion_tables_t conversion;
-//    setConversionTables(&conversion);
+    hubo_conversion_tables_t conversion;
+    setConversionTables(&conversion);
 
-//    for(int i=0; i<MAX_DUTY_TABLE_TYPES; i++)
-//    {
-//        fprintf(stdout, "Table #%d\t Count:%lu\n", i, conversion.table[i].count);
-//        fprintf(stdout, "Duty:\t");
-//        for(int j=0; j<conversion.table[i].count; j++)
-//            fprintf(stdout, "\t%f", conversion.table[i].duty[j]);
-//        fprintf(stdout, "\n");
-//        fprintf(stdout, "Amp: \t");
-//        for(int j=0; j<conversion.table[i].count; j++)
-//            fprintf(stdout, "\t%f", conversion.table[i].amp[j]);
-//        fprintf(stdout, "\n\n");
-//    }
+    for(int i=0; i<MAX_DUTY_TABLE_TYPES; i++)
+    {
+        fprintf(stdout, "Table #%d\t Count:%lu\n", i, conversion.table[i].count);
+        fprintf(stdout, "Duty:\t");
+        for(int j=0; j<conversion.table[i].count; j++)
+            fprintf(stdout, "\t%f", conversion.table[i].duty[j]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "Torque: \t");
+        for(int j=0; j<conversion.table[i].count; j++)
+            fprintf(stdout, "\t%f", conversion.table[i].torque[j]);
+        fprintf(stdout, "\n\n");
+    }
 
-//    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-//        fprintf(stdout, "%s:\t%d\t%f\n",jointNames[i],
-//                conversion.type[i], conversion.Kf[i]);
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        fprintf(stdout, "%s:\t%d\t%f\t%f\t%f\n",jointNames[i],
+                conversion.joint[i].dutyType, conversion.joint[i].kF,
+                conversion.joint[i].Fmax, conversion.joint[i].kT);
 
 
     controlLoop();
@@ -1036,7 +1037,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     char *charPointer;
     char buff[2048];
-    char type[15];
+    char type[32];
     size_t tableID = 0;
     size_t currentLine = 0;
     ctrl_table_t tableType;
@@ -1063,6 +1064,10 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
             if(strcmp(type, "Duty")==0)
             {
                 tableType = CTRL_TABLE_DUTY;
+            }
+            else if(strcmp(type, "Torque")==0)
+            {
+                tableType = CTRL_TABLE_TORQUE;
             }
             else if(strcmp(type, "Amp")==0)
             {
@@ -1129,8 +1134,8 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     size_t jntNameCheck = 0;
     char name[4];
-    size_t tempType;
-    double tempKt;
+    hubo_joint_duty_settings_t tempSet;
+
 
     if(!(ptr_file=fopen(torqueFileLocation, "r")))
     {
@@ -1155,10 +1160,12 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
             return -1;
         }
 
-        if( 3 == sscanf(buff, "%s%lu%lf",
+        if( 5 == sscanf(buff, "%s%lu%lf%lf%lf",
                         name,
-                        &tempType,
-                        &tempKt) )
+                        &(tempSet.dutyType),
+                        &(tempSet.kF),
+                        &(tempSet.Fmax),
+                        &(tempSet.kT)) )
         {
             size_t x; int i; jntNameCheck = 0;
             for( x = 0; x < sizeof(jointNames)/sizeof(jointNames[0]); x++ )
@@ -1179,8 +1186,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
             }
             else
             {
-                conversion->dutyType[i] = tempType;
-                conversion->Kt[i]   = tempKt;
+                memcpy(&(conversion->joint[i]), &tempSet, sizeof(tempSet));
             }
 
         } // end: if(sscanf)

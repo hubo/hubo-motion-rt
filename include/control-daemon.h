@@ -113,6 +113,16 @@ typedef struct hubo_duty_table
     size_t count;
 } hubo_duty_table_t;
 
+typedef struct hubo_joint_duty_settings
+{
+    size_t dutyType;
+
+    double kT;
+    double kF;
+    double Fmax;
+
+} hubo_joint_duty_settings_t;
+
 typedef struct hubo_conversion_tables
 {
     // 10 is the max number of PWM to Amp relationships that we support
@@ -123,11 +133,7 @@ typedef struct hubo_conversion_tables
     hubo_duty_table_t table[MAX_DUTY_TABLE_TYPES];
 
     // The type of table to use for
-    double Kt[HUBO_JOINT_COUNT];
-    double Kf[HUBO_JOINT_COUNT];
-    double fMax[HUBO_JOINT_COUNT];
-
-    size_t dutyType[HUBO_JOINT_COUNT];
+    hubo_joint_duty_settings_t joint[HUBO_JOINT_COUNT];
 
 } hubo_conversion_tables_t;
 
