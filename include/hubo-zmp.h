@@ -76,15 +76,15 @@ enum walkState_t {
   TURNING_LEFT,         //!< turning left while walking forward/backward state
   TURNING_RIGHT,        //!< turning right while walking forward/backward state
   STOP,                 //!< stopped state
-  NUM_OF_WALKSTATES = 8 //!< number of walk states to get trajectories for
+  NUM_OF_WALKSTATES = 11//!< number of walk states to get trajectories for
 };
 
 /// String constants for walkState enum
-static const char* walkStateStrings[NUM_OF_WALKSTATES+2] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
+static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
                                                         "ROTATING_LEFT", "ROTATING_RIGHT",
                                                         "SIDESTEPPING_LEFT", "SIDESTEPPING_RIGHT",
                                                         "GOTO_QUADRUPED", "GOTO_BIPED",
-                                                        "TURNING_LEFT", "TURNING_RIGHT"};
+                                                        "TURNING_LEFT", "TURNING_RIGHT", "STOP"};
 
 /**
  * \brief Walk mode enum
