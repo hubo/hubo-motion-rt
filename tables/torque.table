@@ -6,24 +6,24 @@
 
 #JointName  DutyTable   Kf      MaxFriction     Kt (mNm/A)
 
-LSP         1           50      3.6             0.0276
+LSP         1           35      4.0             0.0276
 LSR         1           50      2.0             0.0276
 
-LSY         2           50      1.45            0.0255
-LEB         2           50      1.5             0.0255
-LWY         2           50      1.45            0.0258
-LWP         2           50      4.5             0.0258      # I will use this number until we confirm if the one below is correct
+LSY         1            9      2.5            0.0255
+LEB         1           50      2.3             0.0255
+LWY         1           13      6.00            0.0258
+LWP         1           30      11.0             0.0258      # I will use this number until we confirm if the one below is correct
 # LWP                                           0.0530      # This is the number given in RAINBOW code
 
-LWR         3           50      0               0.030
+LWR         1           50      0               0.030
 
 
 RSP         1           50      3.1             0.0276
 RSR         1           50      2.0             0.0276
 
-RSY         2           50      1.45            0.0255
-REB         2           50      1.5             0.0255
-RWY         2           50      1.45            0.0258
-RWP         2           50      4.5             0.0258
+RSY         1           50      1.45            0.0255
+REB         1           50      1.5             0.0255
+RWY         1           50      1.45            0.0258
+RWP         1           50      4.5             0.0258
 
-RWR         3           50      0               0.030
+RWR         1           50      0               0.030

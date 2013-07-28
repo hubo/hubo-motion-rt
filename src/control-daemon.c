@@ -170,6 +170,7 @@ void controlLoop()
 
     memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
 
+    fprintf(stdout, "Waiting for first state... "); fflush(stdout);
     if(simMode==0)
     {
         do {
@@ -181,7 +182,7 @@ void controlLoop()
     }
     else
         ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
-
+    fprintf(stdout, " Got it!\n"); fflush(stdout);
 
     if( ACH_OK != result )
     {
@@ -451,9 +452,10 @@ void controlLoop()
                                 gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
                                     ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower);
 
-
-                            if(jnt == LSP)
-                            if(iter==maxi) fprintf(stdout, "Torque %f : [%f,%f] [%f,%f] : %f Duty\t",
+                            if(0)
+                            if(jnt == LEB)
+                            if(iter==maxi) fprintf(stdout, "(%s) Torque %f : [%f,%f] [%f,%f] : %f Duty\t",
+                                                   jointNames[jnt],
                                                    ctrl.joint[jnt].torque,
                                                    torqueLower,
                                                    torqueUpper,
@@ -479,7 +481,6 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += antifriction;
 
-                        if(jnt==LSP)
                         if(iter==maxi)
                         fprintf(stdout, "\t---> (%f) ---> %f\t", H_state.joint[jnt].vel, gains.joint[jnt].pwmCommand);
                     }

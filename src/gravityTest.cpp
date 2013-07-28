@@ -52,11 +52,25 @@ int main(int argc, char **argv)
     int iter=0, maxi=100;
 
     hubo.setJointAntiFriction(LSP, true);
-    hubo.setJointAntiFriction(LSR, true);
+//    hubo.setJointAntiFriction(LSR, true);
+//    hubo.setJointAntiFriction(LSY, true);
+//    hubo.setJointAntiFriction(LEB, true);
+//    hubo.setJointAntiFriction(LWY, true);
+//    hubo.setJointAntiFriction(LWP, true);
+
     hubo.setJointTorque(LSP, 0);
     hubo.setJointTorque(LSR, 0);
+//    hubo.setJointTorque(LSY, 0);
+//    hubo.setJointTorque(LEB, 0);
+//    hubo.setJointTorque(LWY, 0);
+//    hubo.setJointTorque(LWP, 0);
+
     hubo.setJointTorque(RSP, 0);
     hubo.setJointTorque(RSR, 0);
+//    hubo.setJointTorque(RSY, 0);
+//    hubo.setJointTorque(REB, 0);
+//    hubo.setJointTorque(RWY, 0);
+//    hubo.setJointTorque(RWP, 0);
 
     hubo.sendControls();
 
