@@ -49,48 +49,52 @@ int main(int argc, char **argv)
 
     ArmVector torques, armAngles;
 
-    int iter=0, maxi=100;
+    int iter=0, maxi=75;
 
     hubo.setJointAntiFriction(LSP, true);
-//    hubo.setJointAntiFriction(LSR, true);
+    hubo.setJointAntiFriction(LSR, true);
 //    hubo.setJointAntiFriction(LSY, true);
 //    hubo.setJointAntiFriction(LEB, true);
 //    hubo.setJointAntiFriction(LWY, true);
 //    hubo.setJointAntiFriction(LWP, true);
 
+/*
     hubo.setJointTorque(LSP, 0);
     hubo.setJointTorque(LSR, 0);
-//    hubo.setJointTorque(LSY, 0);
-//    hubo.setJointTorque(LEB, 0);
-//    hubo.setJointTorque(LWY, 0);
-//    hubo.setJointTorque(LWP, 0);
+    hubo.setJointTorque(LSY, 0);
+    hubo.setJointTorque(LEB, 0);
+    hubo.setJointTorque(LWY, 0);
+    hubo.setJointTorque(LWP, 0);
 
     hubo.setJointTorque(RSP, 0);
     hubo.setJointTorque(RSR, 0);
-//    hubo.setJointTorque(RSY, 0);
-//    hubo.setJointTorque(REB, 0);
-//    hubo.setJointTorque(RWY, 0);
-//    hubo.setJointTorque(RWP, 0);
+    hubo.setJointTorque(RSY, 0);
+    hubo.setJointTorque(REB, 0);
+    hubo.setJointTorque(RWY, 0);
+    hubo.setJointTorque(RWP, 0);
+*/
+//    hubo.sendControls();
 
-    hubo.sendControls();
+    while(true)
+    {
+        iter++;
+        if(iter>maxi) iter=0;
 
-//    while(true)
-//    {
-//        iter++;
-//        if(iter>maxi) iter=0;
+        hubo.update(true);
+        kin.updateHubo(hubo);
 
-//        hubo.update(true);
-//        kin.updateHubo(hubo);
+        kin.armTorques(LEFT, torques);
 
-//        kin.armTorques(LEFT, torques);
-
+        hubo.setJointTorque(LSP, torques(SP));
+        hubo.setJointTorque(LSR, torques(SR));
 //        hubo.setArmTorques(LEFT, torques);
 
-//        if(iter==maxi)
+        if(iter==maxi)
+            std::cout << torques(SR) << std::endl;
 //            std::cout << torques.transpose() << std::endl;
 
-////        hubo.sendControls();
+        hubo.sendControls();
 
-//    }
+    }
 
 }

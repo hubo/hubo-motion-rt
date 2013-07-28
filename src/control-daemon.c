@@ -439,8 +439,8 @@ void controlLoop()
 
                             torqueLower = conversion.table[tableType].torque[c];
                             torqueUpper = conversion.table[tableType].torque[c+1];
-                            dutyLower   = conversion.table[tableType].torque[c];
-                            dutyUpper   = conversion.table[tableType].torque[c+1];
+                            dutyLower   = conversion.table[tableType].duty[c];
+                            dutyUpper   = conversion.table[tableType].duty[c+1];
 
                             if(torqueLower == torqueUpper)
                             {
@@ -450,17 +450,19 @@ void controlLoop()
                             }
                             else
                                 gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
-                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower);
+                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
+                                        + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
 
-                            if(0)
-                            if(jnt == LEB)
-                            if(iter==maxi) fprintf(stdout, "(%s) Torque %f : [%f,%f] [%f,%f] : %f Duty\t",
+                            
+                            if(jnt == LSR)
+                            if(iter==maxi) fprintf(stdout, "(%s) Torque %f : [%f,%f] [%f,%f] + %f : %f Duty\t",
                                                    jointNames[jnt],
                                                    ctrl.joint[jnt].torque,
                                                    torqueLower,
                                                    torqueUpper,
                                                    dutyLower,
                                                    dutyUpper,
+                                                   fabs(conversion.joint[jnt].Fmax)*2.0/3.0,
                                                    gains.joint[jnt].pwmCommand);
 
                         }
@@ -482,7 +484,7 @@ void controlLoop()
                         gains.joint[jnt].pwmCommand += antifriction;
 
                         if(iter==maxi)
-                        fprintf(stdout, "\t---> (%f) ---> %f\t", H_state.joint[jnt].vel, gains.joint[jnt].pwmCommand);
+                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
                     }
 
                 }
@@ -1140,6 +1142,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
     size_t jntNameCheck = 0;
     char name[4];
     hubo_joint_duty_settings_t tempSet;
+    memset(&tempSet, 0, sizeof(tempSet));
 
 
     if(!(ptr_file=fopen(torqueFileLocation, "r")))
@@ -1170,7 +1173,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
                         &(tempSet.dutyType),
                         &(tempSet.kF),
                         &(tempSet.Fmax),
-                        &(tempSet.kT)) )
+                        &(tempSet.deadbandScale)) )
         {
             size_t x; int i; jntNameCheck = 0;
             for( x = 0; x < sizeof(jointNames)/sizeof(jointNames[0]); x++ )

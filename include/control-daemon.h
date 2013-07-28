@@ -117,9 +117,13 @@ typedef struct hubo_joint_duty_settings
 {
     size_t dutyType;
 
+    // TODO: Decide if this should remain
     double kT;
-    double kF;
-    double Fmax;
+
+    double kF;            // Antifriction gain
+    double Fmax;          // Maximum PWM before a joint starts to move
+    double deadbandScale; // This gets applied to Fmax and then used
+                          // as an offset in torque calculations
 
 } hubo_joint_duty_settings_t;
 
