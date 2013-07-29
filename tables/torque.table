@@ -6,23 +6,23 @@
 
 #JointName  DutyTable   Kf      MaxFriction     DeadbandScale
 
-LSP         1           10      4.0             0.6667
+LSP         1           10      4.0             0.65
 LSR         2           5       2.0             1.0
 
-LSY         1            9      2.5             0.5
-LEB         1           50      2.3             0.5
-LWY         1           13      6.0             0.5
-LWP         1           30      11.0            0.5
+LSY         3           1.0     1.5             0.91
+LEB         4           10      2.3             0.47
+LWY         0            5      6.0             0.1
+LWP         0           30      11.0            0.5
 
-LWR         1           50      0               0.5
+LWR         0           50      0               0.5
 
 
 RSP         1           10      4.0             0.6667
 RSR         2           50      2.0             1.0
 
-RSY         1            9      2.5             0.5
-REB         1           50      2.3             0.5
-RWY         1           13      6.0             0.5
-RWP         1           30      11.0            0.5
+RSY         3            9      2.5             0.5
+REB         4           50      2.3             0.5
+RWY         0           13      6.0             0.5
+RWP         0           30      11.0            0.5
 
-RWR         1           50      0               0.5
+RWR         0           50      0               0.5

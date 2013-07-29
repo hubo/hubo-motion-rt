@@ -454,7 +454,7 @@ void controlLoop()
                                         + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
 
                             
-                            if(jnt == LSR)
+                            if(jnt == LSY)
                             if(iter==maxi) fprintf(stdout, "(%s) Torque %f : [%f,%f] [%f,%f] + %f : %f Duty\t",
                                                    jointNames[jnt],
                                                    ctrl.joint[jnt].torque,
@@ -462,7 +462,7 @@ void controlLoop()
                                                    torqueUpper,
                                                    dutyLower,
                                                    dutyUpper,
-                                                   fabs(conversion.joint[jnt].Fmax)*2.0/3.0,
+                                                   fabs(conversion.joint[jnt].Fmax)*conversion.joint[jnt].deadbandScale,
                                                    gains.joint[jnt].pwmCommand);
 
                         }
@@ -483,6 +483,7 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += antifriction;
 
+                        if(jnt == LSY)
                         if(iter==maxi)
                         fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
                     }

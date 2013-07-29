@@ -53,8 +53,8 @@ int main(int argc, char **argv)
 
     hubo.setJointAntiFriction(LSP, true);
     hubo.setJointAntiFriction(LSR, true);
-//    hubo.setJointAntiFriction(LSY, true);
-//    hubo.setJointAntiFriction(LEB, true);
+    hubo.setJointAntiFriction(LSY, true);
+    hubo.setJointAntiFriction(LEB, true);
 //    hubo.setJointAntiFriction(LWY, true);
 //    hubo.setJointAntiFriction(LWP, true);
 
@@ -87,10 +87,12 @@ int main(int argc, char **argv)
 
         hubo.setJointTorque(LSP, torques(SP));
         hubo.setJointTorque(LSR, torques(SR));
+        hubo.setJointTorque(LSY, torques(SY));
+        hubo.setJointTorque(LEB, torques(EB));
 //        hubo.setArmTorques(LEFT, torques);
 
         if(iter==maxi)
-            std::cout << torques(SR) << std::endl;
+            std::cout << torques(EB) << std::endl;
 //            std::cout << torques.transpose() << std::endl;
 
         hubo.sendControls();
