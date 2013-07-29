@@ -40,39 +40,33 @@
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo(false);
-    DrcHuboKin kin;
+    Hubo_Control hubo(false); // Control command interface
+    DrcHuboKin kin; // Kinematics interface
     kin.updateHubo(hubo);
 
 
-//    kin.linkage("LeftLeg").printInfo();
+    hubo.setArmCompliance(LEFT, true);
+    hubo.setArmCompliance(RIGHT, true);
 
-    ArmVector torques, armAngles;
 
-    int iter=0, maxi=100;
+    while(true)
+    {
 
-    hubo.setJointAntiFriction(LSP, true);
-    hubo.setJointTorque(LSP, 0);
+        hubo.update(true);
+        kin.updateHubo(hubo);
 
-    hubo.sendControls();
 
-//    while(true)
-//    {
-//        iter++;
-//        if(iter>maxi) iter=0;
+        /// PARSE THE NEXT LINE HERE
 
-//        hubo.update(true);
-//        kin.updateHubo(hubo);
+        /// Either use
+        for(int jnt=0; i<LIST_OF_JOINTS; jnt++)
+            hubo.setJointTraj(jointList[jnt], pos[i], (pos[i+1]-pos[i])/dt);
 
-//        kin.armTorques(LEFT, torques);
 
-//        hubo.setArmTorques(LEFT, torques);
 
-//        if(iter==maxi)
-//            std::cout << torques.transpose() << std::endl;
 
-////        hubo.sendControls();
+        hubo.sendControls();
 
-//    }
+    }
 
 }

@@ -64,6 +64,10 @@ void grasp_limp( Hubo_Control &hubo, int side );
 int main( int argc, char **argv )
 {
     Hubo_Control hubo("manip-daemon");
+
+
+
+
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
