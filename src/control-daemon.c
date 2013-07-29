@@ -51,7 +51,7 @@ ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
 static char *ctrlFileLocation    = "/etc/hubo-ach/control.table";
-static char *ampdutyFileLocation = "/etc/hubo-ach/duty.table";
+static char *dutyFileLocation = "/etc/hubo-ach/duty.table";
 static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
 
 int simMode;
@@ -1031,12 +1031,12 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     FILE *ptr_file;
 
-    if(!(ptr_file=fopen(ampdutyFileLocation, "r")))
+    if(!(ptr_file=fopen(dutyFileLocation, "r")))
     {
         fprintf(stderr, "Unable to locate %s\n "
                         " -- Try using sudo!\n"
                         " -- If that doesn\'t work, try reinstalling hubo-motion-rt\n",
-                ampdutyFileLocation);
+                dutyFileLocation);
         return -1;
     }
 
@@ -1045,11 +1045,12 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
     char *charPointer;
     char buff[2048];
-    char type[32];
+    char type[256];
     size_t tableID = 0;
     size_t currentLine = 0;
     ctrl_table_t tableType;
 
+    fprintf(stdout, "Grabbing the %s table... ", dutyFileLocation); fflush(stdout);
     while( fgets(buff, sizeof(buff), ptr_file) != NULL )
     {
         currentLine++;
@@ -1061,7 +1062,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
         if( strlen(buff) == sizeof(buff)-1 )
         {
-            fprintf(stderr, "Amp-Duty Table Parser: Line length overflow!\n");
+            fprintf(stderr, "Duty Table Parser: Line length overflow!\n");
             return -1;
         }
 
@@ -1137,7 +1138,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
             }
         }
     }
-
+    fprintf(stdout, " Got it!\n"); fflush(stdout);
 
 
     size_t jntNameCheck = 0;
@@ -1156,6 +1157,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
     }
 
     currentLine = 0;
+    fprintf(stdout, "Grabbing the %s table... ", torqueFileLocation); fflush(stdout);
     while( fgets(buff, sizeof(buff), ptr_file) != NULL )
     {
         currentLine++;
@@ -1200,6 +1202,7 @@ int setConversionTables( struct hubo_conversion_tables *conversion)
 
         } // end: if(sscanf)
     } // end: while(fgets)
+    fprintf(stdout, "Got it!\n"); fflush(stdout);
 
 }
 
