@@ -62,9 +62,6 @@ add_library(drchubokin SHARED ${drc_hubo_kin_source})
 #link_libraries(drchubokin)
 target_link_libraries(drchubokin RobotKin)
 
-add_executable(ikTest "src/ikTest.cpp")
-target_link_libraries(ikTest huboctrl m rt ach daemonizer)
-
 link_libraries(m rt ach huboparams drchubokin RobotKin ${urdfdom_LIBRARIES} daemonizer huboctrl)
 
 add_executable(balance-daemon ${balance_daemon_source})
