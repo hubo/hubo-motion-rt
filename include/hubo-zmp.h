@@ -6,7 +6,7 @@
  * GUI and the zmp-daemon, and between the zmp-daemon
  * and the walker
  *
- * \author M.X. Grey
+ * \author M.X. Grey and friends
 */
 
 #ifndef _HUBO_ZMP_H_
@@ -56,10 +56,14 @@ enum stepStance_t {
   NUM_OF_STANCES = 3//!< number of stance types. used for 3D trajectory array
 };
 
+/*
 /// String constants for stepStance enum
 static const char* stepStanceStrings[NUM_OF_STANCES] = {"EVEN",
                                                         "LEFT_DOM",
                                                         "RIGHT_DOM"};
+*/
+
+const char* stepStanceString(int i);
 
 /**
  * \brief Walk direction state
@@ -79,12 +83,16 @@ enum walkState_t {
   NUM_OF_WALKSTATES = 11//!< number of walk states to get trajectories for
 };
 
+/*
 /// String constants for walkState enum
 static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
                                                         "ROTATING_LEFT", "ROTATING_RIGHT",
                                                         "SIDESTEPPING_LEFT", "SIDESTEPPING_RIGHT",
                                                         "GOTO_QUADRUPED", "GOTO_BIPED",
                                                         "TURNING_LEFT", "TURNING_RIGHT", "STOP"};
+*/
+
+const char* walkStateString(int i);
 
 /**
  * \brief Walk mode enum
@@ -115,8 +123,7 @@ typedef struct zmp_traj_element {
   unsigned char supporting[4];  //!< Supporting limb
   bipedStance_t bipedStance;
   // TODO: add orientation for IMU
-} zmp_traj_element_t;
-//}__attribute__((packed)) zmp_traj_element_t;
+}__attribute__((packed)) zmp_traj_element_t;
 
 /**
  * \brief Struct containing entire zmp trajectory, including joint configuration
@@ -132,9 +139,66 @@ typedef struct zmp_traj {
   walkState_t walkDirection;//!< walk direction for trajectory
   stepStance_t startStance; //!< start stance for trajectory
   stepStance_t goalStance;  //!< goal stance for trajectory
-  bool reuse;               //!< whether or not to reuse the current trajectory's periodic portion
-} zmp_traj_t;
-//}__attribute__((packed)) zmp_traj_t;
+  int reuse;               //!< whether or not to reuse the current trajectory's periodic portion
+}__attribute__((packed)) zmp_traj_t;
+
+
+enum ik_error_sensitivity {
+  ik_strict,            //!< (default)
+  ik_swing_permissive,  //!< allows ik errors on swing foot when above 0.5 * step_height
+  ik_sloppy             //!< never ever ever ever run this on the robot
+};
+
+/**
+ * \brief Struct containing parameters for ZMP Walking, used by ZMPWalkGenerator and various daemons/demos.
+ */
+typedef struct zmp_params {
+
+  ik_error_sensitivity ik_sense; //!< How much error is allowed in the IK solution
+
+  double com_height;               //!< Height in meters of center of mass above ANKLE
+
+  double zmp_R;               //!< Jerk penalty on ZMP controller
+  double zmpoff_x;            //!< Sagittal (front/back) displacement between zmp and ankle (m)
+  double zmpoff_y;            //!< Lateral displacement between zmp and ankle (m)
+  double lookahead_time;      //!< Seconds to look ahead in preview controller
+  
+  double com_ik_angle_weight; //!< Scale factor on center of mass rotation for solving IK
+
+  double min_single_support_time; //!< Seconds that a single foot is on the ground during each step
+  double min_double_support_time; //!< Seconds that both feet are on the ground during each step
+  double min_pause_time;          //!< Seconds that we hold ZMP stationary before/after double/quad support
+  double walk_startup_time;       //!< Seconds to be stationary at startup
+  double walk_shutdown_time;      //!< Seconds to be stationary at end of trajectory (includes equalizing)
+
+  double half_stance_width;   //!< Half of horizontal separation distance between feet (m)
+  double step_height;         //!< Foot liftoff height in meters
+  double step_length;         //!< Desired step length in meters
+  double walk_dist;           //!< Total distance in meters to walk
+
+  double sidestep_length;     //!< Length in meters of sidestep
+  double sidewalk_dist;       //!< Total distance in meters to sidestep
+
+  size_t max_step_count;      //!< Maximum number of steps for trajectory
+  double walk_circle_radius;  //!< Walk circle radius (m)
+  double turn_in_place_angle;   //!< Angle in radians to turn in place
+
+  double torso_pitch;           //!< Constant pitch of torso (rad) during walking
+  double quad_stance_length;    //!< X-distance (m) from pegs to feet during quad walking
+  double quad_transition_time;  //!< How much time (s) to take to ease in/out of quad from biped
+  double quad_stability_margin; //!< Desired distance inside support polygon for ZMP in quad mode
+
+  double half_peg_width;        //!< Half of horizontal separation distance between pegs (m)
+  int constant_body_z;          //!< If non-zero, holds body z constant during walking
+
+  double footrect_x0;           //!< Negative ankle to rear of foot distance (m)
+  double footrect_y0;           //!< Negative ankle to right of foot distance (m)
+  double footrect_x1;           //!< Positive ankle to front of foot distance (m)
+  double footrect_y1;           //!< Positive ankle to left of foot distance (m)
+
+}__attribute__((packed)) zmp_params_t;
+
+
 
 /**
  * \brief Struct containing walker state information so the zmp-daemon knows what
@@ -145,8 +209,7 @@ typedef struct walker_state {
   stepStance_t startStance;     //!< start stance of current step
   stepStance_t goalStance;      //!< goal stance of current step
   int cyclesLeft;               //!< cycles left in current step trajectory
-} walker_state_t;
-//}__attribute__((packed)) walker_state_t;
+}__attribute__((packed)) walker_state_t;
 
 
 #endif // _HUBO_ZMP_H_
