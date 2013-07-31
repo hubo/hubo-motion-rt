@@ -13,12 +13,16 @@
 #define _HUBO_ZMP_H_
 
 #include <stdlib.h>
+#include <string>
 #include <vector>
 #include "stdint.h"
 #include <hubo.h> //!< hubo main include
 
 /// Ach channel name for zmp trajectory
 #define HUBO_CHAN_ZMP_TRAJ_NAME "hubo-zmp-traj"
+
+/// Ach channel name for zmp-daemon state
+#define HUBO_CHAN_ZMP_STATE_NAME "hubo-zmp-state"
 
 /// Ach channel name for walker state
 #define HUBO_CHAN_WALKER_STATE_NAME "walker-state"
@@ -34,27 +38,15 @@ enum effector_t {
 };
 
 /**
- * \brief Current stance. The first four are set for each
- * timestep of the zmp trajectory. The last three are used
- * to determine which atomic trajectory to used
-*/
-enum bipedStance_t {
-  DOUBLE_LEFT  = 0, //!< double support stance, left dominant
-  DOUBLE_RIGHT = 1, //!< double support stance, right dominant
-  SINGLE_LEFT  = 2, //!< single support stance, left dominant
-  SINGLE_RIGHT = 3, //!< single support stance, right dominant
-};
-
-/**
  * \brief Different stance types for atomic trajectories, used
  * for all walk types.
 */
-enum stepStance_t {
+typedef enum {
   EVEN,             //!< feet are even and normal width
   LEFT_DOM,         //!< left foot is dominant or in front
   RIGHT_DOM,        //!< right foot is dominant or in front
   NUM_OF_STANCES = 3//!< number of stance types. used for 3D trajectory array
-};
+} stepStance_t;
 
 /*
 /// String constants for stepStance enum
@@ -68,7 +60,7 @@ const char* stepStanceString(int i);
 /**
  * \brief Walk direction state
 */
-enum walkState_t {
+typedef enum {
   WALKING_FORWARD = 0,  //!< walking forward state
   WALKING_BACKWARD,     //!< walking backward state
   ROTATING_LEFT,        //!< turning-in-place to the left state
@@ -80,30 +72,25 @@ enum walkState_t {
   TURNING_LEFT,         //!< turning left while walking forward/backward state
   TURNING_RIGHT,        //!< turning right while walking forward/backward state
   STOP,                 //!< stopped state
-  NUM_OF_WALKSTATES = 11//!< number of walk states to get trajectories for
-};
+  NUM_OF_WALKSTATES     //!< number of walk states to get trajectories for
+} walkState_t;
 
-/*
+
 /// String constants for walkState enum
 static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
                                                         "ROTATING_LEFT", "ROTATING_RIGHT",
                                                         "SIDESTEPPING_LEFT", "SIDESTEPPING_RIGHT",
                                                         "GOTO_QUADRUPED", "GOTO_BIPED",
                                                         "TURNING_LEFT", "TURNING_RIGHT", "STOP"};
-*/
 
-const char* walkStateString(int i);
-
-/**
- * \brief Walk mode enum
-*/
-enum walkMode_t
+static std::string walkState_to_string(walkState_t walkState)
 {
-  BIPED_MODE = 0,       //!< Biped walking mode
-  QUADRUPED_MODE,       //!< Quadruped walking mode
-  NUM_OF_WALKMODES = 2
-};
- 
+    if(0 < walkState && walkState < NUM_OF_WALKSTATES)
+        return walkStateStrings[walkState];
+    else
+        return "Invalid Walk State";
+}
+
 /// ZMP trajectory constants
 enum {
   ZMP_TRAJ_FREQ_HZ = 200,   //!< frequency in Hertz of the zmp trajectory
@@ -121,7 +108,6 @@ typedef struct zmp_traj_element {
   double torque[4][3];  //!< right/left predicted moments XYZ at ankles
   effector_t effector_frame;    //!< Frame the end effector is in
   unsigned char supporting[4];  //!< Supporting limb
-  bipedStance_t bipedStance;
   // TODO: add orientation for IMU
 }__attribute__((packed)) zmp_traj_element_t;
 
