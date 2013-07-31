@@ -59,12 +59,12 @@ int main(int argc, char **argv)
     hubo.setJointAntiFriction(LWP, true);
 
 
-//    hubo.setJointAntiFriction(RSP, true);
-//    hubo.setJointAntiFriction(RSR, true);
-//    hubo.setJointAntiFriction(RSY, true);
-//    hubo.setJointAntiFriction(REB, true);
-//    hubo.setJointAntiFriction(RWY, true);
-//    hubo.setJointAntiFriction(RWP, true);
+    hubo.setJointAntiFriction(RSP, true);
+    hubo.setJointAntiFriction(RSR, true);
+    hubo.setJointAntiFriction(RSY, true);
+    hubo.setJointAntiFriction(REB, true);
+    hubo.setJointAntiFriction(RWY, true);
+    hubo.setJointAntiFriction(RWP, true);
 
 /*
     hubo.setJointTorque(LSP, 0);
@@ -101,15 +101,20 @@ int main(int argc, char **argv)
         hubo.setJointTorque(LWP, torques(WP));
 //        hubo.setArmTorques(LEFT, torques);
 
-//        kin.armTorques(RIGHT, torques);
+        if(iter==maxi)
+            std::cout << torques(EB) << "\t";
+
+        kin.armTorques(RIGHT, torques);
         
-//        hubo.setJointTorque(RSP, torques(SP));
-//        hubo.setJointTorque(RSR, torques(SR));
-//        hubo.setJointTorque(RSY, torques(SY));
-//        hubo.setJointTorque(REB, torques(EB));
+        hubo.setJointTorque(RSP, torques(SP));
+        hubo.setJointTorque(RSR, torques(SR));
+        hubo.setJointTorque(RSY, torques(SY));
+        hubo.setJointTorque(REB, torques(EB));
+        hubo.setJointTorque(RWY, torques(WY));
+        hubo.setJointTorque(RWP, torques(WP));
 
         if(iter==maxi)
-            std::cout << torques(WP) << std::endl;
+            std::cout << torques(EB) << std::endl;
 //            std::cout << torques.transpose() << std::endl;
 
         hubo.sendControls();
