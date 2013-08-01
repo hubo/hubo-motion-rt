@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string>
+#include <ostream>
 #include <vector>
 #include "stdint.h"
 #include <hubo.h> //!< hubo main include
@@ -132,8 +133,21 @@ typedef struct zmp_traj {
 enum ik_error_sensitivity {
   ik_strict,            //!< (default)
   ik_swing_permissive,  //!< allows ik errors on swing foot when above 0.5 * step_height
-  ik_sloppy             //!< never ever ever ever run this on the robot
+  ik_sloppy,             //!< never ever ever ever run this on the robot
+  num_of_ik_senses
 };
+
+static const char* ik_error_sensitivity_strings[] = {"STRICT",
+                                                     "PERMISSIVE",
+                                                     "SLOPPY"};
+
+static std::string ik_sense_to_string(ik_error_sensitivity ikSense)
+{
+    if(0 <= ikSense && ikSense < num_of_ik_senses)
+        return ik_error_sensitivity_strings[ikSense];
+    else
+        return "Invalid Walk Mode";
+}
 
 /**
  * \brief Struct containing parameters for ZMP Walking, used by ZMPWalkGenerator and various daemons/demos.
@@ -183,7 +197,6 @@ typedef struct zmp_params {
   double footrect_y1;           //!< Positive ankle to left of foot distance (m)
 
 }__attribute__((packed)) zmp_params_t;
-
 
 
 /**
