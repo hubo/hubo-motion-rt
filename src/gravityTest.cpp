@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     kin.updateHubo(hubo);
 //    kin.linkage("LeftLeg").printInfo();
 
-    ArmVector torques, armAngles;
+    ArmVector torques, armAngles, gravity;
 
     TRANSFORM start = kin.linkage("LeftArm").tool().respectToRobot();
     TRANSFORM current = kin.linkage("LeftArm").tool().respectToRobot();
@@ -99,14 +99,17 @@ int main(int argc, char **argv)
         iter++;
         if(iter>maxi) iter=0;
 
-        hubo.update(true);
-        kin.updateHubo(hubo);
+//        hubo.update(true);
+//        kin.updateHubo(hubo);
+
+        kin.joint("LSY").value(0.5);
+        kin.joint("LEB").value(0.5);
 
         current = kin.linkage("LeftArm").tool().respectToRobot();
 
-        err = current.translation() - start.translation();
+        err = start.translation() - current.translation();
         err(0) *= 0;
-        err(1) *= 1;
+        err(1) *= 5;
         err(2) *= 0;
 
         J = kin.armJacobian(LEFT);
@@ -128,6 +131,7 @@ int main(int argc, char **argv)
 
 
         kin.armTorques(LEFT, torques, wrench);
+        kin.armTorques(LEFT, gravity);
 
         hubo.setJointTorque(LSP, torques(SP));
         hubo.setJointTorque(LSR, torques(SR));
@@ -150,8 +154,13 @@ int main(int argc, char **argv)
 //        hubo.setJointTorque(RWP, torques(WP));
 
         if(iter==maxi)
-            std::cout << torques << std::endl;
+        {
+            std::cout << "Total: " << torques.transpose() << std::endl;
+            std::cout << "Grav:  " << gravity.transpose() << std::endl;
+            std::cout << "Diff:  " << (torques-gravity).transpose() << std::endl;
+            std::cout << "Err:   " << err.transpose() << std::endl;
 ////            std::cout << torques.transpose() << std::endl;
+        }
 
 //        hubo.sendControls();
 

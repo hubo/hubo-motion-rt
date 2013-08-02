@@ -1417,7 +1417,8 @@ double Hubo_Control::getJointNominalSpeed(int joint)
 double Hubo_Control::getJointVelocity(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return C_State.requested_vel[joint];
+        return H_State.joint[joint].vel;
+//        return C_State.requested_vel[joint];
     else
         return 0;
 }
