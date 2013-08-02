@@ -58,39 +58,73 @@ static const char* stepStanceStrings[NUM_OF_STANCES] = {"EVEN",
 
 const char* stepStanceString(int i);
 
+
 /**
- * \brief Walk direction state
+ * \brief: walk type
 */
-typedef enum {
-  WALKING_FORWARD = 0,  //!< walking forward state
-  WALKING_BACKWARD,     //!< walking backward state
-  ROTATING_LEFT,        //!< turning-in-place to the left state
-  ROTATING_RIGHT,       //!< turning-in-place to the right state
-  SIDESTEPPING_LEFT,    //!< sidestepping to the left state
-  SIDESTEPPING_RIGHT,   //!< sidestepping to the right state
-  GOTO_QUADRUPED,       //!< go from biped stance into quadruped stance
-  GOTO_BIPED,           //!< go from quadruped stance into biped stance
-  TURNING_LEFT,         //!< turning left while walking forward/backward state
-  TURNING_RIGHT,        //!< turning right while walking forward/backward state
-  STOP,                 //!< stopped state
-  NUM_OF_WALKSTATES     //!< number of walk states to get trajectories for
-} walkState_t;
+typedef enum walktype {
+  WALK_FORWARD,     //!< walk forward or backward in a straight line
+  WALK_BACKWARD,   //!< walk a circle of specified radius forward or backward
+  SIDESTEP_LEFT, //!< sidestep left or right
+  SIDESTEP_RIGHT,
+  ROTATE_LEFT, //!< turn in place left or right
+  ROTATE_RIGHT,
+  GOTO_BIPED,
+  GOTO_QUADRUPED,
+  STOP_WALKING,
+  NUM_OF_WALKTYPES
+} walktype_t;
 
+static const char* walktype_strings[NUM_OF_WALKTYPES] = {"WALK_FORWARD",
+                                                         "WALK_BACKWARD",
+                                                         "SIDESTEP_LEFT",
+                                                         "SIDESTEP_RIGHT",
+                                                         "ROTATE_LEFT",
+                                                         "ROTATE_RIGHT",
+                                                         "GOTO_BIPED",
+                                                         "GOTO_QUADRUPED",
+                                                         "STOP_WALKING"};
 
-/// String constants for walkState enum
-static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALKING_FORWARD", "WALKING_BACKWARD", 
-                                                        "ROTATING_LEFT", "ROTATING_RIGHT",
-                                                        "SIDESTEPPING_LEFT", "SIDESTEPPING_RIGHT",
-                                                        "GOTO_QUADRUPED", "GOTO_BIPED",
-                                                        "TURNING_LEFT", "TURNING_RIGHT", "STOP"};
-
-static std::string walkState_to_string(walkState_t walkState)
+static std::string walktype_to_string(walktype_t walkType)
 {
-    if(0 < walkState && walkState < NUM_OF_WALKSTATES)
-        return walkStateStrings[walkState];
+    if(0 <= walkType && walkType < NUM_OF_WALKTYPES)
+        return walktype_strings[walkType];
     else
-        return "Invalid Walk State";
+        return "Invalid Walk Type";
 }
+///**
+// * \brief Walk direction command
+//*/
+//typedef enum {
+//  WALK_FORWARD = 0, //!< walking forward state
+//  WALK_BACKWARD,    //!< walking backward state
+//  ROTATE_LEFT,      //!< turning-in-place to the left state
+//  ROTATE_RIGHT,     //!< turning-in-place to the right state
+//  SIDESTEP_LEFT,    //!< sidestepping to the left state
+//  SIDESTEP_RIGHT,   //!< sidestepping to the right state
+//  GOTO_QUADRUPED,   //!< go from biped stance into quadruped stance
+//  GOTO_BIPED,       //!< go from quadruped stance into biped stance
+//  TURN_LEFT,        //!< turning left while walking forward/backward state
+//  TURN_RIGHT,       //!< turning right while walking forward/backward state
+//  STOP,             //!< stopped state
+//  NUM_OF_WALKSTATES //!< number of walk states to get trajectories for
+//} walkState_t;
+
+
+///// String constants for walkState enum
+//static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALK_FORWARD", "WALK_BACKWARD",
+//                                                        "ROTATE_LEFT", "ROTATE_RIGHT",
+//                                                        "SIDESTEP_LEFT", "SIDESTEP_RIGHT",
+//                                                        "GOTO_QUADRUPED", "GOTO_BIPED",
+//                                                        "TURN_LEFT", "TURN_RIGHT", "STOP"};
+
+//static std::string walkState_to_string(walkState_t walkState)
+//{
+//    if(0 <= walkState && walkState < NUM_OF_WALKSTATES)
+//        return walkStateStrings[walkState];
+//    else
+//        return "Invalid Walk State";
+//}
 
 /// ZMP trajectory constants
 enum {
@@ -123,7 +157,7 @@ typedef struct zmp_traj {
   size_t trajNumber;        //!< trajectory number
   size_t periodStartTick;   //!< start timestep of periodic portion of trajectory
   size_t periodEndTick;     //!< end timestep of periodic portion of trajectory
-  walkState_t walkDirection;//!< walk direction for trajectory
+  walktype_t walkDirection;//!< walk direction for trajectory
   stepStance_t startStance; //!< start stance for trajectory
   stepStance_t goalStance;  //!< goal stance for trajectory
   int reuse;               //!< whether or not to reuse the current trajectory's periodic portion
@@ -137,9 +171,9 @@ enum ik_error_sensitivity {
   num_of_ik_senses
 };
 
-static const char* ik_error_sensitivity_strings[] = {"STRICT",
-                                                     "PERMISSIVE",
-                                                     "SLOPPY"};
+static const char* ik_error_sensitivity_strings[num_of_ik_senses] = {"STRICT",
+                                                                    "PERMISSIVE",
+                                                                    "SLOPPY"};
 
 static std::string ik_sense_to_string(ik_error_sensitivity ikSense)
 {
@@ -204,7 +238,7 @@ typedef struct zmp_params {
  * the walker is doing and what trajectories to send next
 */
 typedef struct walker_state {
-  walkState_t walkDirection;    //!< walk direction being executed
+  walktype_t walkDirection;    //!< walk direction being executed
   stepStance_t startStance;     //!< start stance of current step
   stepStance_t goalStance;      //!< goal stance of current step
   int cyclesLeft;               //!< cycles left in current step trajectory
