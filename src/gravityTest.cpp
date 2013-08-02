@@ -42,15 +42,30 @@ using namespace RobotKin;
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo(false);
+
+    double kp = atof(argv[1]);
+    double kd = atof(argv[2]);
+
+    if( !(0 <= kp && kp < 1000) )
+        return -1;
+
+    if( !(0 <= kd && kd <= kp ) )
+        return -1;
+
+    std::cout << "kp:" << kp << "\tkd:" << kd << std::endl;
+
+    Hubo_Control hubo;
     DrcHuboKin kin;
     kin.updateHubo(hubo);
 //    kin.linkage("LeftLeg").printInfo();
 
     ArmVector torques, armAngles, gravity;
 
-    TRANSFORM start = kin.linkage("LeftArm").tool().respectToRobot();
-    TRANSFORM current = kin.linkage("LeftArm").tool().respectToRobot();
+    TRANSFORM startL = kin.linkage("LeftArm").tool().respectToRobot();
+    TRANSFORM currentL = kin.linkage("LeftArm").tool().respectToRobot();
+
+    TRANSFORM startR = kin.linkage("RightArm").tool().respectToRobot();
+    TRANSFORM currentR = kin.linkage("RightArm").tool().respectToRobot();
 
     TRANSLATION err, rot; rot.setZero();
     SCREW vel;
@@ -60,7 +75,7 @@ int main(int argc, char **argv)
     ArmVector qdotC;
     Eigen::Matrix< double, 7, 1 > qdot;
 
-    int iter=0, maxi=75;
+    int iter=0, maxi=20;
 
     hubo.setJointAntiFriction(LSP, true);
     hubo.setJointAntiFriction(LSR, true);
@@ -70,12 +85,12 @@ int main(int argc, char **argv)
     hubo.setJointAntiFriction(LWP, true);
 
 
-//    hubo.setJointAntiFriction(RSP, true);
-//    hubo.setJointAntiFriction(RSR, true);
-//    hubo.setJointAntiFriction(RSY, true);
-//    hubo.setJointAntiFriction(REB, true);
-//    hubo.setJointAntiFriction(RWY, true);
-//    hubo.setJointAntiFriction(RWP, true);
+    hubo.setJointAntiFriction(RSP, true);
+    hubo.setJointAntiFriction(RSR, true);
+    hubo.setJointAntiFriction(RSY, true);
+    hubo.setJointAntiFriction(REB, true);
+    hubo.setJointAntiFriction(RWY, true);
+    hubo.setJointAntiFriction(RWP, true);
 
 /*
     hubo.setJointTorque(LSP, 0);
@@ -99,28 +114,25 @@ int main(int argc, char **argv)
         iter++;
         if(iter>maxi) iter=0;
 
-//        hubo.update(true);
-//        kin.updateHubo(hubo);
+        hubo.update(true);
+        kin.updateHubo(hubo);
 
-        kin.joint("LSY").value(0.5);
-        kin.joint("LEB").value(0.5);
+        currentL = kin.linkage("LeftArm").tool().respectToRobot();
 
-        current = kin.linkage("LeftArm").tool().respectToRobot();
-
-        err = start.translation() - current.translation();
+        err = startL.translation() - currentL.translation();
         err(0) *= 0;
-        err(1) *= 5;
+        err(1) *= kp; // 200 was okay
         err(2) *= 0;
 
         J = kin.armJacobian(LEFT);
 
         hubo.getArmVels(LEFT, qdotC);
-        for(int i=0; i<7; i++)-
+        for(int i=0; i<7; i++)
             qdot(i) = qdotC(i);
 
         vel = J*qdot;
         vel(0) *= 0;
-        vel(1) *= -0.1;
+        vel(1) *= -kd;
         vel(2) *= 0;
         vel(3) *= 0;
         vel(4) *= 0;
@@ -131,7 +143,6 @@ int main(int argc, char **argv)
 
 
         kin.armTorques(LEFT, torques, wrench);
-        kin.armTorques(LEFT, gravity);
 
         hubo.setJointTorque(LSP, torques(SP));
         hubo.setJointTorque(LSR, torques(SR));
@@ -144,25 +155,51 @@ int main(int argc, char **argv)
 //        if(iter==maxi)
 //            std::cout << torques(EB) << "\t";
 
-//        kin.armTorques(RIGHT, torques);
+        currentR = kin.linkage("RightArm").tool().respectToRobot();
+
+        err = startR.translation() - currentR.translation();
+        err(0) *= 0;
+        err(1) *= kp; // 200 was okay
+        err(2) *= 0;
+
+        J = kin.armJacobian(RIGHT);
+
+        hubo.getArmVels(RIGHT, qdotC);
+        for(int i=0; i<7; i++)
+            qdot(i) = qdotC(i);
+
+        vel = J*qdot;
+        vel(0) *= 0;
+        vel(1) *= -kd;
+        vel(2) *= 0;
+        vel(3) *= 0;
+        vel(4) *= 0;
+        vel(5) *= 0;
+
+        wrench << err, rot;
+        wrench += vel;
+
+
+//        kin.armTorques(RIGHT, torques, wrench);
+//        kin.armTorques(RIGHT, gravity);
+        kin.armTorques(RIGHT, torques);
         
-//        hubo.setJointTorque(RSP, torques(SP));
-//        hubo.setJointTorque(RSR, torques(SR));
-//        hubo.setJointTorque(RSY, torques(SY));
-//        hubo.setJointTorque(REB, torques(EB));
-//        hubo.setJointTorque(RWY, torques(WY));
-//        hubo.setJointTorque(RWP, torques(WP));
+        hubo.setJointTorque(RSP, torques(SP));
+        hubo.setJointTorque(RSR, torques(SR));
+        hubo.setJointTorque(RSY, torques(SY));
+        hubo.setJointTorque(REB, torques(EB));
+        hubo.setJointTorque(RWY, torques(WY));
+        hubo.setJointTorque(RWP, torques(WP));
 
         if(iter==maxi)
         {
             std::cout << "Total: " << torques.transpose() << std::endl;
             std::cout << "Grav:  " << gravity.transpose() << std::endl;
             std::cout << "Diff:  " << (torques-gravity).transpose() << std::endl;
-            std::cout << "Err:   " << err.transpose() << std::endl;
 ////            std::cout << torques.transpose() << std::endl;
         }
 
-//        hubo.sendControls();
+        hubo.sendControls();
 
     }
 
