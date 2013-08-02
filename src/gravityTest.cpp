@@ -115,7 +115,7 @@ int main(int argc, char **argv)
         J = kin.armJacobian(LEFT);
 
         hubo.getArmVels(LEFT, qdotC);
-        for(int i=0; i<7; i++)
+        for(int i=0; i<7; i++)-
             qdot(i) = qdotC(i);
 
         vel = J*qdot;
