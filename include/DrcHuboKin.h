@@ -5,6 +5,8 @@
 #include <RobotKin/Robot.h>
 #include <Hubo_Control.h>
 
+typedef Eigen::Matrix< double, 6, 7 > ArmJacobian;
+
 class DrcHuboKin : public RobotKin::Robot
 {
 public:
@@ -22,6 +24,9 @@ public:
 
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, const ArmVector &qPrev);
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target);
+
+    ArmJacobian armJacobian(int side);
+    ArmJacobian armJacobian(int side, ArmVector &q);
 
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench=Vector6d::Zero());
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);

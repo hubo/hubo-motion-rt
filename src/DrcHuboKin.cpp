@@ -150,6 +150,27 @@ TRANSFORM DrcHuboKin::legFK(int side)
         return linkage("LeftLeg").tool().respectToRobot();
 }
 
+
+ArmJacobian DrcHuboKin::armJacobian(int side)
+{
+    ArmJacobian result; result.setZero();
+    MatrixXd J;
+    if( side == RIGHT )
+        linkage("RightArm").jacobian(J, linkage("RightArm").tool().respectToRobot().translation(), this);
+    else if( side == LEFT )
+        linkage("LeftArm").jacobian(J, linkage("LeftArm").tool().respectToRobot().translation(), this);
+
+    result = J.block<6,7>(0,0);
+    return result;
+}
+
+ArmJacobian DrcHuboKin::armJacobian(int side, ArmVector &q)
+{
+    updateArmJoints(side, q);
+    return armJacobian(side);
+}
+
+
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target){ return armIK(side, q, target, q); }
 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM B, const ArmVector &qPrev)
