@@ -359,6 +359,7 @@ void controlLoop()
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
 
+
                             // FIXME: Remove this hack
                             if( fabs(ctrl.joint[jnt].acceleration) == 0 )
                                 ctrl.joint[jnt].acceleration = fabs(minAccel);
@@ -407,35 +408,25 @@ void controlLoop()
 
                             dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt];
 
+                            // Verify that hands are opening
+//                            if( 32 <= jnt && jnt <= 41 )
+//                                printf("dV[%d] = %f, c : %f\n",jnt,dV[jnt],ctrl.joint[jnt].correctness);
 /*
                             dV[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity - V0[jnt] // Check how far we are from desired velocity
                                     + ctrl.joint[jnt].correctness*(
                                         ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
 */
 
-                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
-                                dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
-                            else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) )
-                                dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
+// TODO implement a acceleration mode that can be turned off (same for velocity)
+//                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
+//                                dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
+//                            else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) )
+//                                dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
+
 
                             V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
-/*
-                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]*dt
-                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    -H_ref.ref[jnt]);
-*/
-
-                            V[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]
-                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    - H_ref.ref[jnt])/dt;
-
-/*
-                            // FIXME: remove this:
-                            ctrl.joint[jnt].correctness = 0.01;
-                            V[jnt] += ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    - H_ref.ref[jnt])/dt;
-*/
-                            dr[jnt] = V[jnt]*dt;
+                            V[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]; // specifies the amout of velocity
+                            dr[jnt] = V[jnt]*dt + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position - H_ref.ref[jnt]);
 
                             H_ref.ref[jnt] += dr[jnt];
                             V[jnt] = dr[jnt]/dt;
