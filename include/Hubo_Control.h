@@ -177,6 +177,12 @@ public:
      * Sets joint-space trajectory values for a joint (position, velocity, and acceleration)
     */
     ctrl_flag_t setJointTraj( int joint, double radians, double vel, double acc, bool send=false );
+
+    /**
+     * Sets joint-space trajectory values for a joint (position, velocity )
+    */
+    ctrl_flag_t setJointTraj( int joint, double radians, double vel, bool send=false );
+
     /**
      * Sets a joint-space trajectory position value for a joint, using the current velocity
      * and acceleration settings.
