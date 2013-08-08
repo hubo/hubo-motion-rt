@@ -469,6 +469,49 @@ ctrl_flag_t Hubo_Control::resetJointStatus( int joint, bool send )
 ctrl_flag_t Hubo_Control::setPositionControl(int joint)
 { return setJointAngle( joint, H_State.joint[joint].pos ); }
 
+void Hubo_Control::setAllTrajCorrectness(double correctness)
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        setJointTrajCorrectness(i, correctness);
+}
+
+ctrl_flag_t Hubo_Control::setJointTrajCorrectness(int joint, double correctness)
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlRL:
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlLL:
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlRF:
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlLF:
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlBD:
+                H_Bod_Ctrl.joint[localMap[joint]].correctness = correctness;
+                break;
+            case CtrlNK:
+                H_Nck_Ctrl.joint[localMap[joint]].correctness = correctness;
+                break;
+        }
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
 
 ctrl_flag_t Hubo_Control::setJointTraj( int joint, double radians,
     double vel, double acc, bool send )

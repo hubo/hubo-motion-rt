@@ -162,6 +162,18 @@ public:
     */
     ctrl_flag_t setPositionControl( int joint );
     /**
+     * Sets the desired correctness metric for a trajectory. The 'correctness' refers
+     * to how far the trajectory will deviate from the velocity profile in order to
+     * get to the position profile.
+    */
+    ctrl_flag_t setJointTrajCorrectness( int joint, double correctness );
+    /**
+     * Sets the desired correctness metric for a trajectory. The 'correctness' refers
+     * to how far the trajectory will deviate from the velocity profile in order to
+     * get to the position profile.
+    */
+    void setAllTrajCorrectness(double correctness );
+    /**
      * Sets joint-space trajectory values for a joint (position, velocity, and acceleration)
     */
     ctrl_flag_t setJointTraj( int joint, double radians, double vel, double acc, bool send=false );
