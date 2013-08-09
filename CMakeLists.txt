@@ -53,6 +53,8 @@ file(GLOB manip_daemon_source "src/manip-daemon.cpp"
 
 file(GLOB gravityTest_source "src/gravityTest.cpp")
 
+file(GLOB trajTest_source "src/trajTest.cpp")
+
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)
 
@@ -74,6 +76,9 @@ target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchu
 
 add_executable(gravityTest ${gravityTest_source})
 target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
+add_executable(trajTest ${trajTest_source})
+target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
