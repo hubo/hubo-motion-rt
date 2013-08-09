@@ -42,20 +42,30 @@ int main(int argc, char **argv)
 {
     Hubo_Control hubo;
 
-    double stime, time, angle, pangle=0;
+    double stime, time, dt=0, angle=0, pangle=0, vel;
 
-    double T = 10;
+    double T = 15;
 
     stime = hubo.getTime();
+    time = hubo.getTime();
 
     while(true)
     {
         hubo.update();
+        dt = hubo.getTime() - time;
         time = hubo.getTime();
+        
 
         angle = M_PI/4*cos(2*M_PI*(time-stime)/T) - M_PI/4;
 
-        hubo.setJointAngle(LEB, angle, true);
+        vel = (angle - pangle)/dt;
+        std::cout << "Angle: " << angle << "\t\tVel: " << vel << std::endl;
+
+//        hubo.setJointAngle(LEB, angle);
+        hubo.setJointTraj(LEB, angle, vel);
+//        hubo.passJointAngle(LEB, angle);
+        hubo.sendControls();
+        
 
         pangle = angle;
     }
