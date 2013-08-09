@@ -47,6 +47,10 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
                               "include/manip.h" )
 
+file(GLOB gravityTest_source "src/gravityTest.cpp")
+
+file(GLOB trajTest_source "src/trajTest.cpp")
+
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)
 
@@ -66,6 +70,12 @@ target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBR
 add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
+add_executable(gravityTest ${gravityTest_source})
+target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
+add_executable(trajTest ${trajTest_source})
+target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
 # Install Libraries
 INSTALL(TARGETS daemonizer
                 huboctrl
@@ -81,7 +91,9 @@ INSTALL(FILES include/Hubo_Control.h
         DESTINATION /usr/local/include/)
 
 # Install Tables
-INSTALL(FILES tables/control.table DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/control.table  DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/duty.table DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/torque.table   DESTINATION /etc/hubo-ach/)
 
 # Install Service
 INSTALL(PROGRAMS scripts/hubo-motion DESTINATION /etc/init.d/)
