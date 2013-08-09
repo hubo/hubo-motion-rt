@@ -183,7 +183,6 @@ StopHubo()
 
 StartMotionDaemons()
 {
-	sudo control-daemon
     sudo manip-daemon
     sudo balance-daemon
 }
@@ -220,6 +219,35 @@ StartHubo()
 		echo 'devices to up mode, open all'
 		echo 'ach channels, boot up the'
 		echo 'hubo-daemon and hubo-motion-rt'
+        echo 'control daemon.'
+		echo
+	;;
+
+	*)
+	
+		Ach
+
+        sudo hubo-ach daemon drc
+
+	    sudo control-daemon
+
+        echo
+        echo 'Now please run hubo_init from your remote computer!'
+        echo
+        echo
+	;;
+	esac
+}
+
+TeleopHubo()
+{
+	case "$2" in
+	'help')
+		echo
+		echo 'This will switch all the CAN'
+		echo 'devices to up mode, open all'
+		echo 'ach channels, boot up the'
+		echo 'hubo-daemon and hubo-motion-rt'
         echo 'daemons.'
 		echo
 	;;
@@ -230,6 +258,7 @@ StartHubo()
 
         sudo hubo-ach daemon drc
 
+	    sudo control-daemon
         StartMotionDaemons
 
         echo
@@ -528,6 +557,11 @@ case "$1" in
 # TODO: Make a help field for this
     'ctrl' )
         CtrlHubo $@
+    ;;
+
+# Start the teleop processes
+    'teleop' )
+        TeleopHubo $@
     ;;
 
 # Close all channels and processes

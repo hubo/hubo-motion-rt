@@ -371,8 +371,6 @@ void controlLoop()
         {
             iter++; if(iter>maxi) iter=0;
 
-            if(iter==maxi) fprintf(stdout, "\nPWM: ");
-
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
@@ -408,13 +406,6 @@ void controlLoop()
                         tableType = conversion.joint[jnt].dutyType;
                         int c = 0;
 
-//                        if(conversion.table[tableType].amp[conversion.table[tableType].count-1] <= amp)
-//                            c = conversion.table[tableType].count-2;
-//                        else
-//                            for(c=0; c<conversion.table[tableType].count-1; c++)
-//                                if(conversion.table[tableType].amp[c] <= amp
-//                                        && amp < conversion.table[tableType].amp[c+1])
-//                                    break;
                         torque = fabs(ctrl.joint[jnt].torque);
 
                         if(conversion.table[tableType].torque[conversion.table[tableType].count-1]
@@ -428,14 +419,6 @@ void controlLoop()
 
                         if(tableType != 0)
                         {
-//                            ampLower  = conversion.table[tableType].amp[c];
-//                            ampUpper  = conversion.table[tableType].amp[c+1];
-//                            dutyLower = conversion.table[tableType].duty[c];
-//                            dutyUpper = conversion.table[tableType].duty[c+1];
-
-//                            gains.joint[jnt].pwmCommand = 100*sign(ctrl.joint[jnt].torque)*
-//                                    ((dutyUpper-dutyLower)/(ampUpper-ampLower)*(amp-ampLower)+dutyLower);
-
 
                             torqueLower = conversion.table[tableType].torque[c];
                             torqueUpper = conversion.table[tableType].torque[c+1];
@@ -491,9 +474,6 @@ void controlLoop()
                 }
                 else
                     H_ref.comply[jnt] = 0;
-
-
-
 
                 if( ctrl.joint[jnt].ctrl_mode == CTRL_PASS )
                 {
