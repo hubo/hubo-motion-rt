@@ -55,6 +55,8 @@ file(GLOB gravityTest_source "src/gravityTest.cpp")
 
 file(GLOB trajTest_source "src/trajTest.cpp")
 
+file(GLOB calibrate_source "src/calibrate.cpp")
+
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)
 
@@ -79,6 +81,9 @@ target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach hubopara
 
 add_executable(trajTest ${trajTest_source})
 target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
+add_executable(calibrate ${calibrate_source})
+target_link_libraries(calibrate drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
