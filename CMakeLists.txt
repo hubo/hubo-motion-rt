@@ -70,11 +70,8 @@ target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBR
 add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
-add_executable(gravityTest ${gravityTest_source})
-target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
-
-add_executable(trajTest ${trajTest_source})
-target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+#add_executable(gravityTest ${gravityTest_source})
+#target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
@@ -92,8 +89,6 @@ INSTALL(FILES include/Hubo_Control.h
 
 # Install Tables
 INSTALL(FILES tables/control.table  DESTINATION /etc/hubo-ach/)
-INSTALL(FILES tables/duty.table DESTINATION /etc/hubo-ach/)
-INSTALL(FILES tables/torque.table   DESTINATION /etc/hubo-ach/)
 
 # Install Service
 INSTALL(PROGRAMS scripts/hubo-motion DESTINATION /etc/init.d/)
