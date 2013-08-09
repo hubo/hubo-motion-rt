@@ -44,10 +44,13 @@ int main(int argc, char **argv)
 
     double stime, time, dt=0, angle=0, pangle=0, vel;
 
-    double T = 15;
+    double T = 10;
 
     stime = hubo.getTime();
     time = hubo.getTime();
+
+//    hubo.setJointCompliance(LEB, true, 40, 20);
+    hubo.setJointCompliance(LEB, true);
 
     while(true)
     {
@@ -69,6 +72,5 @@ int main(int argc, char **argv)
 
         pangle = angle;
     }
-
 
 }

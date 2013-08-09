@@ -209,6 +209,8 @@ void controlLoop()
     double dutyLower;
     int tableType=0;
     double antifriction=0;
+    double jointspaceDuty=0;
+    double maxPWM=0;
 
 
     int torqueWarning[HUBO_JOINT_COUNT];
@@ -375,105 +377,6 @@ void controlLoop()
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
-                if( ctrl.joint[jnt].comp_mode == CTRL_COMP_ON || ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
-                {
-                    H_ref.comply[jnt] = 1;
-                    // FIXME: Remove this hack
-                    gains.joint[jnt].maxPWM = 40;
-
-                    if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
-                    {
-                        gains.joint[jnt].Kp = 0;
-                        gains.joint[jnt].Kd = 0;
-                    }
-                    else
-                    {
-                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
-                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
-                    }
-
-                    if( ctrl.joint[jnt].torque_mode != CTRL_TORQUE_ON )
-                    {
-                        gains.joint[jnt].pwmCommand = 0;
-                        gains.joint[jnt].pwmCommand = 0;
-                    }
-                    else
-                    {
-                        // These torque calculations are based off of
-                        // Dr. Inhyeok Kim's RAINBOW code
-//                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
-
-                        tableType = conversion.joint[jnt].dutyType;
-                        int c = 0;
-
-                        torque = fabs(ctrl.joint[jnt].torque);
-
-                        if(conversion.table[tableType].torque[conversion.table[tableType].count-1]
-                                <= torque)
-                            c = conversion.table[tableType].count-2;
-                        else
-                            for(c=0; c<conversion.table[tableType].count-1; c++)
-                                if(conversion.table[tableType].torque[c] <= torque
-                                        && torque < conversion.table[tableType].torque[c+1])
-                                    break;
-
-                        if(tableType != 0)
-                        {
-
-                            torqueLower = conversion.table[tableType].torque[c];
-                            torqueUpper = conversion.table[tableType].torque[c+1];
-                            dutyLower   = conversion.table[tableType].duty[c];
-                            dutyUpper   = conversion.table[tableType].duty[c+1];
-
-                            if(torqueLower == torqueUpper)
-                            {
-                                gains.joint[jnt].pwmCommand = 0;
-                                fprintf(stderr, "ERROR IN DUTY TABLE! Torque entry %d is equal to entry %d!",
-                                        c, c+1);
-                            }
-                            else
-                                gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
-                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
-                                        + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
-
-                            
-                            if(jnt == RSR)
-                            if(iter==maxi) fprintf(stdout, "(%s) Torque %f : [%f,%f] [%f,%f] + %f : %f Duty\t",
-                                                   jointNames[jnt],
-                                                   ctrl.joint[jnt].torque,
-                                                   torqueLower,
-                                                   torqueUpper,
-                                                   dutyLower,
-                                                   dutyUpper,
-                                                   fabs(conversion.joint[jnt].Fmax)*conversion.joint[jnt].deadbandScale,
-                                                   gains.joint[jnt].pwmCommand);
-
-                        }
-                        else
-                        {
-                            if(torqueWarning[jnt]==0)
-                                fprintf(stderr, "You are requesting torque mode for a joint that does not support it! (%s)\n", jointNames[jnt]);
-                            torqueWarning[jnt]=1;
-                        }
-
-                    }
-
-                    if(ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON)
-                    {
-                        antifriction = conversion.joint[jnt].kF*H_state.joint[jnt].vel;
-                        if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
-                            antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
-
-                        gains.joint[jnt].pwmCommand += antifriction;
-
-                        if(jnt == RSR)
-                        if(iter==maxi)
-                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
-                    }
-
-                }
-                else
-                    H_ref.comply[jnt] = 0;
 
                 if( ctrl.joint[jnt].ctrl_mode == CTRL_PASS )
                 {
@@ -645,6 +548,119 @@ void controlLoop()
                     fail[jnt] = 1;
                     C_state.status[jnt] = 1;
                 }                    
+
+
+                
+                if( ctrl.joint[jnt].comp_mode == CTRL_COMP_ON || ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
+                {
+                    H_ref.comply[jnt] = 1;
+                    // FIXME: Remove this hack
+                    gains.joint[jnt].maxPWM = 40;
+
+                    if( ctrl.joint[jnt].torque_mode != CTRL_TORQUE_ON )
+                    {
+                        gains.joint[jnt].pwmCommand = 0;
+                        gains.joint[jnt].pwmCommand = 0;
+                    }
+                    else
+                    {
+                        // These torque calculations are based off of
+                        // Dr. Inhyeok Kim's RAINBOW code
+//                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
+
+                        tableType = conversion.joint[jnt].dutyType;
+                        int c = 0;
+
+                        torque = fabs(ctrl.joint[jnt].torque);
+
+                        if(conversion.table[tableType].torque[conversion.table[tableType].count-1]
+                                <= torque)
+                            c = conversion.table[tableType].count-2;
+                        else
+                            for(c=0; c<conversion.table[tableType].count-1; c++)
+                                if(conversion.table[tableType].torque[c] <= torque
+                                        && torque < conversion.table[tableType].torque[c+1])
+                                    break;
+
+                        if(tableType != 0)
+                        {
+
+                            torqueLower = conversion.table[tableType].torque[c];
+                            torqueUpper = conversion.table[tableType].torque[c+1];
+                            dutyLower   = conversion.table[tableType].duty[c];
+                            dutyUpper   = conversion.table[tableType].duty[c+1];
+
+                            if(torqueLower == torqueUpper)
+                            {
+                                gains.joint[jnt].pwmCommand = 0;
+                                fprintf(stderr, "ERROR IN DUTY TABLE! Torque entry %d is equal to entry %d!",
+                                        c, c+1);
+                            }
+                            else
+                                gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
+                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
+                                        + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
+                            
+                        }
+                        else
+                        {
+                            if(torqueWarning[jnt]==0)
+                                fprintf(stderr, "You are requesting torque mode for a joint that does not support it! (%s)\n", jointNames[jnt]);
+                            torqueWarning[jnt]=1;
+                        }
+
+                    }
+
+                    if(ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON)
+                    {
+                        antifriction = conversion.joint[jnt].kF*H_state.joint[jnt].vel;
+                        if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
+                            antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
+
+                        gains.joint[jnt].pwmCommand += antifriction;
+
+                        if(jnt == RSR)
+                        if(iter==maxi)
+                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
+                    }
+
+                    if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
+                    {
+                        gains.joint[jnt].Kp = 0;
+                        gains.joint[jnt].Kd = 0;
+                    }
+                    else
+                    {
+/*
+                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
+                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
+*/
+                        gains.joint[jnt].Kp = 0;
+                        gains.joint[jnt].Kd = 0;
+
+                        jointspaceDuty = ctrl.joint[jnt].Kp*(H_ref.ref[jnt] - H_state.joint[jnt].pos)
+                                       - ctrl.joint[jnt].Kd*H_state.joint[jnt].vel;
+
+                        maxPWM = ctrl.joint[jnt].maxPWM;
+                        if(maxPWM > 100)
+                            maxPWM = 100;
+                        else if(maxPWM < 0)
+                            maxPWM = 0;
+
+                        if(fabs(jointspaceDuty) > maxPWM)
+                            jointspaceDuty = sign(jointspaceDuty)*maxPWM;
+
+                        gains.joint[jnt].pwmCommand += jointspaceDuty;
+
+                    }
+
+                }
+                else
+                    H_ref.comply[jnt] = 0;
+
+
+
+
 
             } // end: for loop
 
