@@ -521,6 +521,50 @@ ctrl_flag_t Hubo_Control::setJointTrajCorrectness(int joint, double correctness)
     return SUCCESS;
 }
 
+ctrl_flag_t Hubo_Control::setJointTrajFrequency(int joint, double frequency)
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlRL:
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlLL:
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlRF:
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlLF:
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlBD:
+                H_Bod_Ctrl.joint[localMap[joint]].frequency = frequency;
+                break;
+            case CtrlNK:
+                H_Nck_Ctrl.joint[localMap[joint]].frequency = frequency;
+                break;
+        }
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+void Hubo_Control::setAllTrajFrequency(double frequency)
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        setJointTrajFrequency(i, frequency);
+}
+
 ctrl_flag_t Hubo_Control::setArmTraj(int side, ArmVector angles, ArmVector vels, bool send)
 {
     if( side==LEFT || side==RIGHT )

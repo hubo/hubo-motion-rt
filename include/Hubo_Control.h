@@ -179,6 +179,14 @@ public:
     */
     void setAllTrajCorrectness(double correctness );
     /**
+     * Sets the expected frequency for a joint's trajectory.
+    */
+    ctrl_flag_t setJointTrajFrequency( int joint, double frequency );
+    /**
+      * Sets the expected frequency for all trajectories.
+     **/
+    void setAllTrajFrequency( double frequency );
+    /**
      * Sets joint-space trajectory values for a joint (position, velocity)
     */
     ctrl_flag_t setJointTraj(int joint, double radians, double vel, bool send=false );

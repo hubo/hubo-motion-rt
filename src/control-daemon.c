@@ -195,6 +195,7 @@ void controlLoop()
     double V0[HUBO_JOINT_COUNT];
     double dV[HUBO_JOINT_COUNT];
     double V0_actual[HUBO_JOINT_COUNT];
+    double startWaypoint[HUBO_JOINT_COUNT];
     double adr;
     double dtMax = 0.1;
     double errorFactor = 10;
@@ -432,15 +433,18 @@ void controlLoop()
                         }
                         else if( ctrl.joint[jnt].ctrl_mode == CTRL_TRAJ )
                         {
-                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
-                                ctrl.joint[jnt].velocity = 0.0;
+//                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+//                                ctrl.joint[jnt].velocity = 0.0;
+                            if( timeElapse[jnt] == 0 )
+                                startWaypoint[jnt] = H_ref.ref[jnt];
 
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
                             else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_max;
 
-                            dr[jnt] = ctrl.joint[jnt].position - H_ref.ref[jnt]; // Check how far we are from desired position
+//                            dr[jnt] = (ctrl.joint[jnt].position - startWaypoint[jnt])
+//                                        *timeElapse[jnt]*ctrl.joint[jnt].frequency; // Check how far we are from desired position
 
 
                             if( ctrl.joint[jnt].correctness > 1 )
@@ -448,12 +452,17 @@ void controlLoop()
                             else if( ctrl.joint[jnt].correctness < 0 )
                                 ctrl.joint[jnt].correctness = 0;
 
-                            V[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity
-                                    + ctrl.joint[jnt].correctness*dr[jnt]/dt;
 
-                            dr[jnt] = V[jnt]*dt;
+                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity*dt
+                                    + ctrl.joint[jnt].correctness*(
+                                        (ctrl.joint[jnt].position - startWaypoint[jnt])
+                                        *timeElapse[jnt]*ctrl.joint[jnt].frequency
+                                        - (H_ref.ref[jnt] - startWaypoint[jnt])
+                                        );
 
                             H_ref.ref[jnt] += dr[jnt];
+
+                            dr[jnt] = V[jnt]*dt;
                         }
                         else if( ctrl.joint[jnt].ctrl_mode == CTRL_POS )
                         {

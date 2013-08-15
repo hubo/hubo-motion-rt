@@ -154,6 +154,7 @@ typedef struct hubo_joint_control {
     double Kd;
     double maxPWM;
 
+    double frequency;
     double correctness;
 // FIXME: Add minimum accel parameter
 
