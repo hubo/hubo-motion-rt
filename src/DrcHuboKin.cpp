@@ -56,6 +56,13 @@ DrcHuboKin::DrcHuboKin()
                             0, 0, 0, 0;
     legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
             0, 0, 0, 0;
+    
+    armConstraints.performNullSpaceTask = false;
+    armConstraints.maxAttempts = 1;
+    armConstraints.maxIterations = 200;
+    armConstraints.convergenceTolerance = 0.001;
+    armConstraints.wrapToJointLimits = false;
+    armConstraints.wrapSolutionToJointLimits = false;
 }
 
 DrcHuboKin::DrcHuboKin(string filename)
@@ -185,9 +192,9 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
-        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B);
+        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B, armConstraints);
     else
-        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B);
+        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B, armConstraints);
 
     for(int i=0; i<7; i++)
         q(i) = jointVals(i);
