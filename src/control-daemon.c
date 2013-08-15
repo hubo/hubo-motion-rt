@@ -462,7 +462,7 @@ void controlLoop()
 
                             H_ref.ref[jnt] += dr[jnt];
 
-                            dr[jnt] = V[jnt]*dt;
+                            V[jnt] = dr[jnt]/dt;
                         }
                         else if( ctrl.joint[jnt].ctrl_mode == CTRL_POS )
                         {
