@@ -8,68 +8,68 @@
 
 
 # BODY JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-WST     0.75        0.4         0.50        3.0             -1.571      1.571       0.5     BD      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+WST     0.75        0.4         1.5         0.50        3.0             -1.571      1.571       0.5     200         BD
 
 # NECK JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-NKY     0.75        0.4         0.50        3.0             -1.571      1.571       0.5     NK      
-NK1     0.75        0.4         0.50        3.0             -1.571      1.571       0.5     NK      
-NK2     0.75        0.4         0.50        3.0             -1.571      1.571       0.5     NK      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+NKY     0.75        0.4         1.5         0.50        3.0             -1.571      1.571       0.5     200         NK
+NK1     0.75        0.4         1.5         0.50        3.0             -1.571      1.571       0.5     200         NK
+NK2     0.75        0.4         1.5         0.50        3.0             -1.571      1.571       0.5     200         NK
 
 # LEFT ARM JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-LSP     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA      
-LSR     1.00        0.8         0.50        3.0              0.0        2.3         0.5     LA
-LSY     1.00        0.8         0.50        3.0             -2.25       2.0         0.5     LA      
-LEB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     LA      
-LWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     LA     
-LWP     1.00        0.8         0.50        3.0             -1.25       1.0         0.5     LA     
-LWR     1.00        0.8         0.50        3.0             -1.5        1.5         0.5     LA 
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+LSP     1.00        0.8         1.5         0.50        3.0             -2.0        2.0         0.5     200         LA
+LSR     1.00        0.8         1.5         0.50        3.0              0.0        2.3         0.5     200         LA
+LSY     1.00        0.8         1.5         0.50        3.0             -2.25       2.0         0.5     200         LA
+LEB     1.00        0.8         1.5         0.50        3.0             -2.5        0.0         0.5     200         LA
+LWY     1.00        0.8         1.5         0.50        3.0             -2.0        2.0         0.5     200         LA
+LWP     1.00        0.8         1.5         0.50        3.0             -1.25       1.0         0.5     200         LA
+LWR     1.00        0.8         1.5         0.50        3.0             -1.5        1.5         0.5     200         LA
 
 # RIGHT ARM JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-RSP     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
-RSR     1.00        0.8         0.50        3.0             -2.3        0.0         0.5     RA
-RSY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
-REB     1.00        0.8         0.50        3.0             -2.5        0.0         0.5     RA      
-RWY     1.00        0.8         0.50        3.0             -2.0        2.0         0.5     RA      
-RWP     1.00        0.8         0.50        3.0             -1.4        1.2         0.5     RA
-RWR     1.00        0.8         0.50        3.0             -1.5        1.5         0.5     RA
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+RSP     1.00        0.8         1.5         0.50        3.0             -2.0        2.0         0.5     200         RA
+RSR     1.00        0.8         1.5         0.50        3.0             -2.3        0.0         0.5     200         RA
+RSY     1.00        0.8         1.5         0.50        3.0             -2.0        2.0         0.5     200         RA
+REB     1.00        0.8         1.5         0.50        3.0             -2.5        0.0         0.5     200         RA
+RWY     1.00        0.8         1.5         0.50        3.0             -2.0        2.0         0.5     200         RA
+RWP     1.00        0.8         1.5         0.50        3.0             -1.4        1.2         0.5     200         RA
+RWR     1.00        0.8         1.5         0.50        3.0             -1.5        1.5         0.5     200         RA
 
 # LEFT LEG JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type
-LHY     0.8         0.6         0.50        6.0             0.00        1.80        0.5     LL
-LHR     0.8         0.6         0.50        6.0             0.00        0.58        0.5     LL
-LHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     LL
-LKN     0.8         0.6         0.50        6.0             0.00        2.50        0.5     LL      
-LAP     0.8         0.6         0.50        6.0             -1.26       1.80        0.5     LL      
-LAR     0.8         0.6         0.50        6.0             -0.31       0.23        0.5     LL      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+LHY     0.8         0.6         2.5         0.50        6.0             0.00        1.80        0.5     200         LL
+LHR     0.8         0.6         2.5         0.50        6.0             0.00        0.58        0.5     200         LL
+LHP     0.8         0.6         2.5         0.50        6.0             -1.30       1.30        0.5     200         LL
+LKN     0.8         0.6         2.5         0.50        6.0             0.00        2.50        0.5     200         LL
+LAP     0.8         0.6         2.5         0.50        6.0             -1.26       1.80        0.5     200         LL
+LAR     0.8         0.6         2.5         0.50        6.0             -0.31       0.23        0.5     200         LL
 
 # RIGHT LEG JOINTS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-RHY     0.8         0.6         0.50        6.0             -1.80       0.00        0.5     RL
-RHR     0.8         0.6         0.50        6.0             -0.58       0.00        0.5     RL
-RHP     0.8         0.6         0.50        6.0             -1.30       1.30        0.5     RL
-RKN     0.8         0.6         0.50        6.0             0.00        2.50        0.5     RL      
-RAP     0.8         0.6         0.50        6.0             -1.26       1.80        0.5     RL      
-RAR     0.8         0.6         0.50        6.0             -0.23       0.31        0.5     RL      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+RHY     0.8         0.6         2.5         0.50        6.0             -1.80       0.00        0.5     200         RL
+RHR     0.8         0.6         2.5         0.50        6.0             -0.58       0.00        0.5     200         RL
+RHP     0.8         0.6         2.5         0.50        6.0             -1.30       1.30        0.5     200         RL
+RKN     0.8         0.6         2.5         0.50        6.0             0.00        2.50        0.5     200         RL
+RAP     0.8         0.6         2.5         0.50        6.0             -1.26       1.80        0.5     200         RL
+RAR     0.8         0.6         2.5         0.50        6.0             -0.23       0.31        0.5     200         RL
 
 # RIGHT FINGERS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-RF1     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     RF      
-RF2     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     RF      
-RF3     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     RF      
-RF4     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     RF      
-RF5     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     RF      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+RF1     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         RF
+RF2     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         RF
+RF3     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         RF
+RF4     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         RF
+RF5     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         RF
 
 # LEFT FINGERS
-#name   NomSpeed    NomAccel    Correctness ErrorLimit      PosMin      PosMax      TimeOut type    
-LF1     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     LF      
-LF2     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     LF      
-LF3     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     LF      
-LF4     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     LF      
-LF5     0.75        0.4         0.50        1.0             -1.0        1.0         0.5     LF      
+#name   NomSpeed    NomAccel    MaxSpeed    Correctness ErrorLimit      PosMin      PosMax      TimeOut TrajFreq    type
+LF1     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         LF
+LF2     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         LF
+LF3     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         LF
+LF4     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         LF
+LF5     0.75        0.4         1.5         0.50        1.0             -1.0        1.0         0.5     200         LF
 
 
 

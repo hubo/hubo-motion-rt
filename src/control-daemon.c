@@ -460,6 +460,10 @@ void controlLoop()
                                         - (H_ref.ref[jnt] - startWaypoint[jnt])
                                         );
 
+                            // Probably come up with a more meaningful safety check
+                            if( fabs(dr[jnt]) > fabs(ctrl.joint[jnt].maxSpeed*dt) )
+                                dr[jnt] = sign(dr[jnt])*fabs(ctrl.joint[jnt].maxSpeed*dt);
+
                             H_ref.ref[jnt] += dr[jnt];
 
                             V[jnt] = dr[jnt]/dt;
@@ -880,15 +884,17 @@ int setCtrlDefaults(hubo_param_t *H_param)
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-        if (9 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%s",
+        if (11 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%lf%lf%s",
 			name,
 			&tempJC.speed,
 			&tempJC.acceleration,
+            &tempJC.maxSpeed,
             &tempJC.correctness,
 			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
             &tempJC.timeOut,
+            &tempJC.frequency,
             type ) ) // check that all values are found
 		{
 
