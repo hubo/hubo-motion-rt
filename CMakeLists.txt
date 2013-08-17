@@ -55,7 +55,9 @@ file(GLOB gravityTest_source "src/gravityTest.cpp")
 
 file(GLOB trajTest_source "src/trajTest.cpp")
 
-file(GLOB calibrate_source "src/calibrate.cpp")
+file(GLOB calibrate_source "src/calibrate.cpp"
+                           "src/calibrationAPI.cpp"
+                           "include/calibration.h")
 
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)

@@ -237,6 +237,10 @@ public:
      */
     ctrl_flag_t setJointCompliance(int joint, bool on, double Kp, double Kd=0);
     /**
+     * Sets the max PWM used by the jointspace compliance mode.
+     */
+    ctrl_flag_t setJointMaxPWM(int joint, double maxPWM);
+    /**
      * Toggles joint-space compliance in the specified arm.
      */
     ctrl_flag_t setArmCompliance(int side, bool on);
@@ -727,6 +731,13 @@ public:
      * \b NOTE: Use of this mode is \em strongly discouraged.
     */
     ctrl_flag_t passJointAngle( int joint, double radians, bool send=false );
+    /**
+      * Instructs the control-daemon to send the given PWM command straight through
+      * to the motor board without any kind of conversion or smoothing.
+      *
+      * \b NOTE: Use of this mode is \em strongly discouraged.
+    */
+    ctrl_flag_t setJointPWM( int joint, double pwm , bool send=false );
 
     // ~~~*** State Readings ***~~~ //
 

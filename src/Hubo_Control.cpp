@@ -750,6 +750,27 @@ ctrl_flag_t Hubo_Control::setJointCompliance(int joint, bool on, double Kp, doub
     return SUCCESS;
 }
 
+ctrl_flag_t Hubo_Control::setJointMaxPWM(int joint, double maxPWM)
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].maxPWM = maxPWM;
+                break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].maxPWM = maxPWM;
+                break;
+            default:
+                return JOINT_OOB;
+        }
+    }
+    else return JOINT_OOB;
+
+    return SUCCESS;
+}
+
 ctrl_flag_t Hubo_Control::setArmCompliance(int side, bool on)
 {
     if( side==LEFT || side==RIGHT )
@@ -1991,6 +2012,55 @@ ctrl_flag_t Hubo_Control::passJointAngle(int joint, double radians, bool send)
             case CtrlNK: // Right Fingers
                 H_Nck_Ctrl.joint[localMap[joint]].position = radians;
                 H_Nck_Ctrl.joint[localMap[joint]].ctrl_mode = CTRL_PASS;
+                H_Nck_Ctrl.active=1; ctrlOn[CtrlNK] = true; break;
+        }
+
+        if(send)
+            sendControls();
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::setJointPWM(int joint, double pwm, bool send)
+{
+    if(joint < HUBO_JOINT_COUNT)
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA: // Right Arm
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].pwm = pwm;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Arm_Ctrl[RIGHT].active=1; ctrlOn[CtrlRA] = true; break;
+            case CtrlLA: // Left Arm
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].pwm = pwm;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Arm_Ctrl[LEFT].active=1; ctrlOn[CtrlLA] = true; break;
+            case CtrlRL: // Right Leg
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].pwm = pwm;
+                H_Leg_Ctrl[RIGHT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Leg_Ctrl[RIGHT].active=1; ctrlOn[CtrlRL] = true; break;
+            case CtrlLL: // Left Leg
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].pwm = pwm;
+                H_Leg_Ctrl[LEFT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Leg_Ctrl[LEFT].active=1; ctrlOn[CtrlLL] = true; break;
+            case CtrlRF: // Right Fingers
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].pwm = pwm;
+                H_Fin_Ctrl[RIGHT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Fin_Ctrl[RIGHT].active=1; ctrlOn[CtrlRF] = true; break;
+            case CtrlLF: // Left Fingers
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].pwm = pwm;
+                H_Fin_Ctrl[LEFT].joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Fin_Ctrl[LEFT].active=1; ctrlOn[CtrlLF] = true; break;
+            case CtrlBD: // Right Fingers
+                H_Bod_Ctrl.joint[localMap[joint]].pwm = pwm;
+                H_Bod_Ctrl.joint[localMap[joint]].ctrl_mode = CTRL_PWM;
+                H_Bod_Ctrl.active=1; ctrlOn[CtrlBD] = true; break;
+            case CtrlNK: // Right Fingers
+                H_Nck_Ctrl.joint[localMap[joint]].pwm = pwm;
+                H_Nck_Ctrl.joint[localMap[joint]].ctrl_mode = CTRL_PWM;
                 H_Nck_Ctrl.active=1; ctrlOn[CtrlNK] = true; break;
         }
 

@@ -198,7 +198,7 @@ void controlLoop()
     double startWaypoint[HUBO_JOINT_COUNT];
     double adr;
     double dtMax = 0.1;
-    double errorFactor = 10;
+    double errorFactor = 100; // This makes the error checking basically meaningless
     double timeElapse[HUBO_JOINT_COUNT];
     double amp=0;
     double ampUpper;
@@ -383,6 +383,17 @@ void controlLoop()
                 {
                     V[jnt] = (ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
+                }
+                else if( ctrl.joint[jnt].ctrl_mode == CTRL_PWM )
+                {
+                    H_ref.comply[jnt] = 1;
+                    // FIXME: Remove this hack
+                    gains.joint[jnt].maxPWM = 40;
+
+                    gains.joint[jnt].Kp = 0;
+                    gains.joint[jnt].Kd = 0;
+
+                    gains.joint[jnt].pwmCommand = ctrl.joint[jnt].pwm;
                 }
                 else if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
                     && fail[jnt]==0  )

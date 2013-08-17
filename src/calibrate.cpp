@@ -35,7 +35,7 @@
  */
 
 
-#include "DrcHuboKin.h"
+#include "calibration.h"
 
 using namespace RobotKin;
 using namespace std;
@@ -277,6 +277,12 @@ int main(int argc, char **argv)
     }
     else
     {
+        bool valid = false;
+
+
+
+
+
         cout << "... I don't understand that request. Next time, pick an option out of the table!" << endl;
         return 1;
     }
