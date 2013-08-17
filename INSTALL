@@ -1,14 +1,17 @@
 Installation Instructions
 *************************
 
-Prerequisite: hubo-ach (https://github.com/hubo/hubo-ach)
+Prerequisites: 
+   1) hubo-ach (https://github.com/hubo/hubo-ach)
+   2) RobotKin (https://github.com/mxgrey/RoboKin)
+   3) drchubo-v2.urdf in /etc/hubo-ach/
 
-0. This package uses autotools. If you're not sure whether you have autotools, put the following
+0. This package uses cmake. If you're not sure whether you have cmake, put the following
 into the terminal:
 
 $ sudo apt-get update
 $ sudo apt-get upgrade
-$ sudo apt-get install autoconf
+$ sudo apt-get install cmake
 
 It also depends on the Eigen C++ Library 3.0. Get it with the following command on Ubuntu:
 
@@ -16,23 +19,23 @@ $ sudo apt-get install libeigen3-dev
 
 ____________________________________________________________
 
-1. Now to use autotools:
+1. Now use cmake to generate a Makefile:
 
-In the directory which contains Makefile.am and configure.ac, run the following commands into
+In the top directory (ie. hubo-motion-rt) run the following commands into
 the terminal:
 
-$ mkdir m4
-(If it already exists, then don't worry about this step.)
+(Make a build directory for the binaries to go in, if it doesn't already exist)
+$ mkdir build
 
-$ autoreconf -i
-(Give this some time. It can take a while.)
+(Navigate to the newly created build directory)
+$ cd build
 
-$ ./configure
+(Run cmake to configure the project and create a Makefile)
+$ cmake ..
 
-This should generate a Makefile. You can use 
+This should generate a Makefile. You can use
 
 $ ls
-
 from the terminal to check that "Makefile" exists.
 
 ____________________________________________________________
