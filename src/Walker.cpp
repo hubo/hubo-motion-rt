@@ -414,10 +414,9 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         checkCommands();
         if( cmd.cmd_request != BAL_ZMP_WALKING )
             keepWalking = false;
-    } while(!daemon_sig_quit && keepWalking && (r==ACH_TIMEOUT
-                || !currentTrajectory->reuse) ); // TODO: Replace this with something more intelligent
+    } while(!daemon_sig_quit && keepWalking && r==ACH_TIMEOUT);
 
-    if(!keepWalking || !currentTrajectory->reuse) // TODO: Take out the reuse condition here
+    if(!keepWalking) // TODO: Take out the reuse condition here
     {
         bal_state.m_walk_mode = WALK_INACTIVE;
         sendState();
