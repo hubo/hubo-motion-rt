@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                 ovr.m_override = OVR_ACQUIESCENT;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
 
-                staticBalance(hubo, kin, cmd, gains, dt);
+                //staticBalance(hubo, kin, cmd, gains, dt);
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
