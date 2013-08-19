@@ -213,7 +213,7 @@ typedef struct zmp_params {
   double sidestep_length;     //!< Length in meters of sidestep
   double sidewalk_dist;       //!< Total distance in meters to sidestep
 
-  size_t max_step_count;      //!< Maximum number of steps for trajectory
+  int max_step_count;      //!< Maximum number of steps for trajectory
   double walk_circle_radius;  //!< Walk circle radius (m)
   double turn_in_place_angle;   //!< Angle in radians to turn in place
 
