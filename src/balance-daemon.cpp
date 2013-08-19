@@ -115,10 +115,10 @@ int main(int argc, char **argv)
     memset( &nudge, 0, sizeof(nudge) );
     memset( &ovr, 0, sizeof(ovr) );
     memset( &manip_state, 0, sizeof(manip_state) );
-    
-    hubo.update();
-    double dt, time=hubo.getTime();
 
+    hubo.update();
+
+    double dt, time=hubo.getTime();
     size_t fs;
     while( !daemon_sig_quit )
     {
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
         time = hubo.getTime();
         if( dt <= 0 )
         {
-            fprintf(stderr, "Something unnatural has happened... %f\n", dt);
+            fprintf(stderr, "Something unnatural has happened in the balance daemon... %f\n", dt);
             continue;
         }
 

@@ -525,7 +525,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         time = hubo.getTime();
         if( dt <= 0 )
         {
-            fprintf(stderr, "Something unnatural has happened... %f\n", dt);
+            fprintf(stderr, "Something unnatural has happened in the Walker... %f\n", dt);
             continue;
         }
 
@@ -684,7 +684,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
-    complyKnee( hubo, tempNextElem, state, gains, dt );
+    //complyKnee( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 //    double vel, accel;
 
@@ -729,7 +729,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
 
- // hubo.sendControls();
+  hubo.sendControls();
 }
 
 
