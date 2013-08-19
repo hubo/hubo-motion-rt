@@ -97,7 +97,7 @@ typedef struct balance_gains {
     double double_support_hip_nudge_kp;
     double double_support_hip_nudge_kd;
 
-} balance_gains_t;
+}__attribute__((packed)) balance_gains_t;
 
 
 
@@ -109,7 +109,7 @@ typedef struct balance_cmd {
     double height;
     double com_x_offset;
 
-} balance_cmd_t;
+}__attribute__((packed)) balance_cmd_t;
 
 typedef struct balance_state {
 
@@ -118,7 +118,7 @@ typedef struct balance_state {
     walk_mode_t m_walk_mode;
     walk_error_t m_walk_error;
 
-} balance_state_t;
+}__attribute__((packed)) balance_state_t;
 
 
 typedef enum {
