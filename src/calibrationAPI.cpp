@@ -54,7 +54,7 @@ double findDeadband(Hubo_Control& hubo, int joint)
     {
         hubo.update();
         time = hubo.getTime();
-    } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 3)
+    } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 3);
     
 
     while(fabs(hubo.getJointVelocity(joint)) < 1e-3)
