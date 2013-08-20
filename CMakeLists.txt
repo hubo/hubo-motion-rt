@@ -62,14 +62,11 @@ add_library(drchubokin SHARED ${drc_hubo_kin_source})
 #link_libraries(drchubokin)
 target_link_libraries(drchubokin RobotKin)
 
-link_libraries(m rt ach huboparams drchubokin RobotKin ${urdfdom_LIBRARIES} daemonizer huboctrl)
-
 add_executable(balance-daemon ${balance_daemon_source})
-#target_link_libraries(balance-daemon m rt ach huboparams drchubokin RobotKin ${urdfdom_LIBRARIES} daemonizer huboctrl)
+target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBRARIES} daemonizer drchubokin huboctrl)
 
 add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
-
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
@@ -84,6 +81,7 @@ INSTALL(FILES include/Hubo_Control.h
               include/manip.h
               include/hubo-zmp.h
               include/DrcHuboKin.h
+              include/motion-trajectory.h
         DESTINATION /usr/local/include/)
 
 # Install Tables
