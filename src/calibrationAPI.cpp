@@ -126,7 +126,9 @@ bool calibrateJoint(int joint,
     cout << " :: Ready!" << endl << endl;
 
     double deadBand = findDeadband(joint);
+    // TODO: print/report deadband
 
+    cout << endl << "Found deadband for " << jointNames[joint] << ": " << deadBand << endl;
 
     hubo.setArmAngles(side, startAngles, true);
     hubo.update();
