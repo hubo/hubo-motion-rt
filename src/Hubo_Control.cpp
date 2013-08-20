@@ -1882,6 +1882,10 @@ void Hubo_Control::getRightLegAngleStates( LegVector &angles )
 void Hubo_Control::getLeftLegAngleStates( LegVector &angles )
 { getLegAngleStates( LEFT, angles ); }
 
+
+double Hubo_Control::getJointDuty(int joint) { return H_State.joint[joint].duty; }
+
+
 // ~~** Sensors
 // ~* Force-torque
 // Mx

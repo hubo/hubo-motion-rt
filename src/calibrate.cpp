@@ -36,8 +36,8 @@
 
 
 #include "calibration.h"
+#include <iostream>
 
-using namespace RobotKin;
 using namespace std;
 
 
@@ -135,11 +135,15 @@ int main(int argc, char **argv)
                 cout << endl << "CoM Z: >> ";
                 cin >> rcomz;
 
+                calibrateRightArm(prompt, rmass, rcomx, rcomy, rcomz);
+
                 valid = true;
             }
             else if(prompt_str.compare("n")==0 || prompt_str.compare("no")==0)
             {
                 cout << endl << "Okay, then I'll just use the arm's natural weight.";
+
+                calibrateRightArm(prompt);
 
                 valid = true;
             }
@@ -183,11 +187,15 @@ int main(int argc, char **argv)
                 cout << endl << "CoM Z: >> ";
                 cin >> lcomz;
 
+                calibrateLeftArm(prompt, lmass, lcomx, lcomy, lcomz);
+
                 valid = true;
             }
             else if(prompt_str.compare("n")==0 || prompt_str.compare("no")==0)
             {
                 cout << endl << "Okay, then I'll just use the arm's natural weight.";
+
+                calibrateLeftArm(prompt);
 
                 valid = true;
             }
@@ -222,11 +230,15 @@ int main(int argc, char **argv)
                 cout << endl << "CoM Z: >> ";
                 cin >> lcomz;
 
+                calibrateLeftArm(prompt, lmass, lcomx, lcomy, lcomz);
+
                 valid = true;
             }
             else if(prompt_str.compare("n")==0 || prompt_str.compare("no")==0)
             {
                 cout << endl << "Okay, then I'll just use the arm's natural weight.";
+
+                calibrateLeftArm(prompt);
 
                 valid = true;
             }
@@ -259,11 +271,15 @@ int main(int argc, char **argv)
                 cout << endl << "CoM Z: >> ";
                 cin >> rcomz;
 
+                calibrateRightArm(prompt, rmass, rcomx, rcomy, rcomz);
+
                 valid = true;
             }
             else if(prompt_str.compare("n")==0 || prompt_str.compare("no")==0)
             {
                 cout << endl << "Okay, then I'll just use the arm's natural weight.";
+
+                calibrateRightArm(prompt);
 
                 valid = true;
             }
@@ -277,14 +293,56 @@ int main(int argc, char **argv)
     }
     else
     {
-        bool valid = false;
+        bool validJoint;
+
+        bool valid=false;
+
+        while(!valid)
+        {
+            cout << endl << endl
+                 << "Will the hand be holding additional weight? [y/n] >> ";
+
+            string prompt_str;
+            cin >> prompt_str;
+
+            if(prompt_str.compare("y")==0 || prompt_str.compare("yes")==0)
+            {
+                cout << endl << "Alright, then provide me with the following details:";
+                cout << endl << "Mass:  >> ";
+                cin >> rmass;
+                cout << endl << "CoM X: >> ";
+                cin >> rcomx;
+                cout << endl << "CoM Y: >> ";
+                cin >> rcomy;
+                cout << endl << "CoM Z: >> ";
+                cin >> rcomz;
+
+                validJoint = calibrateJoint(target_str, rmass, rcomx, rcomy, rcomz);
+
+                valid = true;
+            }
+            else if(prompt_str.compare("n")==0 || prompt_str.compare("no")==0)
+            {
+                cout << endl << "Okay, then I'll just use the arm's natural weight.";
+
+                validJoint = calibrateJoint(target_str);
+
+                valid = true;
+            }
+            else
+            {
+                cout << "... I don't understand that response. Just type y or n!" << endl;
+                valid = false;
+            }
+        }
 
 
 
-
-
-        cout << "... I don't understand that request. Next time, pick an option out of the table!" << endl;
-        return 1;
+        if(!validJoint)
+        {
+            cout << "... I don't understand that request. Next time, pick an option out of the table!" << endl;
+            return 1;
+        }
     }
 
 

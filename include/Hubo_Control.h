@@ -781,6 +781,10 @@ public:
      * Similar to getLeftArmAngleStates() but applied to the leg
     */
     void getLeftLegAngleStates( LegVector &angles );
+    /**
+      * Returns the PWM % Duty command that is being sent to the motor for the specified joint
+    */
+    double getJointDuty(int joint);
     // TODO: All of these (state position, velocity, whatever)
 
     // ~~** Sensors
