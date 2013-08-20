@@ -7,6 +7,27 @@
 using namespace std;
 using namespace RobotKin;
 
+double findDeadband(Hubo_Control& hubo, int joint)
+{
+    hubo.update();
+
+    double pwm=0;
+
+
+    while(fabs(hubo.getJointVelocity(joint)) < 1e-3)
+    {
+        pwm += 0.1;
+        cout << "Checking deadband of " << jointNames[joint] << " at PWM " << pwm << endl;
+        hubo.setJointPWM(joint, pwm, true);
+
+        sleep(1);
+        hubo.update();
+    }
+
+    hubo.setJointPWM(joint, 0, true);
+
+    return pwm - 0.1;
+}
 
 bool calibrateJoint(string joint,
                     double mass, double comx, double comy, double comz,
@@ -125,11 +146,12 @@ bool calibrateJoint(int joint,
     }
     cout << " :: Ready!" << endl << endl;
 
-    double deadBand = findDeadband(joint);
+    double deadBand = findDeadband(hubo, joint);
     // TODO: print/report deadband
 
     cout << endl << "Found deadband for " << jointNames[joint] << ": " << deadBand << endl;
 
+    hubo.update();
     hubo.setArmAngles(side, startAngles, true);
     hubo.update();
     hubo.getArmAngleStates(side, currentAngles);
@@ -144,18 +166,20 @@ bool calibrateJoint(int joint,
 
 
 
-    hubo.setJointCompliance(joint, false);
     hubo.setJointMaxPWM(joint, 10);
 
     double testAngle = rangeStart;
 
-    for(int i=0; i<resolution; i++)
+    for(int i=0; i<=resolution; i++)
     {
+        hubo.setJointCompliance(joint, false);
         hubo.setJointAngle(joint, testAngle, true);
-        while( fabs(testAngle-hubo.getJointAngleState(joint)) < 0.01 )
+        cout << "Moving joint " << jointNames[joint] << " to " << testAngle << "..."; fflush(stdout);
+        while( fabs(testAngle-hubo.getJointAngleState(joint)) > 0.01 )
             hubo.update();
+        cout << " Arrived!" << endl;
 
-        hubo.setJointCompliance(joint, true, 80, 20);
+        hubo.setJointCompliance(joint, true, 120, 0);
         hubo.sendControls();
 
         double stime = hubo.getTime();
@@ -164,7 +188,7 @@ bool calibrateJoint(int joint,
         {
             hubo.update();
             time = hubo.getTime();
-        } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 2 );
+        } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 3 );
 
         kin.updateHubo(hubo);
 
@@ -174,6 +198,8 @@ bool calibrateJoint(int joint,
              << "\t PWM: " << hubo.getJointDuty(joint) << endl;
 
         // TODO: Grab the current PWM reading and record it versus the torque prediction
+
+        testAngle += (rangeEnd-rangeStart)/resolution;
     }
 
     cout << endl << "Finished with joint " << jointNames[joint] << "!" << endl;
@@ -276,25 +302,3 @@ void calibrateLeftArm(bool prompt, double mass, double comx, double comy, double
     calibrateArm(LEFT, prompt, mass, comx, comy, comz, resolution);
 }
 
-double findDeadband(int joint)
-{
-    Hubo_Control hubo;
-    hubo.update();
-
-    double pwm=0;
-
-
-    while(fabs(hubo.getJointVelocity(joint)) < 1e-3)
-    {
-        pwm += 0.1;
-        cout << "Checking deadband of " << jointNames[joint] << " at PWM " << pwm << endl;
-        hubo.setJointPWM(joint, pwm, true);
-
-        sleep(1);
-        hubo.update();
-    }
-
-    hubo.setJointPWM(joint, 0, true);
-
-    return pwm - 0.1;
-}
