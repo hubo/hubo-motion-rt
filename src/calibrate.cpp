@@ -104,14 +104,7 @@ int main(int argc, char **argv)
     }
 
 
-    if( target_str.compare("right")==0
-            || target_str.compare("RSP")==0
-            || target_str.compare("RSR")==0
-            || target_str.compare("RSY")==0
-            || target_str.compare("REB")==0
-            || target_str.compare("RWY")==0
-            || target_str.compare("RWP")==0
-            || target_str.compare("RWR")==0)
+    if( target_str.compare("right")==0 )
     {
         bool valid = false;
 
@@ -156,14 +149,7 @@ int main(int argc, char **argv)
         }
 
     }
-    else if( target_str.compare("left")==0
-             || target_str.compare("LSP")==0
-             || target_str.compare("LSR")==0
-             || target_str.compare("LSY")==0
-             || target_str.compare("LEB")==0
-             || target_str.compare("LWY")==0
-             || target_str.compare("LWP")==0
-             || target_str.compare("LWR")==0)
+    else if( target_str.compare("left")==0 )
     {
         bool valid = false;
 

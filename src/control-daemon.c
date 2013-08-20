@@ -679,7 +679,7 @@ void controlLoop()
                     }
 
                 }
-                else
+                else if( ctrl.joint[jnt].ctrl_mode != CTRL_PWM )
                     H_ref.comply[jnt] = 0;
 
 
