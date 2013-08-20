@@ -31,7 +31,7 @@ double findDeadband(Hubo_Control& hubo, int joint)
 
 bool calibrateJoint(string joint,
                     double mass, double comx, double comy, double comz,
-                    int resolution)
+                    double resolution)
 {
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         if(joint.compare(jointNames[i])==0)
@@ -44,7 +44,7 @@ bool calibrateJoint(string joint,
 
 bool calibrateJoint(int joint,
                     double mass, double comx, double comy, double comz,
-                    int resolution)
+                    double resolution)
 {
 
     Hubo_Control hubo;
@@ -79,7 +79,7 @@ bool calibrateJoint(int joint,
 
     case LSY:
     case RSY:
-        startAngles(SP) = -M_PI/2;
+        startAngles(SP) = M_PI/2;
         startAngles(EB) = -M_PI/2;
         rangeStart = 0;
         rangeEnd = -M_PI/2;
@@ -89,8 +89,8 @@ bool calibrateJoint(int joint,
     case RWY:
         startAngles(EB) = -M_PI/2;
         startAngles(WP) = -M_PI/2;
-        rangeStart = -2.18;
-        rangeEnd = -0.5585;
+        rangeStart = -2.18; // TODO: Base this off of the mass model
+        rangeEnd = -0.5585; // TODO: Base this off of the mass model
         break;
 
     // TODO: Add in wrist roll
@@ -166,10 +166,35 @@ bool calibrateJoint(int joint,
 
 
 
+
+    double pwm = deadBand;
+
+    while( fabs(hubo.getJointAngle(joint)-rangeStart) < fabs(rangeEnd-rangeStart) )
+    {
+        pwm += resolution*(rangeEnd-rangeStart)/fabs(rangeEnd-rangeStart);
+
+        cout << "Checking torque of " << pwm << "% Duty for joint " << jointNames[joint] << endl;
+        hubo.setJointPWM(joint, pwm, true);
+
+        double stime = hubo.getTime();
+        double time = hubo.getTime();
+        do
+        {
+            hubo.update();
+            time = hubo.getTime();
+        } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 3 );
+
+        kin.updateHubo(hubo);
+
+        cout << "Angle: " << hubo.getJointAngleState(joint)
+             << "\tTorque: " << kin.joint(jointNames[joint]).gravityTorque()
+             << "\t PWM: " << hubo.getJointDuty(joint) << endl;
+    }
+
+    /*
+     *
     hubo.setJointMaxPWM(joint, 10);
-
     double testAngle = rangeStart;
-
     for(int i=0; i<=resolution; i++)
     {
         hubo.setJointCompliance(joint, false);
@@ -201,6 +226,7 @@ bool calibrateJoint(int joint,
 
         testAngle += (rangeEnd-rangeStart)/resolution;
     }
+    */
 
     cout << endl << "Finished with joint " << jointNames[joint] << "!" << endl;
 
