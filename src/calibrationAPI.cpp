@@ -131,8 +131,9 @@ bool calibrateJoint(int joint,
     case LWY:
     case RWY:
         startAngles(EB) = -M_PI/2;
+        startAngles(WY) = -2.18; // TODO: Base this off of the mass model 
         startAngles(WP) = -M_PI/2;
-        rangeStart = -2.18; // TODO: Base this off of the mass model
+        rangeStart = startAngles(WY);
         rangeEnd = -0.5585; // TODO: Base this off of the mass model
         break;
 
@@ -147,6 +148,7 @@ bool calibrateJoint(int joint,
             ||  joint == LSY
             ||  joint == LWY )
     {
+        startAngles(WY) = -startAngles(WY);
         rangeStart = -rangeStart;
         rangeEnd   = -rangeEnd;
     }
