@@ -793,7 +793,6 @@ ctrl_flag_t Hubo_Control::setArmCompliance(int side, bool on, ArmVector Kp, ArmV
     return SUCCESS;
 }
 
-
 ctrl_flag_t Hubo_Control::setJointTorque(int joint, double torque)
 {
     if( joint < HUBO_JOINT_COUNT )
@@ -819,11 +818,48 @@ ctrl_flag_t Hubo_Control::setJointTorque(int joint, double torque)
     return SUCCESS;
 }
 
+ctrl_flag_t Hubo_Control::releaseJointTorque(int joint)
+{
+    if( joint < HUBO_JOINT_COUNT )
+    {
+        switch( ctrlMap[joint] )
+        {
+            case CtrlRA:
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque = 0;
+                H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_OFF;
+                H_Arm_Ctrl[RIGHT].active=1; ctrlOn[CtrlRA] = true; break;
+            case CtrlLA:
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque = 0;
+                H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_OFF;
+                H_Arm_Ctrl[LEFT].active=1; ctrlOn[CtrlLA] = true; break;
+            default:
+                return JOINT_OOB;
+            // NOTE: Torque mode is not currently supported on any other joints
+        }
+    }
+    else
+        return JOINT_OOB;
+
+    return SUCCESS;
+}
+
 ctrl_flag_t Hubo_Control::setArmTorques(int side, ArmVector torques)
 {
     if( side==LEFT || side==RIGHT )
         for(int i=0; i<H_Arm_Ctrl[side].count; i++)
             setJointTorque(armjoints[side][i], torques[i]);
+
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
+
+ctrl_flag_t Hubo_Control::releaseArmTorques(int side)
+{
+    if( side==LEFT || side==RIGHT )
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            releaseJointTorque(armjoints[side][i]);
 
     else
         return BAD_SIDE;

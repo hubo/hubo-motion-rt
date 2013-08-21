@@ -254,6 +254,14 @@ public:
      */
     ctrl_flag_t setJointTorque( int joint, double torque );
     /**
+     * Turns off torque control for the specified joint
+     */
+    ctrl_flag_t releaseJointTorque( int joint );
+    /**
+     * Turns off torque control for the specified arm
+     */
+    ctrl_flag_t releaseArmTorques( int side );
+    /**
      * Sets the feedforward torque commands for the specified arm.
      */
     ctrl_flag_t setArmTorques( int side, ArmVector torques );

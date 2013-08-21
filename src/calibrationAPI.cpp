@@ -233,7 +233,7 @@ bool calibrateJoint(int joint,
         kin.updateHubo(hubo);
 
         if( fabs(hubo.getJointAngleState(joint)-rangeStart) < fabs(rangeEnd-rangeStart) )
-            // Print result to table
+            // TODO: Print result to table
             cout << "Angle: " << hubo.getJointAngleState(joint)
                  << "\tTorque: " << kin.joint(jointNames[joint]).gravityTorque()
                  << "\t PWM: " << hubo.getJointDuty(joint) << endl;
@@ -252,43 +252,6 @@ bool calibrateJoint(int joint,
     hubo.update();
 
     hubo.setJointAngle(joint, rangeStart, true);
-
-    /*
-     *
-    hubo.setJointMaxPWM(joint, 10);
-    double testAngle = rangeStart;
-    for(int i=0; i<=resolution; i++)
-    {
-        hubo.setJointCompliance(joint, false);
-        hubo.setJointAngle(joint, testAngle, true);
-        cout << "Moving joint " << jointNames[joint] << " to " << testAngle << "..."; fflush(stdout);
-        while( fabs(testAngle-hubo.getJointAngleState(joint)) > 0.01 )
-            hubo.update();
-        cout << " Arrived!" << endl;
-
-        hubo.setJointCompliance(joint, true, 120, 0);
-        hubo.sendControls();
-
-        double stime = hubo.getTime();
-        double time = hubo.getTime();
-        do
-        {
-            hubo.update();
-            time = hubo.getTime();
-        } while( fabs(hubo.getJointVelocity(joint)) > 1e-5 || (time-stime) < 3 );
-
-        kin.updateHubo(hubo);
-
-
-        cout << "Angle: " << hubo.getJointAngleState(joint)
-             << "\tTorque: " << kin.joint(jointNames[joint]).gravityTorque()
-             << "\t PWM: " << hubo.getJointDuty(joint) << endl;
-
-        // TODO: Grab the current PWM reading and record it versus the torque prediction
-
-        testAngle += (rangeEnd-rangeStart)/resolution;
-    }
-    */
 
     cout << endl << "Finished with joint " << jointNames[joint] << "!" << endl;
 

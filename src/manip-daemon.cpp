@@ -34,6 +34,7 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "DrcHuboKin.h"
 #include "manip.h"
 
 extern "C" {
@@ -41,6 +42,9 @@ extern "C" {
 #include "daemonizer.h"
 }
 
+// FIXME: Comment out if reflex and amino don't exist
+manip_error_t handle_teleop(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state,
                 hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
@@ -64,6 +68,9 @@ void grasp_limp( Hubo_Control &hubo, int side );
 int main( int argc, char **argv )
 {
     Hubo_Control hubo("manip-daemon");
+
+    DrcHuboKin kin;
+    kin.updateHubo(hubo);
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
@@ -102,6 +109,8 @@ int main( int argc, char **argv )
     memset( &override_cmd, 0, sizeof(override_cmd) );
 
     ArmVector arms[2];
+    ArmVector torques[2];
+    Vector6d eeWrench[2];
     
     hubo.update(true);
     
@@ -110,6 +119,7 @@ int main( int argc, char **argv )
     {
         // Update hubo, and get latest manipulation and override commands from ach
         hubo.update(true);
+        kin.updateHubo(hubo);
         ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
 
@@ -167,6 +177,53 @@ int main( int argc, char **argv )
 
             for(int i=0; i<3; i++)
                 manip_state.pose[side].data[i] = transreal(i);
+
+
+            // Handle Control Mode
+            if(manip_cmd[side].m_ctrl[side]!=MC_RIGID  && side==RIGHT)
+                kin.linkage("RightArm").tool().massProperties.setMass(
+                            manip_cmd[side].m_tool[side].mass,
+                            Vector3d(manip_cmd[side].m_tool[side].com_x,
+                                     manip_cmd[side].m_tool[side].com_y,
+                                     manip_cmd[side].m_tool[side].com_z));
+            else if(manip_cmd[side].m_ctrl[side]!=MC_RIGID  && side==LEFT)
+                kin.linkage("LeftArm").tool().massProperties.setMass(
+                            manip_cmd[side].m_tool[side].mass,
+                            Vector3d(manip_cmd[side].m_tool[side].com_x,
+                                     manip_cmd[side].m_tool[side].com_y,
+                                     manip_cmd[side].m_tool[side].com_z));
+
+
+            if( manip_cmd[side].m_ctrl[side] == MC_RIGID )
+            {
+                hubo.setArmCompliance(side, false);
+                hubo.releaseArmTorques(side); // Just in case
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_COMPLIANT )
+            {
+                hubo.setArmCompliance(side, true);
+                kin.armTorques(side, torques[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_FORCE )
+            {
+                for(int i=0; i<6; i++)
+                    eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
+
+                hubo.setArmCompliance(side, false);
+                kin.armTorques(side, torques[side], eeWrench[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_HYBRID )
+            {
+                for(int i=0; i<6; i++)
+                    eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
+
+                hubo.setArmCompliance(side, true);
+                kin.armTorques(side, torques[side], eeWrench[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+
         }
 
         hubo.setJointAngle( WST, manip_req.waistAngle );
@@ -341,6 +398,15 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
 
     hubo.getArmAngleStates( side, arm );
 }
+
+
+
+
+
+
+
+
+
 
 manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
 {

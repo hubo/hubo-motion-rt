@@ -61,8 +61,9 @@ typedef enum {
     MC_TRANS_EULER,
     MC_TRANS_QUAT,
     MC_ANGLES,
-    MC_TRAJ
-    
+    MC_TRAJ,
+    MC_TELEOP
+
 }__attribute__((packed)) manip_mode_t;
 
 typedef enum {
@@ -85,9 +86,10 @@ typedef enum {
 
 typedef enum {
     
-    MC_NONE,
+    MC_RIGID,
+    MC_COMPLIANT,
     MC_FORCE,
-    MC_CURRENT
+    MC_HYBRID
     
 }__attribute__((packed)) manip_ctrl_t;
 
@@ -144,6 +146,38 @@ typedef union
 	};
 }__attribute__((packed)) hubo_manip_pose_t;
 
+typedef union
+{
+    double data[6];
+    struct
+    {
+        union
+        {
+            struct
+            {
+                double force[3];
+            };
+
+            struct
+            {
+                double fx, fy, fz;
+            };
+        };
+
+        union
+        {
+            struct
+            {
+                double torque[3];
+            };
+
+            struct
+            {
+                double mx, my, mz;
+            };
+        };
+    };
+}__attribute__((packed)) manip_wrench_t;
 
 typedef struct hubo_manip_state {
 
@@ -157,17 +191,32 @@ typedef struct hubo_manip_state {
 }__attribute__((packed)) hubo_manip_state_t;
 
 
+typedef struct manip_tool {
+
+    double mass;
+    double com_x;
+    double com_y;
+    double com_z;
+
+}__attribute__((packed)) manip_tool_t;
+
 typedef struct hubo_manip_cmd {
     
     uint32_t goalID[NUM_ARMS];
     manip_mode_t m_mode[NUM_ARMS];        ///< Defines what type of manipulation to execute: trajectory or pose
     manip_ctrl_t m_ctrl[NUM_ARMS];        ///< Defines the type of compliance to use
     manip_grasp_t m_grasp[NUM_ARMS];      ///< Defines at what point to perform a grasp
-    double waistAngle;
+
+    manip_tool_t m_tool[NUM_ARMS];
+    manip_wrench_t m_wrench[NUM_ARMS];
+
     bool interrupt[NUM_ARMS];             ///< Interrupts the specified arm's execution
+
+    double waistAngle;
     
     hubo_manip_pose_t pose[NUM_ARMS];     ///< Defines a pose target for the arm. Ignored if m_mode == manip_mode_t::MC_TRAJ
     double arm_angles[NUM_ARMS][ARM_JOINT_COUNT];   ///< Defines the joint angles for each arm
+
 
     double stopNorm;
     double convergeNorm;
@@ -175,6 +224,7 @@ typedef struct hubo_manip_cmd {
 }__attribute__((packed)) hubo_manip_cmd_t;
 
 
+// NOTE: Currently this structure is not being used
 typedef struct hubo_manip_param {
     
     double mx_P[NUM_ARMS][6];
