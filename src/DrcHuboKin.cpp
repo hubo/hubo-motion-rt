@@ -1,5 +1,6 @@
 
 #include "DrcHuboKin.h"
+#include <RobotKin/urdf_parsing.h>
 
 
 using namespace std;
@@ -8,8 +9,17 @@ using namespace RobotKin;
 
 
 DrcHuboKin::DrcHuboKin()
-    : Robot("/etc/hubo-ach/drchubo-v2.urdf", "drchubo")
+    : Robot()
 {
+    linkages_.resize(0);
+
+
+    if( !RobotKinURDF::loadURDF(*this, "/etc/hubo-ach/drchubo_v2.urdf") )
+         RobotKinURDF::loadURDF(*this, "/etc/hubo-ach/drchubo-v2.urdf");
+
+
+
+
     linkage("Body_RSP").name("RightArm");
     linkage("Body_LSP").name("LeftArm");
     linkage("Body_RHY").name("RightLeg");
