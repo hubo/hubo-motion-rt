@@ -38,10 +38,12 @@ public:
 
     ArmVector armRestValues[2];
     LegVector legRestValues[2];
-    
-protected:
+
+
     RobotKin::Constraints armConstraints;
 
+    
+protected:
 };
 
 

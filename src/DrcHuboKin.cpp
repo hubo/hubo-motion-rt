@@ -69,7 +69,7 @@ DrcHuboKin::DrcHuboKin()
     
     armConstraints.performNullSpaceTask = false;
     armConstraints.maxAttempts = 1;
-    armConstraints.maxIterations = 200;
+    armConstraints.maxIterations = 10;
     armConstraints.convergenceTolerance = 0.001;
     armConstraints.wrapToJointLimits = false;
     armConstraints.wrapSolutionToJointLimits = false;
@@ -478,8 +478,6 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
         qA = qAll.col(minInd).matrix();
     }
     // set the final joint angles to the solution closest to the previous solution
-
-    std::cout << qAll.matrix() << std::endl;
 
     for( int i=0; i<6; i++)
         qA(i) = max( min( qA(i), limits(i,1)), limits(i,0) );

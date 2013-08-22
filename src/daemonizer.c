@@ -265,19 +265,9 @@ void daemonize(const char *daemon_name, int priority)
     kill( parent, SIGUSR1 );
 
 
-    if( priority >= 0 )
-    {
-        // Real Time
-        struct sched_param param;
-        // Declare ourself as a real time task
 
-        param.sched_priority = priority;
-        if( sched_setscheduler(0, SCHED_FIFO, &param) == -1 )
-        {
-            fprintf(stderr, "sched_setscheduler Failed!\n");
-            exit( EXIT_FAILURE );
-        }
-    }
+    if( priority >= 0 )
+        daemon_prioritize(priority);
 
     // Lock memory
 
@@ -291,6 +281,21 @@ void daemonize(const char *daemon_name, int priority)
     stack_prefault();
 
     syslog( LOG_NOTICE, "Daemonization finished - Process Beginning" );
+}
+
+
+void daemon_prioritize(int priority)
+{
+    // Real Time
+    struct sched_param param;
+    // Declare ourself as a real time task
+
+    param.sched_priority = priority;
+    if( sched_setscheduler(0, SCHED_FIFO, &param) == -1 )
+    {
+        fprintf(stderr, "sched_setscheduler Failed!\n");
+        exit( EXIT_FAILURE );
+    }
 }
 
 

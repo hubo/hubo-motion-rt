@@ -66,7 +66,7 @@ add_executable(control-daemon ${control_daemon_source})
 target_link_libraries(control-daemon m rt ach huboparams daemonizer)
 
 add_library(huboctrl SHARED ${hubo_control_source})
-target_link_libraries(huboctrl ach)
+target_link_libraries(huboctrl ach daemonizer)
 #link_libraries(huboctrl)
 
 add_library(drchubokin SHARED ${drc_hubo_kin_source})
@@ -89,7 +89,7 @@ add_executable(calibrate ${calibrate_source})
 target_link_libraries(calibrate drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
 
 add_executable(ingress_reader src/readfile_ingress.cpp)
-target_link_libraries(ingress_reader drchubokin huboctrl RobotKin m rt huboparams daemonizer ach )
+target_link_libraries(ingress_reader drchubokin huboctrl daemonizer RobotKin m rt huboparams ach )
 
 # Install Libraries
 INSTALL(TARGETS daemonizer

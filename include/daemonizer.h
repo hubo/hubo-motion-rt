@@ -71,6 +71,7 @@ extern char lockfile[100];
 extern char gdaemon_name[100];
 
 void daemonize(const char *daemon_name, int priority);
+void daemon_prioritize(int priority);
 void redirectSigs();
 void daemon_close();
 void daemon_assert( int result, int line ); // Instructs the program to quit gracefully if the result is not true
