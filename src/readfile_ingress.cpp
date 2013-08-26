@@ -44,7 +44,8 @@ void readTraj(std::string filename)
     
     double time = 0, dt = 0;
     DrcHuboKin robot;
-    Hubo_Control hubo(false);
+//    Hubo_Control hubo(false);
+    Hubo_Control hubo;
 //    daemon_prioritize(40);
 
     robot.updateHubo(hubo);		// current state of hubo
@@ -73,6 +74,8 @@ void readTraj(std::string filename)
     qRL(AP) = -10*M_PI/180;
     qRL(AR) =   0*M_PI/180;
 
+    hubo.setRightLegAngles(qRL);
+
 
 //    robot.joint("LHY").value(0*3.1415926/180);
 //    robot.joint("LHR").value(0*3.1415926/180);
@@ -88,9 +91,11 @@ void readTraj(std::string filename)
     qLL(AP) = -10*M_PI/180;
     qLL(AR) =   0*M_PI/180;
 
+    hubo.setLeftLegAngles(qLL);
+
     robot.joint("WST").value(0*3.1415926/180);
 
-
+    hubo.setJointAngle(WST, 0);
 
 //    robot.joint("RSP").value(20*3.1415926/180);
 //    robot.joint("RSR").value(-45*3.1415926/180);
@@ -108,6 +113,9 @@ void readTraj(std::string filename)
     qRA(WP) = -20*M_PI/180;
     qRA(WR) = -45*M_PI/180;
 
+    hubo.setRightArmAngles(qRA);
+
+
 //    robot.joint("LSP").value(20*3.1415926/180);
 //    robot.joint("LSR").value(45*3.1415926/180);
 //    robot.joint("LSY").value(0*3.1415926/180);
@@ -124,6 +132,32 @@ void readTraj(std::string filename)
     qLA(WP) = -20*M_PI/180;
     qLA(WR) =  45*M_PI/180;
 
+    hubo.setLeftArmAngles(qLA);
+
+    hubo.setJointNominalSpeed(RAP, hubo.getJointNominalSpeed(RHP));
+    hubo.setJointNominalSpeed(RKN, 2*hubo.getJointNominalSpeed(RHP));
+
+    hubo.setJointNominalSpeed(LHP, hubo.getJointNominalSpeed(RHP));
+    hubo.setJointNominalSpeed(LAP, hubo.getJointNominalSpeed(LHP));
+    hubo.setJointNominalSpeed(LKN, 2*hubo.getJointNominalSpeed(LHP));
+
+    hubo.setArmCompliance(RIGHT, false);
+    hubo.setArmCompliance(LEFT, false);
+
+    hubo.sendControls();
+
+    do {
+        
+        hubo.update();
+        hubo.getRightArmAngleStates(qRAprev);
+        hubo.getLeftArmAngleStates(qLAprev);
+        hubo.getRightLegAngleStates(qRLprev);
+        hubo.getLeftLegAngleStates(qLLprev);
+        
+    } while(   (qRA-qRAprev).norm() > 0.075
+            || (qLA-qLAprev).norm() > 0.075
+            || (qLL-qLLprev).norm() > 0.075
+            || (qRL-qRLprev).norm() > 0.075 );
 
     RobotKin::TRANSFORM tfArm[2], tfLeg[2], startTfPelvis, stepTfPelvis, tfPelvis, stepTfArm[2], stepTfLeg[2], startTfArm[2], startTfLeg[2];
 
@@ -179,7 +213,8 @@ void readTraj(std::string filename)
 
 
         // Initialization
-        hubo.update(false);   // set it as true when running on robot
+//        hubo.update(false);   // set it as true when running on robot
+        hubo.update();
         dt = hubo.getTime() - time;
         time = hubo.getTime();
 //        robot.updateHubo(hubo);
@@ -187,6 +222,9 @@ void readTraj(std::string filename)
 //        hubo.getLeftArmAngles(qLA);
 //        hubo.getRightLegAngles(qRL);
 //        hubo.getLeftLegAngles(qLL);
+
+//        hubo.setArmCompliance(RIGHT, true);
+//        hubo.setArmCompliance(LEFT, true);
 
         // Isometry 3d transformation
         for (int i = 0; i < 5; ++i)
@@ -263,11 +301,12 @@ void readTraj(std::string filename)
 
         endTime = clock();
 
-
+/*
         cout << k << ":\t" << rk_result_to_string(rstatus) << ":"
              << rk_result_to_string(lstatus) << "\tTime: " << (endTime - countTime)/((double)CLOCKS_PER_SEC*tests) << " : " <<
                 (double)CLOCKS_PER_SEC*tests/(endTime-countTime)
-             /*<< "\t" << qRA.transpose() << "||\t" << qLA.transpose()*/ << endl;
+             << endl;
+*/
 		k = k + 1;
 
 
@@ -364,10 +403,10 @@ void readTraj(std::string filename)
 
         // controlling actual robot
         // 1. safe way (constant accleration)
-        //hubo.setLeftArmAngles(qLA);
-        //hubo.setRightArmAngles(qRA);
-        //hubo.setLeftLegAngles(qLL);
-        //hubo.setRightLegAngles(qRL);
+        hubo.setLeftArmAngles(qLA);
+        hubo.setRightArmAngles(qRA);
+        hubo.setLeftLegAngles(qLL);
+        hubo.setRightLegAngles(qRL);
 
 
         /*
@@ -381,7 +420,7 @@ hubo.setRightLegTraj(qLA, (qRL - qRLprev)/dt);
 
 */	
 
-        //	hubo.sendControls();    // send to actual robot
+        	hubo.sendControls();    // send to actual robot
 
         //qLAprev = qLA;
         //qRAprev = qRA;
