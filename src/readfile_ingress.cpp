@@ -36,10 +36,16 @@ int main(int argc, char **argv) {
 void readTraj(std::string filename)
 {
     ArmVector qLA, qRA, qLL, qRL, qLAprev, qRAprev, qLLprev, qRLprev;
+    Vector3d tempPel;
+    Vector3d tempArm;
+    Vector3d tempLeg;
+    AngleAxisd tempRotArm;
+    AngleAxisd tempRotLeg;
+    
     double time = 0, dt = 0;
     DrcHuboKin robot;
     Hubo_Control hubo(false);
-    daemon_prioritize(40);
+//    daemon_prioritize(40);
 
     robot.updateHubo(hubo);		// current state of hubo
 
@@ -189,7 +195,8 @@ void readTraj(std::string filename)
 
             if (i == 0)
             {
-                Vector3d tempPel(data[2], data[1], data[0]);
+//                Vector3d tempPel(data[2], data[1], data[0]);
+                tempPel << data[2], data[1], data[0];
                 tempPel = startTfPelvis.rotation().transpose()*tempPel;          // used when pelvis rotated
                 //std::cout<< "parsed pelvis " << "\t" << tempPel.transpose() << std::endl;
                 stepTfPelvis = TRANSFORM::Identity();
@@ -197,8 +204,9 @@ void readTraj(std::string filename)
             }
             else if(i > 0 && i < 3)
             {
-                Vector3d tempArm(data[pos],data[pos + 1], data[pos + 2]);
-                AngleAxisd tempRotArm(data[pos + (i-1) + 12], Vector3d(data[pos + (i-1) + 13], data[pos + (i-1) + 14], data[pos + (i-1) + 15]));
+//                Vector3d tempArm(data[pos],data[pos + 1], data[pos + 2]);
+                tempArm << data[pos], data[pos+1], data[pos+2];
+                tempRotArm = AngleAxisd(data[pos + (i-1) + 12], Vector3d(data[pos + (i-1) + 13], data[pos + (i-1) + 14], data[pos + (i-1) + 15]));
                 //std::cout<< "parsed arm " << i-1 << "\t" << tempArm.transpose()<< "\t:\t" << tempRotArm.angle() << ", " << tempRotArm.axis().transpose() << std::endl;
                 tempArm = startTfArm[i-1].rotation().transpose()*(tempArm - stepTfPelvis.translation());
                 tempRotArm = startTfArm[i-1].rotation().transpose()*tempRotArm*startTfArm[i-1].rotation();
@@ -208,8 +216,8 @@ void readTraj(std::string filename)
             }
             else
             {
-                Vector3d tempLeg(data[pos],data[pos + 1], data[pos + 2]);
-                AngleAxisd tempRotLeg(data[pos + (i-1) + 12], Vector3d(data[pos + (i-1) + 13], data[pos + (i-1) + 14], data[pos + (i-1) + 15]));
+                tempLeg << data[pos],data[pos + 1], data[pos + 2];
+                tempRotLeg = AngleAxisd(data[pos + (i-1) + 12], Vector3d(data[pos + (i-1) + 13], data[pos + (i-1) + 14], data[pos + (i-1) + 15]));
                 //std::cout<< "parsed leg " << i-2 << "\t" << tempLeg.transpose()<< "\t:\t" << tempRotLeg.angle() << ", " << tempRotLeg.axis().transpose() << std::endl;
                 tempLeg = startTfLeg[i-3].rotation().transpose()*(tempLeg - stepTfPelvis.translation());
                 tempRotLeg = startTfLeg[i-3].rotation().transpose()*tempRotLeg*startTfLeg[i-3].rotation();

@@ -44,6 +44,9 @@ public:
 
     
 protected:
+    
+    Eigen::VectorXd jointVals;
+    Eigen::VectorXd restVals;
 };
 
 

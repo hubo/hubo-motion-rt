@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(hubo-motion-rt)
 
+set(CMAKE_BUILD_TYPE "Release")
+
 # uninstall target
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"

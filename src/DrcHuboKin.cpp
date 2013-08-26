@@ -69,10 +69,13 @@ DrcHuboKin::DrcHuboKin()
     
     armConstraints.performNullSpaceTask = false;
     armConstraints.maxAttempts = 1;
-    armConstraints.maxIterations = 10;
+    armConstraints.maxIterations = 20;
     armConstraints.convergenceTolerance = 0.001;
     armConstraints.wrapToJointLimits = false;
     armConstraints.wrapSolutionToJointLimits = false;
+    
+    
+    jointVals.resize(7); restVals.resize(7);
 }
 
 DrcHuboKin::DrcHuboKin(string filename)
@@ -128,7 +131,8 @@ void DrcHuboKin::updateHubo(Hubo_Control &hubo)
                 || strcmp(jointNames[i], "LF4")==0
                 || strcmp(jointNames[i], "LF5")==0
                 || hubo.H_State.joint[i].active==0) )
-            setJointValue(jointNames[i], hubo.getJointAngleState(i));
+            setJointValue(jointNames[i], hubo.getJointAngleState(i), false);
+    updateFrames();
 }
 
 void DrcHuboKin::updateArmJoints(int side, const ArmVector &jointValues)
@@ -192,13 +196,8 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM B, const ArmVector &qPrev)
 {
-    VectorXd jointVals, restVals;
-    jointVals.resize(7); restVals.resize(7);
     for(int i=0; i<7; i++)
-    {
         jointVals(i) = qPrev(i);
-        restVals(i)  = armRestValues[side](i);
-    }
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
