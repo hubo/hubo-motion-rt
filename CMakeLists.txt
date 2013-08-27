@@ -22,6 +22,21 @@ set(BINARY_INSTALL_PATH /usr/local/bin/)
 set(CMAKE_C_FLAGS "-std=gnu99")
 
 #find_package(ach)
+find_path(REFLEX_INCLUDE "reflex.h" PATHS ${CMAKE_INCLUDE_PATH})
+
+if(${REFLEX_INCLUDE} STREQUAL REFLEX_INCLUDE-NOTFOUND)
+
+  message("\n -- INFO: Could not find reflex includes. We will NOT slerp with reflex/amino\n")
+  set(HAVE_REFLEX 0)
+
+else() # Reflex not found
+
+  message("\n -- Found reflex includes. We will slerp with reflex/amino\n")
+  add_definitions(-DHAVE_REFLEX)
+  set(HAVE_REFLEX 1)
+
+endif() # Reflex not found
+
 
 set( CMAKE_VERBOSE_MAKEFILE true )
 
@@ -81,7 +96,11 @@ add_executable(balance-daemon ${balance_daemon_source})
 target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBRARIES} daemonizer drchubokin huboctrl)
 
 add_executable(manip-daemon ${manip_daemon_source})
-target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
+if(${REFLEX_INCLUDE} STREQUAL REFLEX_INCLUDE-NOTFOUND)
+  target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
+else() # Reflex not found
+  target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl reflex amino)
+endif()  # Reflex not found
 
 add_executable(gravityTest ${gravityTest_source})
 target_link_libraries(gravityTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)

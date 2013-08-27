@@ -62,7 +62,8 @@ typedef enum {
     MC_TRANS_QUAT,
     MC_ANGLES,
     MC_TRAJ,
-    MC_TELEOP
+    MC_TELEOP,
+    MC_DUAL_TELEOP
 
 }__attribute__((packed)) manip_mode_t;
 
