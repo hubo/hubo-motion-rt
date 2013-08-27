@@ -51,7 +51,9 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "include/hubo-zmp.h" )
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
-                              "include/manip.h" )
+                              "include/manip.h"
+                              "src/Slerper.cpp"
+                              "include/Slerper.h" )
 
 file(GLOB gravityTest_source "src/gravityTest.cpp")
 
@@ -89,9 +91,6 @@ target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams 
 
 add_executable(calibrate ${calibrate_source})
 target_link_libraries(calibrate drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
-
-add_executable(ingress_reader src/readfile_ingress.cpp)
-target_link_libraries(ingress_reader drchubokin huboctrl daemonizer RobotKin m rt huboparams ach )
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
