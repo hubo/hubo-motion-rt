@@ -45,6 +45,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 {
     std::cerr << "We do not currently have reflex/amino support" << std::endl;
     
+    return;
     
     hubo.update();
     kin.updateHubo(hubo);

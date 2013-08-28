@@ -22,7 +22,10 @@ set(BINARY_INSTALL_PATH /usr/local/bin/)
 set(CMAKE_C_FLAGS "-std=gnu99")
 
 #find_package(ach)
+#NOTE: This dummy business should be addressed
 find_path(REFLEX_INCLUDE "reflex.h" PATHS ${CMAKE_INCLUDE_PATH})
+
+message(${REFLEX_INCLUDE})
 
 if(${REFLEX_INCLUDE} STREQUAL REFLEX_INCLUDE-NOTFOUND)
 
@@ -78,6 +81,8 @@ file(GLOB calibrate_source "src/calibrate.cpp"
                            "src/calibrationAPI.cpp"
                            "include/calibration.h")
 
+file(GLOB manipTest_source "src/manipTest.cpp")
+
 add_library(daemonizer SHARED ${daemonizer_source})
 #link_libraries(daemonizer)
 
@@ -110,6 +115,10 @@ target_link_libraries(trajTest drchubokin huboctrl RobotKin m rt ach huboparams 
 
 add_executable(calibrate ${calibrate_source})
 target_link_libraries(calibrate drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
+add_executable(manipTest ${manipTest_source})
+target_link_libraries(manipTest drchubokin huboctrl RobotKin m rt ach huboparams daemonizer)
+
 
 # Install Libraries
 INSTALL(TARGETS daemonizer
