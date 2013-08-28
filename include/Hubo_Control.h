@@ -195,28 +195,28 @@ public:
      * Sets a joint-space trajectory waypoint for all the arms angles on the specified
      * side.
      */
-    ctrl_flag_t setArmTraj(int side, ArmVector angles, ArmVector vels, bool send);
+    ctrl_flag_t setArmTraj(int side, ArmVector angles, ArmVector vels, bool send=false);
     /**
      * Sets a joint-space trajectory waypoint for all angles on the Left Arm.
      */
-    ctrl_flag_t setLeftArmTraj(ArmVector angles, ArmVector vels, bool send);
+    ctrl_flag_t setLeftArmTraj(ArmVector angles, ArmVector vels, bool send=false);
     /**
      * Sets a joint-space trajectory waypoint for all angles on the Right Arm.
      */
-    ctrl_flag_t setRightArmTraj(ArmVector angles, ArmVector vels, bool send);
+    ctrl_flag_t setRightArmTraj(ArmVector angles, ArmVector vels, bool send=false);
     /**
      * Sets a joint-space trajectory waypoint for all the leg angles on the specified
      * side.
      */
-    ctrl_flag_t setLegTraj(int side, ArmVector angles, ArmVector vels, bool send);
+    ctrl_flag_t setLegTraj(int side, ArmVector angles, ArmVector vels, bool send=false);
     /**
      * Sets a joint-space trajectory waypoint for all angles on the Left Leg.
      */
-    ctrl_flag_t setLeftLegTraj(LegVector angles, LegVector vels, bool send);
+    ctrl_flag_t setLeftLegTraj(LegVector angles, LegVector vels, bool send=false);
     /**
      * Sets a joint-space trajectory waypoint for all angles on the Left Leg.
      */
-    ctrl_flag_t setRightLegTraj(LegVector angles, LegVector vels, bool send);
+    ctrl_flag_t setRightLegTraj(LegVector angles, LegVector vels, bool send=false);
     /**
      * Toggles joint-level friction (back-EMF) compensation in the specified
      * joint.

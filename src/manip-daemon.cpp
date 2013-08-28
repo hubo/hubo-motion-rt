@@ -36,6 +36,7 @@
 
 #include "DrcHuboKin.h"
 #include "manip.h"
+#include "Slerper.h"
 
 extern "C" {
 // For process management
@@ -71,6 +72,7 @@ int main( int argc, char **argv )
 
     DrcHuboKin kin;
     kin.updateHubo(hubo);
+    Slerper slerp;
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
@@ -112,14 +114,21 @@ int main( int argc, char **argv )
     ArmVector torques[2];
     Vector6d eeWrench[2];
     
+    
+    double time=hubo.getTime(), dt=0;
     hubo.update(true);
+    dt = hubo.getTime() - time;
+    time = hubo.getTime();
     
     size_t fs;
     while( !daemon_sig_quit )
     {
         // Update hubo, and get latest manipulation and override commands from ach
         hubo.update(true);
+        dt = hubo.getTime() - time;
+        time = hubo.getTime();
         kin.updateHubo(hubo);
+        
         ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
 
@@ -140,6 +149,9 @@ int main( int argc, char **argv )
             // Handle arm motions
             switch( manip_cmd[side].m_mode[side] )
             {
+                case MC_TELEOP:
+                case MC_DUAL_TELEOP:
+                    slerp.commenceSlerping(side, manip_cmd[side], hubo, dt); break;
                 case MC_TRANS_EULER:
                     handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRANS_QUAT:
