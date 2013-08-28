@@ -457,9 +457,6 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     hubo.setJointNominalSpeed( LKN, 0.8 );
     hubo.setJointNominalAcceleration( LKN, 0.8 );
 
-//    hubo.setJointAngle( RSR, currentTrajectory->traj[0].angles[RSR] + hubo.getJointAngleMax(RSR) );
-//    hubo.setJointAngle( LSR, currentTrajectory->traj[0].angles[LSR] + hubo.getJointAngleMin(LSR) );
-
     hubo.sendControls();
 
     // Wait specified time for joints to get into initial configuration,
@@ -482,10 +479,6 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
              && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
              && NK1!=i && NK2!=i && NKY!=i && LWR!=i && RWR!=i && RWY!=i && RWP!=i) //FIXME
                 err = (hubo.getJointAngleState( i )-currentTrajectory->traj[0].angles[i]);
-//            if( LSR == i )
-//                err -= hubo.getJointAngleMin(i);
-//            if( RSR == i )
-//                err -= hubo.getJointAngleMax(i);
 
             norm += err*err;
             if( fabs(err) > fabs(biggestErr) )
@@ -685,7 +678,6 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     //straightenBack( hubo, nextElem, state, gains, dt );
     //complyKnee( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
-//    double vel, accel;
 
 //    std::cout << "after: ";
 //    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
@@ -695,35 +687,9 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     // current timestep, which has been adjusted based on feedback.
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-//        hubo.setJointTraj( i, currentElem.angles[i] );
-//        hubo.setJointTraj( i, nextElem.angles[i] );
-//        hubo.setJointAngle( i, nextElem.angles[i] );
         hubo.passJointAngle( i, tempNextElem.angles[i] );
 
-
-//        vel = (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ;
-//        hubo.setJointVelocity( i, vel );
-//        hubo.setJointNominalSpeed(i, vel);
-//        hubo.setJointNominalSpeed( i, 1*
-//                (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ/2.0 );
-//               (nextElem.angles[i]-currentElem.angles[i])*ZMP_TRAJ_FREQ_HZ );
-//               (nextElem.angles[i]-currentElem.angles[i])/dt );
-
-        // Compute and set joint acceleration, used by the control daemon,
-        // based on current and next joint velocities. Save new velocity in
-        // the state.V0 variable for use on next timestep.
-        //FIXME accel = (vel-state.V0[i])*ZMP_TRAJ_FREQ_HZ;
-        //accel = (vel-state.V0[i])/dt;
-        //state.V0[i] = vel;
-        //hubo.setJointNominalAcceleration( i, 2*accel );
-//        if( i == RHY || i == RHR || i == RHP || i == RKN || i == RAR || i==RAP )
-//            std::cout << "(" << vel << ":" << accel << ")" << "\t";
     }
-
-//    hubo.setJointAngle( RSR, nextElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
-//    hubo.setJointAngle( LSR, nextElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
-//    hubo.setJointTraj( RSR, currentElem.angles[RSR] + hubo.getJointAngleMax(RSR) );
-//    hubo.setJointTraj( LSR, currentElem.angles[LSR] + hubo.getJointAngleMin(LSR) );
 
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
