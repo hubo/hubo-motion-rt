@@ -117,21 +117,37 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     return armTorques(side, jointTorque, eeWrench, jointAngles);
 }
 
-void DrcHuboKin::updateHubo(Hubo_Control &hubo)
+void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
 {
-    for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        if( !(strcmp(jointNames[i], "RF1")==0
-                || strcmp(jointNames[i], "RF2")==0
-                || strcmp(jointNames[i], "RF3")==0
-                || strcmp(jointNames[i], "RF4")==0
-                || strcmp(jointNames[i], "RF5")==0
-                || strcmp(jointNames[i], "LF1")==0
-                || strcmp(jointNames[i], "LF2")==0
-                || strcmp(jointNames[i], "LF3")==0
-                || strcmp(jointNames[i], "LF4")==0
-                || strcmp(jointNames[i], "LF5")==0
-                || hubo.H_State.joint[i].active==0) )
-            setJointValue(jointNames[i], hubo.getJointAngleState(i), false);
+    if(state)
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+            if( !(strcmp(jointNames[i], "RF1")==0
+                    || strcmp(jointNames[i], "RF2")==0
+                    || strcmp(jointNames[i], "RF3")==0
+                    || strcmp(jointNames[i], "RF4")==0
+                    || strcmp(jointNames[i], "RF5")==0
+                    || strcmp(jointNames[i], "LF1")==0
+                    || strcmp(jointNames[i], "LF2")==0
+                    || strcmp(jointNames[i], "LF3")==0
+                    || strcmp(jointNames[i], "LF4")==0
+                    || strcmp(jointNames[i], "LF5")==0
+                    || hubo.H_State.joint[i].active==0) )
+                setJointValue(jointNames[i], hubo.getJointAngleState(i), false);
+    else
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+            if( !(strcmp(jointNames[i], "RF1")==0
+                    || strcmp(jointNames[i], "RF2")==0
+                    || strcmp(jointNames[i], "RF3")==0
+                    || strcmp(jointNames[i], "RF4")==0
+                    || strcmp(jointNames[i], "RF5")==0
+                    || strcmp(jointNames[i], "LF1")==0
+                    || strcmp(jointNames[i], "LF2")==0
+                    || strcmp(jointNames[i], "LF3")==0
+                    || strcmp(jointNames[i], "LF4")==0
+                    || strcmp(jointNames[i], "LF5")==0
+                    || hubo.H_State.joint[i].active==0) )
+                setJointValue(jointNames[i], hubo.getJointAngle(i), false);
+
     updateFrames();
 }
 

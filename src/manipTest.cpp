@@ -15,12 +15,12 @@ int main(int argc, char **argv)
 
     Hubo_Control hubo;
     DrcHuboKin kin;
-    kin.updateHubo(hubo);
+    kin.updateHubo(hubo, false);
 
     hubo_manip_cmd_t manip_cmd;
 
     TRANSFORM pose = kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP"));
-    pose.translate(TRANSLATION(0,0,0.1));
+    pose.pretranslate(TRANSLATION(0.0,0.0,0.1));
 
     manip_cmd.pose[RIGHT].x = pose.translation().x();
     manip_cmd.pose[RIGHT].y = pose.translation().y();

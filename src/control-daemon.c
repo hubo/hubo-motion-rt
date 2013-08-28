@@ -449,6 +449,9 @@ void controlLoop()
                             if( timeElapse[jnt] == 0 )
                                 startWaypoint[jnt] = H_ref.ref[jnt];
 
+                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+                                ctrl.joint[jnt].velocity = 0.0;
+
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
                                 ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
                             else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
@@ -467,7 +470,7 @@ void controlLoop()
                             dr[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity*dt
                                     + ctrl.joint[jnt].correctness*(
                                         (ctrl.joint[jnt].position - startWaypoint[jnt])
-                                        *timeElapse[jnt]*ctrl.joint[jnt].frequency
+                                        *(timeElapse[jnt]+dt)*ctrl.joint[jnt].frequency
                                         - (H_ref.ref[jnt] - startWaypoint[jnt])
                                         );
 
@@ -476,6 +479,8 @@ void controlLoop()
                                 dr[jnt] = sign(dr[jnt])*fabs(ctrl.joint[jnt].maxSpeed*dt);
 
                             H_ref.ref[jnt] += dr[jnt];
+
+                            fprintf(stdout, "%f\n", H_ref.ref[jnt]);
 
                             V[jnt] = dr[jnt]/dt;
                         }
