@@ -203,6 +203,20 @@ protected:
     void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt );
 
+    /**
+     * \brief During single support phase if the swing foot feels
+     * any force in the z-direction the knee joints (as well as the ankle and hip
+     * pitch joints) will comply using a spring, mass and damper controller.
+     * \param hubo Hubo_Control object to get state info from
+     * \param elem ZMP trajectory element we are currently executing
+     * \param state Nudge state which stores the integrated knee offset
+       state.
+     * \param gains Knee gain values for balancing
+     * \param dt Time change between last update and current update
+     * \return void
+    */
+    void landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
+        nudge_state_t &state, balance_gains_t &gains, double dt );
 
     /**
      * \brief Send balance state, which include balance mode, walk
