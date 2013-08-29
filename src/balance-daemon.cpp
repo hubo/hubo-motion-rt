@@ -79,9 +79,9 @@ void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen:
 int main(int argc, char **argv)
 {
     Hubo_Control hubo("balance-daemon", 35);
-    DrcHuboKin kin;
-
     //Hubo_Control hubo;
+
+    DrcHuboKin kin;
 
     hubo.storeAllDefaults();
 
@@ -115,10 +115,10 @@ int main(int argc, char **argv)
     memset( &nudge, 0, sizeof(nudge) );
     memset( &ovr, 0, sizeof(ovr) );
     memset( &manip_state, 0, sizeof(manip_state) );
-    
-    hubo.update();
-    double dt, time=hubo.getTime();
 
+    hubo.update();
+
+    double dt, time=hubo.getTime();
     size_t fs;
     while( !daemon_sig_quit )
     {
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
         time = hubo.getTime();
         if( dt <= 0 )
         {
-            fprintf(stderr, "Something unnatural has happened... %f\n", dt);
+            fprintf(stderr, "Something unnatural has happened in the balance daemon... %f\n", dt);
             continue;
         }
 
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
                 ovr.m_override = OVR_ACQUIESCENT;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
 
-                staticBalance(hubo, kin, cmd, gains, dt);
+                //staticBalance(hubo, kin, cmd, gains, dt);
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {

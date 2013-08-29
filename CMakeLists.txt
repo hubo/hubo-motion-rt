@@ -66,6 +66,8 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "include/balance-daemon.h"
                                 "src/Walker.cpp"
                                 "include/Walker.h"
+                                "src/ImpedanceController.cpp"
+                                "include/ImpedanceController.h"
                                 "include/hubo-zmp.h" )
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
@@ -126,12 +128,14 @@ INSTALL(TARGETS daemonizer
         DESTINATION ${LIBRARY_INSTALL_PATH})
 
 # Install Headers
-INSTALL(FILES include/Hubo_Control.h 
+INSTALL(FILES include/Hubo_Control.h
+              include/daemonizer.h
               include/control-daemon.h 
               include/balance-daemon.h
               include/manip.h
               include/hubo-zmp.h
               include/DrcHuboKin.h
+              include/motion-trajectory.h
         DESTINATION /usr/local/include/)
 
 # Install Tables

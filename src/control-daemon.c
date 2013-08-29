@@ -289,7 +289,7 @@ void controlLoop()
             else if( dt < 0 )
                 fprintf(stderr, "You have traveled backwards through time by %f seconds!\n", -dt);
             else if( dt == 0 )
-                fprintf(stderr, "Something unnatural has happened...\n");
+                fprintf(stderr, "Something unnatural has happened on 254 in the control-daemon...\n");
         }
         else
             fprintf( stderr, "Unexpected ach state: %s\n", ach_result_to_string(sresult) );

@@ -155,10 +155,18 @@ StopHubo()
 	;;
 
 	*)
-        
         for entry in $( ls $LOCK_DIR )
         do
-            sudo killall $entry
+            pid=$(sudo cat $LOCK_DIR/$entry)
+            if [ "$pid" != "" ]
+            then
+                    echo "Killing the $entry with \"kill -s SIGTERM pid\""
+                    sudo kill -s SIGTERM $pid
+            else
+                echo "Killing the $entry with \"killall\""
+                sudo killall $entry
+            fi
+
         done
 
         sleep 1
@@ -321,7 +329,15 @@ KillHubo()
 	*)
         for entry in $( ls $LOCK_DIR )
         do
-            sudo killall -v -s SIGKILL $entry
+            pid=$(sudo cat $LOCK_DIR/$entry)
+            if [ "$pid" != "" ]
+            then
+                echo "Killing the $entry with \"kill -v -s SIGKILL pid\""
+                sudo kill -v -s SIGKILL $pid
+            else
+                echo "Killing the $entry with \"killall -v -s SIGKILL\""
+                sudo killall -v -s SIGKILL $entry
+            fi
             sudo rm $LOCK_DIR/$entry
         done
 	;;
