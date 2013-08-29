@@ -10,8 +10,14 @@ using namespace RobotKin;
 
 int main(int argc, char **argv)
 {
-    int side = LEFT;
+    int side = RIGHT;
     std::string limb;
+    double dy = 0.1;
+    if(side == LEFT)
+        dy = fabs(dy);
+    else if(side == RIGHT)
+        dy = -fabs(dy);
+        
 
     if(side==RIGHT)
         limb = "RightArm";
@@ -33,7 +39,7 @@ int main(int argc, char **argv)
 
     std::cout << pose.matrix() << std::endl;
     
-    goal.translate( TRANSLATION(0.1,0.1,0.25) );
+    goal.translate( TRANSLATION(0.1,dy,0.25) );
     goal.translate( pose.translation() );
     goal.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(0, 1, 0)));
     goal.rotate( pose.rotation() );
