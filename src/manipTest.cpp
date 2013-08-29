@@ -10,28 +10,41 @@ using namespace RobotKin;
 
 int main(int argc, char **argv)
 {
+    int side = LEFT;
+    std::string limb;
+
+    if(side==RIGHT)
+        limb = "RightArm";
+    else
+        limb = "LeftArm";
+
     ach_channel_t chan_manip_cmd;
     ach_open(&chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL);
 
     Hubo_Control hubo;
+    hubo.update();
     DrcHuboKin kin;
-    kin.updateHubo(hubo, false);
+    kin.updateHubo(hubo);
 
     hubo_manip_cmd_t manip_cmd;
 
-    TRANSFORM pose = kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP"));
-    pose.pretranslate(TRANSLATION(0.0,0.0,0.1));
+    TRANSFORM pose = kin.linkage(limb).tool().withRespectTo(kin.joint("RAP"));
+    pose.pretranslate(TRANSLATION(0.0,-0.3,0.0));
+//    pose.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(1, 0, 0)));
 
-    manip_cmd.pose[RIGHT].x = pose.translation().x();
-    manip_cmd.pose[RIGHT].y = pose.translation().y();
-    manip_cmd.pose[RIGHT].z = pose.translation().z();
+    
+
+    manip_cmd.pose[side].x = pose.translation().x();
+    manip_cmd.pose[side].y = pose.translation().y();
+    manip_cmd.pose[side].z = pose.translation().z();
     Eigen::Quaterniond quat(pose.rotation());
-    manip_cmd.pose[RIGHT].w = quat.w();
-    manip_cmd.pose[RIGHT].i = quat.x();
-    manip_cmd.pose[RIGHT].j = quat.y();
-    manip_cmd.pose[RIGHT].k = quat.z();
+    manip_cmd.pose[side].w = quat.w();
+    manip_cmd.pose[side].i = quat.x();
+    manip_cmd.pose[side].j = quat.y();
+    manip_cmd.pose[side].k = quat.z();
 
-    manip_cmd.m_mode[RIGHT] = MC_TELEOP;
+    manip_cmd.m_mode[side] = MC_TELEOP;
+    manip_cmd.interrupt[side] = true;
 
     ach_put(&chan_manip_cmd, &manip_cmd, sizeof(manip_cmd));
 

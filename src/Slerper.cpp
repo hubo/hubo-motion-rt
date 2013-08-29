@@ -17,6 +17,7 @@ Slerper::Slerper() :
     aa_mem_region_init(&reg, 1024*32);
 #endif //HAVE_REFLEX
 
+    kin.armConstraints.maxAttempts = 2;
     
     nomSpeed = 0.15;
     nomAcc   = 0.2;
@@ -38,6 +39,8 @@ Slerper::Slerper() :
     
     limb[RIGHT] = "RightArm";
     limb[LEFT]  = "LeftArm";
+
+    
 
 }
 
@@ -84,16 +87,23 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         alt = RIGHT;
     else
         alt = LEFT;
+
+    kin.resetTool(side);
+    
+    if(dual)
+        kin.lockTool(alt);
     
     
     start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
     next = TRANSFORM::Identity();
-    
+   
+/* 
     if(dual)
     {
         altStart = kin.linkage(limb[alt]).tool().withRespectTo(kin.joint("RAP"));
         altNext = TRANSFORM::Identity();
     }
+*/
     
     goal = TRANSFORM::Identity();
     goal.translate(TRANSLATION(cmd.pose[side].x, 
@@ -129,18 +139,19 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     next.translate(dr[side]);
     next.translate(start.translation());
+/*
     if(dual)
     {
         altNext.translate(dr[side]);
         altNext.translate(altStart.translation());
     }
-    
+*/  
 //    angax = goal.rotation()*start.rotation().transpose();
     angax = goal.rotation()*start.rotation().transpose();
     
     angle[side] = angax.angle();
 
-cout << "angle: " << angle[side] << "\t";
+//cout << "angle: " << angle[side] << "\t";
     
     if( angle[side] > M_PI )
         angle[side] = angle[side]-2*M_PI;
@@ -159,29 +170,36 @@ cout << "angle: " << angle[side] << "\t";
     
     if( fabs(angle[side]) > fabs(W[side]*dt) || angle[side]*W[side] < 0 )
         angle[side] = W[side]*dt;
-cout << "angle: " << angle[side] << "\t";
+//cout << "angle: " << angle[side] << "\t";
     
     W[side] = angle[side]/dt;
     
     next.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
     next.rotate(start.rotation());
+
+/*
     if(dual)
     {
         altNext.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
         altNext.rotate(altStart.rotation());
     }
+*/
     
 //    cout << "Start : " << endl << start.matrix() << endl << endl;
 //    cout << "Next  : " << dr[side].transpose() << " (" << angle[side] << ")" << endl << next.matrix() << endl << endl;
     //std::cout << next.translation().z() << "\t:\t";
 
 
-
-    next = goal;
-
+//    next = goal;
+/*
+cout << endl << "Start:" << endl << start.matrix() << endl << endl
+     << "Next:" << endl << next.matrix() << endl << endl 
+     << "Goal:" << endl << goal.matrix() << endl << endl;
+*/    
     next = kin.joint("RAP").respectToRobot()*next;
     if(dual)
         altNext = kin.joint("RAP").respectToRobot()*altNext;
+
     
     hubo.getArmAngles(side, armAngles[side]);
     if(dual)
@@ -191,14 +209,31 @@ cout << "angle: " << angle[side] << "\t";
     if(dual)
         lastAngles[alt] = armAngles[alt];
     
-    kin.armIK(side, armAngles[side], next);
+    rk_result_t result = kin.armIK(side, armAngles[side], next);
     if(dual)
-        kin.armIK(alt, armAngles[alt], altNext);
+        kin.armIK(alt, armAngles[alt], next);
 
-    cout << endl << start.matrix() << endl << endl
-         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
+
+
+    if( result != RK_SOLVED )
+        cout << rk_result_to_string(result) << endl;
+/*
+cout     << "EE:  " << endl << next.matrix() << endl << endl
+         << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
+         << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
+*/
+/*
+cout  << "Angles: "  << armAngles[side].transpose() << endl
+      << "Last:   "  << lastAngles[side].transpose() << endl
+      << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
+*/     
+
+//    cout << endl << endl << goal.matrix() << endl << endl
+//         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
     
 //    hubo.setArmTraj(side, armAngles[side], (armAngles[side]-lastAngles[side])/dt);
+    hubo.setArmAngles(side, armAngles[side]);
+/*
     hubo.passJointAngle(RSP, armAngles[side](SP));
     hubo.passJointAngle(RSR, armAngles[side](SR));
     hubo.passJointAngle(RSY, armAngles[side](SY));
@@ -206,6 +241,7 @@ cout << "angle: " << angle[side] << "\t";
     hubo.passJointAngle(RWY, armAngles[side](WY));
     hubo.passJointAngle(RWP, armAngles[side](WP));
     hubo.passJointAngle(RWR, armAngles[side](WR));
+*/
     if(dual)
         hubo.setArmTraj(alt, armAngles[alt], (armAngles[alt]-lastAngles[alt])/dt);
 
@@ -217,7 +253,7 @@ cout << "angle: " << angle[side] << "\t";
         //      << armAngles[side].transpose()
           //    << std::endl;
     
-    cout << endl;
+//    cout << endl;
 }
 #endif //HAVE_REFLEX
 

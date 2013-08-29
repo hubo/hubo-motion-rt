@@ -36,11 +36,13 @@ public:
 
     void updateHubo(Hubo_Control& hubo, bool state=true);
 
-    ArmVector armRestValues[2];
-    LegVector legRestValues[2];
+    Eigen::VectorXd armRestValues;
 
 
     RobotKin::Constraints armConstraints;
+
+    void resetTool(int side);
+    void lockTool(int side);
 
     
 protected:

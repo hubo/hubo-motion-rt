@@ -31,6 +31,9 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
     joint("TSY").name("WST");
 
+    joint("LEB").max(0);
+    joint("REB").max(0);
+
     // Note: These are all basically meaningless
 //    joint("RF11").name("RF1");
 //    joint("RF21").name("RF2");
@@ -57,15 +60,9 @@ DrcHuboKin::DrcHuboKin()
 //    updateFrames();
 
 
-    armRestValues[RIGHT] << -20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
-            0, 0, 0;
-    armRestValues[LEFT]  <<  20*M_PI/180, 0, 0, -30*M_PI/180, 0, 0, 0,
-            0, 0, 0;
+    armRestValues.resize(7);
+    armRestValues <<  0, 0, 0, -30*M_PI/180, 0, 0, 0;
 
-    legRestValues[RIGHT] << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
-                            0, 0, 0, 0;
-    legRestValues[LEFT]  << 0, 0, -10*M_PI/180, 20*M_PI/180, -10*M_PI/180, 0,
-            0, 0, 0, 0;
     
     armConstraints.performNullSpaceTask = false;
     armConstraints.maxAttempts = 1;
@@ -73,15 +70,37 @@ DrcHuboKin::DrcHuboKin()
     armConstraints.convergenceTolerance = 0.001;
     armConstraints.wrapToJointLimits = false;
     armConstraints.wrapSolutionToJointLimits = false;
+    armConstraints.restingValues(armRestValues);
     
     
-    jointVals.resize(7); restVals.resize(7);
+    jointVals.resize(7); 
 }
 
 DrcHuboKin::DrcHuboKin(string filename)
     : Robot(filename, "drchubo")
 {
+}
 
+void DrcHuboKin::resetTool(int side)
+{
+
+    if( side == LEFT )
+        linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
+    else
+        linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
+
+}
+
+void DrcHuboKin::lockTool(int side)
+{
+    if( side == LEFT )
+        linkage("LeftArm").tool().respectToFixed(
+                  linkage("RightArm").tool().withRespectTo(
+                          joint("LWR")  ) );
+    else
+        linkage("RightArm").tool().respectToFixed(
+                  linkage("LeftArm").tool().withRespectTo(
+                          joint("RWR")  ) );
 }
 
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
@@ -213,7 +232,7 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM B, const ArmVector &qPrev)
 {
     for(int i=0; i<7; i++)
-        jointVals(i) = qPrev(i);
+        jointVals[i] = qPrev[i];
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
@@ -221,11 +240,12 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     else
         result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B, armConstraints);
 
+
     for(int i=0; i<7; i++)
-        q(i) = jointVals(i);
+        q[i] = jointVals[i];
 
     for(int i=7; i<ARM_JOINT_COUNT; i++)
-        q(i) = 0;
+        q[i] = 0;
 
     return result;
 }
