@@ -42,8 +42,12 @@ DrcHuboKin::DrcHuboKin()
 
     updateFrames();
 
-    linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
-    linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
+    RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
+    toolTf.translate(joint("RWR_dummy").respectToFixed().translation());
+    linkage("RightArm").tool().respectToFixed(toolTf);
+    toolTf = RobotKin::TRANSFORM::Identity();
+    toolTf.translate(joint("LWR_dummy").respectToFixed().translation());
+    linkage("LeftArm").tool().respectToFixed(toolTf);
 
 //    TRANSFORM foot = joint("LAR_dummy").respectToFixed();
 //    std::cout << foot.matrix() << std::endl;
