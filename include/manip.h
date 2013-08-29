@@ -207,6 +207,7 @@ typedef struct hubo_manip_cmd {
     manip_mode_t m_mode[NUM_ARMS];        ///< Defines what type of manipulation to execute: trajectory or pose
     manip_ctrl_t m_ctrl[NUM_ARMS];        ///< Defines the type of compliance to use
     manip_grasp_t m_grasp[NUM_ARMS];      ///< Defines at what point to perform a grasp
+    manip_grasp_t trigger;
 
     manip_tool_t m_tool[NUM_ARMS];
     manip_wrench_t m_wrench[NUM_ARMS];

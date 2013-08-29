@@ -66,6 +66,10 @@ void grasp_close( Hubo_Control &hubo, int side );
 void grasp_open( Hubo_Control &hubo, int side );
 void grasp_limp( Hubo_Control &hubo, int side );
 
+void trigger_close( Hubo_Control &hubo );
+void trigger_open( Hubo_Control &hubo );
+void trigger_limp( Hubo_Control &hubo );
+
 int main( int argc, char **argv )
 {
 //    Hubo_Control hubo("manip-daemon");
@@ -132,6 +136,18 @@ int main( int argc, char **argv )
         
         ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
+
+        if(manip_req.trigger == MC_GRASP_NOW ||
+                ( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_GRASP_AT_END
+                 && manip_state.mode_state[RIGHT]==MC_READY ) )
+            trigger_close(hubo);
+        else if(manip_req.trigger == MC_RELEASE_NOW ||
+                ( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_RELEASE_AT_END
+                && manip_state.mode_state[RIGHT]==MC_READY ) )
+            trigger_open(hubo);
+        else if( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_GRASP_LIMP )
+            trigger_limp(hubo);
+
 
         manip_state.override = override_cmd.m_override;
 
@@ -261,18 +277,10 @@ void grasp_close( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, 1);
-        hubo.passJointAngle(RF2, 1);
-        hubo.passJointAngle(RF3, 1);
-        hubo.passJointAngle(RF4, 1);
-        hubo.passJointAngle(RF5, 1);
     }
     else
     {
         hubo.passJointAngle(LF1, 1);
-        hubo.passJointAngle(LF2, 1);
-        hubo.passJointAngle(LF3, 1);
-        hubo.passJointAngle(LF4, 1);
-        hubo.passJointAngle(LF5, 1);
     }
 }
 
@@ -281,18 +289,10 @@ void grasp_open( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, -1);
-        hubo.passJointAngle(RF2, -1);
-        hubo.passJointAngle(RF3, -1);
-        hubo.passJointAngle(RF4, -1);
-        hubo.passJointAngle(RF5, -1);
     }
     else
     {
         hubo.passJointAngle(LF1, -1);
-        hubo.passJointAngle(LF2, -1);
-        hubo.passJointAngle(LF3, -1);
-        hubo.passJointAngle(LF4, -1);
-        hubo.passJointAngle(LF5, -1);
     }
 }
 
@@ -301,19 +301,26 @@ void grasp_limp( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, 0);
-        hubo.passJointAngle(RF2, 0);
-        hubo.passJointAngle(RF3, 0);
-        hubo.passJointAngle(RF4, 0);
-        hubo.passJointAngle(RF5, 0);
     }
     else
     {
         hubo.passJointAngle(LF1, 0);
-        hubo.passJointAngle(LF2, 0);
-        hubo.passJointAngle(LF3, 0);
-        hubo.passJointAngle(LF4, 0);
-        hubo.passJointAngle(LF5, 0);
     }
+}
+
+void trigger_close( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, 1);
+}
+
+void trigger_open( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, -1);
+}
+
+void trigger_limp( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, 0);
 }
 
 manip_error_t handle_halt(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
