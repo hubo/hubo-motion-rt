@@ -539,7 +539,7 @@ void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
         return;
     }
     else
-        values(EB) = 30*M_PI/180;
+        values(EB) = -30*M_PI/180;
 }
 
 
