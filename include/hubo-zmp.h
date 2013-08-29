@@ -18,6 +18,7 @@
 #include <vector>
 #include "stdint.h"
 #include <hubo.h> //!< hubo main include
+#include <control-daemon.h>
 
 /// Ach channel name for zmp trajectory
 #define HUBO_CHAN_ZMP_TRAJ_NAME "hubo-zmp-traj"
@@ -243,6 +244,11 @@ typedef struct walker_state {
   stepStance_t goalStance;      //!< goal stance of current step
   int cyclesLeft;               //!< cycles left in current step trajectory
 }__attribute__((packed)) walker_state_t;
+
+typedef struct arm_states {
+    int should_use;
+    double arm_joint_states[2][ARM_JOINT_COUNT];
+}__attribute__((packed)) arm_states_t;
 
 
 #endif // _HUBO_ZMP_H_
