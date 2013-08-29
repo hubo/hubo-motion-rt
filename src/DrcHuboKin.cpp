@@ -565,17 +565,33 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 
 
 
+double sign(double x)
+{
+    return (x < 0) ? -1 : (x > 0);
+}
 
 void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
                                            const std::vector<size_t> &indices, Eigen::VectorXd &values)
 {
     if(attemptNumber == 0)
     {
-        values(EB) = -30*M_PI/180;
         return;
     }
     else
-        values(EB) = -30*M_PI/180;
+    {
+        if(values(EB) > -5*M_PI/180)
+            values(EB) = -30*M_PI/180;
+
+        if( robot.joint(indices[SR]).name()=="RSR" && fabs(values(SR)+90*M_PI/180) < 3*M_PI/180)
+            values(SR) = (-90+10*sign(values(SR)+90*M_PI/180))*M_PI/180;
+
+        if( robot.joint(indices[SR]).name()=="LSR" && fabs(values(SR)-90*M_PI/180) < 3*M_PI/180)
+            values(SR) = (90+10*sign(values(SR)+90*M_PI/180))*M_PI/180;
+
+        if( fabs(values(WP)) < 3*M_PI/180 )
+            values(WP) = sign(values(WP))*10*M_PI/180;
+
+    }
 }
 
 

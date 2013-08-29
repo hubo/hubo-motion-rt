@@ -29,17 +29,21 @@ int main(int argc, char **argv)
     hubo_manip_cmd_t manip_cmd;
 
     TRANSFORM pose = kin.linkage(limb).tool().withRespectTo(kin.joint("RAP"));
-    
+    TRANSFORM goal = TRANSFORM::Identity();
+
     std::cout << pose.matrix() << std::endl;
-    pose.pretranslate(TRANSLATION(0.0,0.0,0.2));
-//    pose.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(1, 0, 0)));
+    
+    goal.translate( TRANSLATION(0.1,0.1,0.25) );
+    goal.translate( pose.translation() );
+    goal.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(0, 1, 0)));
+    goal.rotate( pose.rotation() );
 
     
 
-    manip_cmd.pose[side].x = pose.translation().x();
-    manip_cmd.pose[side].y = pose.translation().y();
-    manip_cmd.pose[side].z = pose.translation().z();
-    Eigen::Quaterniond quat(pose.rotation());
+    manip_cmd.pose[side].x = goal.translation().x();
+    manip_cmd.pose[side].y = goal.translation().y();
+    manip_cmd.pose[side].z = goal.translation().z();
+    Eigen::Quaterniond quat(goal.rotation());
     manip_cmd.pose[side].w = quat.w();
     manip_cmd.pose[side].i = quat.x();
     manip_cmd.pose[side].j = quat.y();

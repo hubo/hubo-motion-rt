@@ -20,10 +20,10 @@ Slerper::Slerper() :
     kin.armConstraints.maxAttempts = 2;
     
     nomSpeed = 0.15;
-    nomAcc   = 0.2;
+    nomAcc   = 0.1;
 
-    nomRotSpeed = 0.5;
-    nomRotAcc   = 0.5;
+    nomRotSpeed = 0.2;
+    nomRotAcc   = 0.1;
     
     for(int i=0; i<2; i++)
     {
@@ -73,6 +73,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
+//    bool verbose = true;
     bool verbose = false;
 
     kin.updateHubo(hubo, false);
@@ -91,7 +92,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         alt = LEFT;
 
     kin.resetTool(side);
-    
+  
     if(dual)
         kin.lockTool(alt);
     
@@ -221,7 +222,7 @@ if(verbose)
 
 
     if( result != RK_SOLVED )
-        cout << rk_result_to_string(result) << endl;
+        cout << rk_result_to_string(result) << " "; fflush(stdout);
 
 if(verbose)
 {
@@ -233,9 +234,6 @@ if(verbose)
           << "Last:   "  << lastAngles[side].transpose() << endl
           << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
 }
-    cout  << "Angles: "  << armAngles[side].transpose() << endl
-          << "Last:   "  << lastAngles[side].transpose() << endl
-          << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
 //    cout << endl << endl << goal.matrix() << endl << endl
 //         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
     
