@@ -50,11 +50,15 @@ int main(int argc, char **argv)
     time = hubo.getTime();
 
 //    hubo.setJointCompliance(LEB, true, 40, 20);
-    hubo.setJointCompliance(LEB, true);
+//    hubo.setJointCompliance(LEB, true);
+
+    double frequency = 10;
+    hubo.setAllTrajFrequency(frequency);
+
+    hubo.update(true);
 
     while(true)
     {
-        hubo.update();
         dt = hubo.getTime() - time;
         time = hubo.getTime();
         
@@ -71,6 +75,11 @@ int main(int argc, char **argv)
         
 
         pangle = angle;
+
+        usleep(1.0/frequency*1e6);
+        hubo.update(false);
+
     }
+
 
 }

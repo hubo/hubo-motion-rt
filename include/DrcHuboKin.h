@@ -42,13 +42,15 @@ public:
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
 
-    void updateHubo(Hubo_Control& hubo);
+    void updateHubo(Hubo_Control& hubo, bool state=true);
 
-    ArmVector armRestValues[2];
-    LegVector legRestValues[2];
+    Eigen::VectorXd armRestValues;
 
 
     DrcConstraints armConstraints;
+
+    void resetTool(int side);
+    void lockTool(int side);
 
     
 protected:

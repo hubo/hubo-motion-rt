@@ -34,6 +34,8 @@ protected:
     RobotKin::TRANSFORM next;
     RobotKin::TRANSFORM altStart;
     RobotKin::TRANSFORM altNext;
+    RobotKin::TRANSFORM eepose;
+    RobotKin::TRANSFORM alteepose;
     
     double nomSpeed;
     double nomAcc;
