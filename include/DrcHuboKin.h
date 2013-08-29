@@ -7,6 +7,14 @@
 
 typedef Eigen::Matrix< double, 6, 7 > ArmJacobian;
 
+
+
+class DrcConstraints : public RobotKin::Constraints
+{
+public:
+    void iterativeJacobianSeed(RobotKin::Robot &robot, size_t attemptNumber, const std::vector<size_t> &indices, Eigen::VectorXd &values);
+};
+
 class DrcHuboKin : public RobotKin::Robot
 {
 public:
@@ -40,7 +48,7 @@ public:
     LegVector legRestValues[2];
 
 
-    RobotKin::Constraints armConstraints;
+    DrcConstraints armConstraints;
 
     
 protected:
@@ -48,6 +56,7 @@ protected:
     Eigen::VectorXd jointVals;
     Eigen::VectorXd restVals;
 };
+
 
 
 

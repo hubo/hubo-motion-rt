@@ -1454,7 +1454,7 @@ hubo_ctrl_mode_t Hubo_Control::getCtrlMode(int joint)
 double Hubo_Control::getJointAngle(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )
-        return H_Ref.ref[joint] - jointAngleCalibration[joint];
+        return H_Ref.ref[joint] - jointAngleCalibration[joint]; // FIXME: Change this to use state
     else
         return 0;
 }

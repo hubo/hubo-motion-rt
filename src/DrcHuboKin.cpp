@@ -31,6 +31,8 @@ DrcHuboKin::DrcHuboKin()
     joint("LEP").name("LEB");
     joint("TSY").name("WST");
 
+    joint("LEB").max(0);
+
     // Note: These are all basically meaningless
 //    joint("RF11").name("RF1");
 //    joint("RF21").name("RF2");
@@ -493,6 +495,18 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 }
 
 
+
+
+void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
+                                           const std::vector<size_t> &indices, Eigen::VectorXd &values)
+{
+    if(attemptNumber == 0)
+    {
+        return;
+    }
+    else
+        values(EB) = 30*M_PI/180;
+}
 
 
 
