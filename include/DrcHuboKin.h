@@ -48,6 +48,11 @@ public:
 
 
     DrcConstraints armConstraints;
+//    RobotKin::Constraints armConstraints;
+
+    RobotKin::TRANSFORM toolTf[2];
+    RobotKin::TRANSFORM toolTfR;
+    RobotKin::TRANSFORM toolTfL;
 
     void resetTool(int side);
     void lockTool(int side);

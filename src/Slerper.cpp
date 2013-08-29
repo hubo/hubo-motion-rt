@@ -73,6 +73,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
+    bool verbose = false;
+
     kin.updateHubo(hubo, false);
     
     bool dual;
@@ -95,6 +97,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     
     start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
+
     next = TRANSFORM::Identity();
    
 /* 
@@ -191,11 +194,13 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 
 
 //    next = goal;
-/*
-cout << endl << "Start:" << endl << start.matrix() << endl << endl
-     << "Next:" << endl << next.matrix() << endl << endl 
-     << "Goal:" << endl << goal.matrix() << endl << endl;
-*/    
+if(verbose)
+{
+    cout << endl << "Start:" << endl << start.matrix() << endl << endl
+         << "Next:" << endl << next.matrix() << endl << endl 
+         << "Goal:" << endl << goal.matrix() << endl << endl;
+}
+
     next = kin.joint("RAP").respectToRobot()*next;
     if(dual)
         altNext = kin.joint("RAP").respectToRobot()*altNext;
@@ -217,17 +222,20 @@ cout << endl << "Start:" << endl << start.matrix() << endl << endl
 
     if( result != RK_SOLVED )
         cout << rk_result_to_string(result) << endl;
-/*
-cout     << "EE:  " << endl << next.matrix() << endl << endl
-         << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
-         << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
-*/
-/*
-cout  << "Angles: "  << armAngles[side].transpose() << endl
-      << "Last:   "  << lastAngles[side].transpose() << endl
-      << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
-*/     
 
+if(verbose)
+{
+    cout     << "EE:  " << endl << next.matrix() << endl << endl
+             << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
+             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
+
+    cout  << "Angles: "  << armAngles[side].transpose() << endl
+          << "Last:   "  << lastAngles[side].transpose() << endl
+          << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
+}
+    cout  << "Angles: "  << armAngles[side].transpose() << endl
+          << "Last:   "  << lastAngles[side].transpose() << endl
+          << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
 //    cout << endl << endl << goal.matrix() << endl << endl
 //         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
     

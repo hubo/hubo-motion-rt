@@ -42,12 +42,31 @@ DrcHuboKin::DrcHuboKin()
 
     updateFrames();
 
-    RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
-    toolTf.translate(joint("RWR_dummy").respectToFixed().translation());
-    linkage("RightArm").tool().respectToFixed(toolTf);
-    toolTf = RobotKin::TRANSFORM::Identity();
-    toolTf.translate(joint("LWR_dummy").respectToFixed().translation());
-    linkage("LeftArm").tool().respectToFixed(toolTf);
+/*
+    RobotKin::TRANSFORM toolTf[RIGHT] = RobotKin::TRANSFORM::Identity();
+//    toolTf[RIGHT].translate(joint("RWR_dummy").respectToFixed().translation());
+    toolTf[RIGHT] = joint("RWR_dummy").respectToFixed();
+    linkage("RightArm").tool().respectToFixed(toolTf[RIGHT]);
+    toolTf[LEFT] = RobotKin::TRANSFORM::Identity();
+//    toolTf[LEFT].translate(joint("LWR_dummy").respectToFixed().translation());
+    toolTf[LEFT] = joint("LWR_dummy").respectToFixed();
+    linkage("LeftArm").tool().respectToFixed(toolTf[LEFT]);
+*/
+/*
+    toolTfR = RobotKin::TRANSFORM::Identity();
+    toolTfR.translate(joint("RWR_dummy").respectToFixed().translation());
+    toolTfL = RobotKin::TRANSFORM::Identity();
+    toolTfL.translate(joint("LWR_dummy").respectToFixed().translation());
+*/
+    toolTfR = joint("RWR_dummy").respectToFixed();
+    toolTfL = joint("LWR_dummy").respectToFixed();
+    
+    linkage("RightArm").tool().respectToFixed(toolTfR);
+    linkage("LeftArm").tool().respectToFixed(toolTfL);
+
+
+//    linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
+//    linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed()); 
 
 //    TRANSFORM foot = joint("LAR_dummy").respectToFixed();
 //    std::cout << foot.matrix() << std::endl;
@@ -87,12 +106,24 @@ DrcHuboKin::DrcHuboKin(string filename)
 
 void DrcHuboKin::resetTool(int side)
 {
+/*
+    if( side == LEFT )
+        linkage("LeftArm").tool().respectToFixed(toolTf[LEFT]);
+    else
+        linkage("RightArm").tool().respectToFixed(toolTf[RIGHT]);
+*/
 
+    if( side == LEFT )
+        linkage("LeftArm").tool().respectToFixed(toolTfL);
+    else
+        linkage("RightArm").tool().respectToFixed(toolTfR);
+
+/*
     if( side == LEFT )
         linkage("LeftArm").tool().respectToFixed(joint("LWR_dummy").respectToFixed());
     else
         linkage("RightArm").tool().respectToFixed(joint("RWR_dummy").respectToFixed());
-
+*/
 }
 
 void DrcHuboKin::lockTool(int side)
@@ -540,6 +571,7 @@ void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
 {
     if(attemptNumber == 0)
     {
+        values(EB) = -30*M_PI/180;
         return;
     }
     else

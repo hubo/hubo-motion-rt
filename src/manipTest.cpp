@@ -29,7 +29,9 @@ int main(int argc, char **argv)
     hubo_manip_cmd_t manip_cmd;
 
     TRANSFORM pose = kin.linkage(limb).tool().withRespectTo(kin.joint("RAP"));
-    pose.pretranslate(TRANSLATION(0.0,-0.3,0.0));
+    
+    std::cout << pose.matrix() << std::endl;
+    pose.pretranslate(TRANSLATION(0.0,0.0,0.2));
 //    pose.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(1, 0, 0)));
 
     
