@@ -82,6 +82,7 @@ typedef Eigen::Vector3d Vector3d;
 #define EB      3
 #define WY      4
 #define WP      5
+#define WR      6
 
 #define HY      0
 #define HR      1

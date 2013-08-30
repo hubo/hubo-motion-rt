@@ -35,8 +35,8 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "balance-daemon.h"
 #include "DrcHuboKin.h"
+#include "balance-daemon.h"
 #include "Walker.h"
 #include "Hubo_Control.h"
 #include "manip.h"
@@ -46,6 +46,8 @@ ach_channel_t bal_state_chan;
 ach_channel_t bal_param_chan;
 ach_channel_t manip_override_chan;
 ach_channel_t manip_state_chan;
+
+void fillArmStates(Hubo_Control &hubo, balance_state_t &bal_state);
 
 /**
  * \brief Balance while not moving the legs (in a static lower body pose)
@@ -155,6 +157,10 @@ int main(int argc, char **argv)
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
+                state.m_zmp_arm_states.should_use = cmd.use_cur_arm_positions;
+                fillArmStates(hubo, state);
+                // Put current arm angles on ach channel
+                ach_put( &bal_state_chan, &state, sizeof(state) );
                 walk.commenceWalking(state, nudge, gains);
                 ovr.m_override = OVR_SOVEREIGN;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
@@ -174,7 +180,21 @@ int main(int argc, char **argv)
 }
 
 
+void fillArmStates(Hubo_Control &hubo, balance_state_t & bal_state)
+{
+    ArmVector armStates[2];
 
+    for(int side=0; side<2; side++)
+    {
+        hubo.getArmAngles(side, armStates[side]);
+        for(int joint=0; joint<ARM_JOINT_COUNT; joint++)
+        {
+            bal_state.m_zmp_arm_states.arm_joint_states[side][joint] = armStates[side](joint);
+        }
+    }
+
+    bal_state.m_zmp_arm_states.num_arm_joints = ARM_JOINT_COUNT;
+}
 
 
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)

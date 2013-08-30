@@ -687,8 +687,12 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     // current timestep, which has been adjusted based on feedback.
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-        hubo.passJointAngle( i, tempNextElem.angles[i] );
-
+        // Don't worry about waiting for these joints to get into position.
+        if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i &&
+            RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i)
+        {
+            hubo.passJointAngle( i, tempNextElem.angles[i] );
+        }
     }
 
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );

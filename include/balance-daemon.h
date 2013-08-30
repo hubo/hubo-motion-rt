@@ -35,9 +35,10 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef BALANCE_DAEMON_H
 #define BALANCE_DAEMON_H
+
+#include "Hubo_Control.h"
 
 #define BALANCE_CMD_CHAN "balance-cmd"
 #define BALANCE_STATE_CHAN "balance-state"
@@ -99,8 +100,11 @@ typedef struct balance_gains {
 
 }__attribute__((packed)) balance_gains_t;
 
-
-
+typedef struct zmp_arm_states {
+    int should_use;
+    int num_arm_joints;
+    double arm_joint_states[2][ARM_JOINT_COUNT];
+}__attribute__((packed)) zmp_arm_states_t;
 
 typedef struct balance_cmd {
 
@@ -108,6 +112,8 @@ typedef struct balance_cmd {
     
     double height;
     double com_x_offset;
+
+    int use_cur_arm_positions;
 
 }__attribute__((packed)) balance_cmd_t;
 
@@ -118,8 +124,9 @@ typedef struct balance_state {
     walk_mode_t m_walk_mode;
     walk_error_t m_walk_error;
 
-}__attribute__((packed)) balance_state_t;
+    zmp_arm_states_t m_zmp_arm_states;
 
+}__attribute__((packed)) balance_state_t;
 
 typedef enum {
     
