@@ -3,7 +3,7 @@
  * All rights reserved.
  *
  * Author: Michael X. Grey <mxgrey@gatech.edu>
- * Date: Feb 03, 2013
+ * Date: August 9, 2013
  *
  * Humanoid Robotics Lab      Georgia Institute of Technology
  * Director: Mike Stilman     http://www.golems.org
@@ -34,48 +34,52 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DAEMONIZER_H
-#define DAEMONIZER_H
+#include "DrcHuboKin.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sched.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <syslog.h>
-#include <errno.h>
-#include <pwd.h>
-#include <signal.h>
-#include <string.h>
+using namespace RobotKin;
 
-#define MAX_SAFE_STACK (1024*1024) /* The maximum stack size which is
-                   guaranteed safe to access without
-                   faulting */
+int main(int argc, char **argv)
+{
+    Hubo_Control hubo;
 
-#define RUN_AS_USER "root"
-#define MY_PRIORITY (49)
+    double stime, time, dt=0, angle=0, pangle=0, vel;
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
+    double T = 10;
+
+    stime = hubo.getTime();
+    time = hubo.getTime();
+
+//    hubo.setJointCompliance(LEB, true, 40, 20);
+//    hubo.setJointCompliance(LEB, true);
+
+    double frequency = 10;
+    hubo.setAllTrajFrequency(frequency);
+
+    hubo.update(true);
+
+    while(true)
+    {
+        dt = hubo.getTime() - time;
+        time = hubo.getTime();
+        
+
+        angle = M_PI/4*cos(2*M_PI*(time-stime)/T) - M_PI/4;
+
+        vel = (angle - pangle)/dt;
+        std::cout << "Angle: " << angle << "\t\tVel: " << vel << std::endl;
+
+//        hubo.setJointAngle(LEB, angle);
+        hubo.setJointTraj(LEB, angle, vel);
+//        hubo.passJointAngle(LEB, angle);
+        hubo.sendControls();
+        
+
+        pangle = angle;
+
+        usleep(1.0/frequency*1e6);
+        hubo.update(false);
+
+    }
 
 
-
-extern int daemon_sig_quit;
-extern int daemon_sig_usr1;
-extern int daemon_sig_usr2;
-
-extern char lockfile[100];
-extern char gdaemon_name[100];
-
-void daemonize(const char *daemon_name, int priority);
-void daemon_prioritize(int priority);
-void redirectSigs();
-void daemon_close();
-void daemon_assert( int result, int line ); // Instructs the program to quit gracefully if the result is not true
-
-
-
-#endif // DAEMONIZER_H
+}

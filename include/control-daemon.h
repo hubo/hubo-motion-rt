@@ -67,6 +67,10 @@
 #define     HUBO_CHAN_NCK_CTRL_NAME     "hubo-NCK-control"// Neck control channel
 #define     CTRL_CHAN_STATE             "ctrl-d-state"    // Control daemon state channel
 
+enum{
+    MAX_DUTY_TABLE_TYPES = 10,
+    MAX_DUTY_TABLE_SIZE = 100
+};
 
 
 typedef enum {
@@ -76,8 +80,67 @@ typedef enum {
     CTRL_VEL,
     CTRL_HOME,
     CTRL_RESET,
-    CTRL_PASS
+    CTRL_PASS,
+    CTRL_PWM
 } hubo_ctrl_mode_t;
+
+
+typedef enum {
+    CTRL_TORQUE_OFF = 0,
+    CTRL_TORQUE_ON
+} hubo_torque_mode_t;
+
+typedef enum {
+    CTRL_COMP_OFF = 0,
+    CTRL_COMP_ON
+} hubo_compliance_mode_t;
+
+typedef enum {
+    CTRL_ANTIFRICTION_OFF = 0,
+    CTRL_ANTIFRICTION_ON
+} hubo_friction_mode_t;
+
+typedef enum {
+    CTRL_TABLE_DUTY,
+    CTRL_TABLE_TORQUE,
+    CTRL_TABLE_AMP
+} ctrl_table_t;
+
+typedef struct hubo_duty_table
+{
+    double amp[MAX_DUTY_TABLE_SIZE];
+    double torque[MAX_DUTY_TABLE_SIZE];
+    double duty[MAX_DUTY_TABLE_SIZE];
+    size_t count;
+} hubo_duty_table_t;
+
+typedef struct hubo_joint_duty_settings
+{
+    size_t dutyType;
+
+    // TODO: Decide if this should remain
+    double kT;
+
+    double kF;            // Antifriction gain
+    double Fmax;          // Maximum PWM before a joint starts to move
+    double deadbandScale; // This gets applied to Fmax and then used
+                          // as an offset in torque calculations
+
+} hubo_joint_duty_settings_t;
+
+typedef struct hubo_conversion_tables
+{
+    // 10 is the max number of PWM to Amp relationships that we support
+    //    -- The first entry (0) is zeroed, and PWM control is not allowed for those joints
+    //    -- (Currently we are only using 2 types)
+    // 100 is the max number of tabulated entries that we currently support
+    //    -- (Currently we only go up to 24)
+    hubo_duty_table_t table[MAX_DUTY_TABLE_TYPES];
+
+    // The type of table to use for
+    hubo_joint_duty_settings_t joint[HUBO_JOINT_COUNT];
+
+} hubo_conversion_tables_t;
 
 
 typedef struct hubo_joint_control {
@@ -86,6 +149,15 @@ typedef struct hubo_joint_control {
     double velocity;
     double acceleration;
 
+    double torque;
+    double pwm;
+
+    double Kp;
+    double Kd;
+    double maxPWM;
+
+    double maxSpeed;
+    double frequency;
     double correctness;
 // FIXME: Add minimum accel parameter
 
@@ -96,7 +168,11 @@ typedef struct hubo_joint_control {
 
     double timeOut;
 
-    hubo_ctrl_mode_t mode;
+    hubo_ctrl_mode_t ctrl_mode;
+    hubo_compliance_mode_t comp_mode;
+    hubo_torque_mode_t torque_mode;
+    hubo_friction_mode_t friction_mode;
+
 } hubo_joint_control_t;
 
 typedef struct hubo_control {

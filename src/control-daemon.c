@@ -37,6 +37,7 @@
 #include "control-daemon.h"
 
 ach_channel_t chan_hubo_ref;
+ach_channel_t chan_hubo_pwm;
 ach_channel_t chan_hubo_board_cmd;
 ach_channel_t chan_hubo_state;
 ach_channel_t chan_hubo_ra_ctrl;
@@ -49,11 +50,17 @@ ach_channel_t chan_hubo_bod_ctrl;
 ach_channel_t chan_hubo_nck_ctrl;
 ach_channel_t chan_ctrl_state;
 
-static char *ctrlFileLocation = "/etc/hubo-ach/control.table";
+static char *ctrlFileLocation    = "/etc/hubo-ach/control.table";
+static char *dutyFileLocation = "/etc/hubo-ach/duty.table";
+static char *torqueFileLocation  = "/etc/hubo-ach/torque.table";
+
+int simMode;
 
 
 void controlLoop();
-int setCtrlDefaults( struct hubo_control *ctrl );
+int setCtrlDefaults(hubo_param_t *H_param);
+int setConversionTables( struct hubo_conversion_tables *conversion);
+double getGearReduction(hubo_param_t *h, int jnt);
 
 void sortJointControls( struct hubo_control *ctrl, struct hubo_arm_control *ractrl, struct hubo_arm_control *lactrl,
                                                    struct hubo_leg_control *rlctrl, struct hubo_leg_control *llctrl,
@@ -114,8 +121,10 @@ void controlLoop()
     struct hubo_fin_control lfctrl;
     struct hubo_bod_control bodctrl;
     struct hubo_nck_control nckctrl;
-    struct hubo_param H_param;
     struct hubo_ctrl_state C_state;
+    struct hubo_param h;
+
+    struct hubo_conversion_tables conversion;
 
     memset( &H_ref,   0, sizeof(H_ref)   );
     memset( &H_cmd,   0, sizeof(H_cmd)   );
@@ -129,8 +138,9 @@ void controlLoop()
     memset( &lfctrl,  0, sizeof(lfctrl)  );
     memset( &bodctrl, 0, sizeof(bodctrl) );
     memset( &nckctrl, 0, sizeof(nckctrl) );
-    memset( &H_param, 0, sizeof(H_param) );
     memset( &C_state, 0, sizeof(C_state) );
+    memset( &h,       0, sizeof(h)       );
+    memset( &conversion,  0, sizeof(conversion)  );
 
     size_t fs;
     int result = ach_get( &chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST );
@@ -144,25 +154,35 @@ void controlLoop()
     }
 
     hubo_pwm_gains_t gains;
-    setJointParams( &H_param, &H_state, &gains);
-    if(setCtrlDefaults( &ctrl )==-1)
+    memset(&gains, 0, sizeof(gains));
+    if(setCtrlDefaults( &h )==-1)
+        return;
+
+    if(setConversionTables(&conversion)==-1)
         return;
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
-        ctrl.joint[i].mode = CTRL_HOME;
+        ctrl.joint[i].ctrl_mode = CTRL_HOME;
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         H_ref.mode[i] = HUBO_REF_MODE_REF; // Make sure that the values are not put through Dan's buffer/filter
 
+
     memcpy( &stored_ref, &H_ref, sizeof(H_ref) );
 
-    do {
-        struct timespec timeoutCheck;
-        clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
-        timeoutCheck.tv_sec += 1;
-        result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
-    } while( !daemon_sig_quit && result == ACH_TIMEOUT );
-
+    fprintf(stdout, "Waiting for first state... "); fflush(stdout);
+    if(simMode==0)
+    {
+        do {
+            struct timespec timeoutCheck;
+            clock_gettime( ACH_DEFAULT_CLOCK, &timeoutCheck );
+            timeoutCheck.tv_sec += 1;
+            result = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, &timeoutCheck, ACH_O_WAIT | ACH_O_LAST );
+        } while( !daemon_sig_quit && result == ACH_TIMEOUT );
+    }
+    else
+        ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs, NULL, ACH_O_LAST );
+    fprintf(stdout, " Got it!\n"); fflush(stdout);
 
     if( ACH_OK != result )
     {
@@ -175,14 +195,32 @@ void controlLoop()
     double V0[HUBO_JOINT_COUNT];
     double dV[HUBO_JOINT_COUNT];
     double V0_actual[HUBO_JOINT_COUNT];
+    double startWaypoint[HUBO_JOINT_COUNT];
     double adr;
     double dtMax = 0.1;
-    double errorFactor = 10;
+    double errorFactor = 100; // This makes the error checking basically meaningless
     double timeElapse[HUBO_JOINT_COUNT];
+    double amp=0;
+    double ampUpper;
+    double ampLower;
+    double torque=0;
+    double torqueUpper;
+    double torqueLower;
+    double dutyUpper;
+    double dutyLower;
+    int tableType=0;
+    double antifriction=0;
+    double jointspaceDuty=0;
+    double maxPWM=0;
+
+
+    int torqueWarning[HUBO_JOINT_COUNT];
+
 
     int fail[HUBO_JOINT_COUNT];
     int reset[HUBO_JOINT_COUNT];
-    ach_status_t cresult, rresult, sresult, presult, iter=0, maxi=15;
+    ach_status_t cresult, rresult, sresult, presult=ACH_OK;
+    int iter=0, maxi=200;
 
     // Initialize arrays
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -190,22 +228,21 @@ void controlLoop()
         dr[i] = 0;  dV[i] = 0;
         V[i] = 0;   V0[i] = 0;
         V0_actual[i] = 0;
-        fail[i] = 0;
+        fail[i] = 0; torqueWarning[i] = 0;
     }
 
     double minAccel = 0.1; // FIXME: Replace this with user-defined parameter
 
     double t0 = H_state.time;
     double t = H_state.time, dt, err;
-    fprintf(stdout, "Start time:%f\n", H_state.time);
+    fprintf(stdout, "Start time:%f\n", H_state.time); fflush(stdout);
     dt = 1.0; // Arbitrary non-zero number to keep things from crashing
 
-    fprintf(stdout, "Beginning control loop\n"); fflush(stdout);
+    fprintf(stdout, "Beginning control loop\n"); fflush(stdout);  fflush(stdout);
 
     // Main control loop
     while( !daemon_sig_quit )
     {
-
         struct timespec recheck;
         clock_gettime( ACH_DEFAULT_CLOCK, &recheck );
         long nanoWait = recheck.tv_nsec + (long)(dt/3.0*1E9);
@@ -213,6 +250,7 @@ void controlLoop()
         recheck.tv_nsec = (long)(nanoWait%((long)1E9));
         sresult = ach_get( &chan_hubo_state, &H_state, sizeof(H_state), &fs,
                              &recheck, ACH_O_WAIT | ACH_O_LAST );
+
         if( ACH_TIMEOUT == sresult || ACH_STALE_FRAMES == sresult )
         {
             memcpy( &H_ref, &stored_ref, sizeof(H_ref) );
@@ -319,7 +357,7 @@ void controlLoop()
                 V[jnt] = 0; V0[jnt] = 0; dV[jnt] = 0;
                 dr[jnt]=0;
 /*
-                if( ctrl.joint[jnt].mode == CTRL_HOME )
+                if( ctrl.joint[jnt].ctrl_mode == CTRL_HOME )
                 {
                     H_ref.ref[jnt] = 0; 
                     V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
@@ -332,29 +370,38 @@ void controlLoop()
             C_state.paused=0;
 
 
-        if( 0 < dt && dt < dtMax && H_state.refWait==0 )
+        if( (0 < dt && dt < dtMax && H_state.refWait==0) || simMode==1 )
         {
             iter++; if(iter>maxi) iter=0;
-
 
             for(int jnt=0; jnt<HUBO_JOINT_COUNT; jnt++)
             {
                 err = H_ref.ref[jnt] - H_state.joint[jnt].pos;
 
-                if( ctrl.joint[jnt].mode == CTRL_PASS )
+
+                if( ctrl.joint[jnt].ctrl_mode == CTRL_PASS )
                 {
                     V[jnt] = (ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
                     H_ref.ref[jnt] = ctrl.joint[jnt].position;
-//                    if( jnt == RF1 )
-//                        fprintf(stdout, "Pass:%f\t", ctrl.joint[jnt].position);
+                }
+                else if( ctrl.joint[jnt].ctrl_mode == CTRL_PWM )
+                {
+                    H_ref.comply[jnt] = 1;
+                    // FIXME: Remove this hack
+                    gains.joint[jnt].maxPWM = 40;
+
+                    gains.joint[jnt].Kp = 0;
+                    gains.joint[jnt].Kd = 0;
+
+                    gains.joint[jnt].pwmCommand = ctrl.joint[jnt].pwm;
                 }
                 else if( fabs(err) <=  fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax)  // TODO: Validate this condition
                     && fail[jnt]==0  )
                 {
-                    if( ctrl.joint[jnt].mode != CTRL_OFF && ctrl.joint[jnt].mode != CTRL_RESET )
+                    if( ctrl.joint[jnt].ctrl_mode != CTRL_OFF && ctrl.joint[jnt].ctrl_mode != CTRL_RESET )
                     {
 
-                        if( ctrl.joint[jnt].mode == CTRL_VEL )
+                        if( ctrl.joint[jnt].ctrl_mode == CTRL_VEL )
                         {
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
@@ -395,52 +442,49 @@ void controlLoop()
 */
                             H_ref.ref[jnt] += dr[jnt];
                         }
-                        else if( ctrl.joint[jnt].mode == CTRL_TRAJ )
+                        else if( ctrl.joint[jnt].ctrl_mode == CTRL_TRAJ )
                         {
+//                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+//                                ctrl.joint[jnt].velocity = 0.0;
+                            if( timeElapse[jnt] == 0 )
+                                startWaypoint[jnt] = H_ref.ref[jnt];
+
                             if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
                                 ctrl.joint[jnt].velocity = 0.0;
+
+                            if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_min;
+                            else if( ctrl.joint[jnt].position > ctrl.joint[jnt].pos_max )
+                                ctrl.joint[jnt].position = ctrl.joint[jnt].pos_max;
+
+//                            dr[jnt] = (ctrl.joint[jnt].position - startWaypoint[jnt])
+//                                        *timeElapse[jnt]*ctrl.joint[jnt].frequency; // Check how far we are from desired position
+
 
                             if( ctrl.joint[jnt].correctness > 1 )
                                 ctrl.joint[jnt].correctness = 1;
                             else if( ctrl.joint[jnt].correctness < 0 )
                                 ctrl.joint[jnt].correctness = 0;
 
-                            dV[jnt] = ctrl.joint[jnt].velocity - V0[jnt];
 
-/*
-                            dV[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity - V0[jnt] // Check how far we are from desired velocity
+                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity*dt
                                     + ctrl.joint[jnt].correctness*(
-                                        ctrl.joint[jnt].position-H_ref.ref[jnt])/dt;
-*/
+                                        (ctrl.joint[jnt].position - startWaypoint[jnt])
+                                        *(timeElapse[jnt]+dt)*ctrl.joint[jnt].frequency
+                                        - (H_ref.ref[jnt] - startWaypoint[jnt])
+                                        );
 
-                            if( dV[jnt] > fabs(ctrl.joint[jnt].acceleration*dt) ) // Scale it down to be within bounds
-                                dV[jnt] = fabs(ctrl.joint[jnt].acceleration*dt);
-                            else if( dV[jnt] < -fabs(ctrl.joint[jnt].acceleration*dt) )
-                                dV[jnt] = -fabs(ctrl.joint[jnt].acceleration*dt);
-
-                            V[jnt] = V0[jnt] + dV[jnt]; // Step velocity forward
-/*
-                            dr[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]*dt
-                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    -H_ref.ref[jnt]);
-*/
-
-                            V[jnt] = (1-ctrl.joint[jnt].correctness)*V[jnt]
-                                    + ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    - H_ref.ref[jnt])/dt;
-
-/*
-                            // FIXME: remove this:
-                            ctrl.joint[jnt].correctness = 0.01;
-                            V[jnt] += ctrl.joint[jnt].correctness*(ctrl.joint[jnt].position
-                                                                    - H_ref.ref[jnt])/dt;
-*/
-                            dr[jnt] = V[jnt]*dt;
+                            // Probably come up with a more meaningful safety check
+                            if( fabs(dr[jnt]) > fabs(ctrl.joint[jnt].maxSpeed*dt) )
+                                dr[jnt] = sign(dr[jnt])*fabs(ctrl.joint[jnt].maxSpeed*dt);
 
                             H_ref.ref[jnt] += dr[jnt];
+
+                            fprintf(stdout, "%f\n", H_ref.ref[jnt]);
+
                             V[jnt] = dr[jnt]/dt;
                         }
-                        else if( ctrl.joint[jnt].mode == CTRL_POS )
+                        else if( ctrl.joint[jnt].ctrl_mode == CTRL_POS )
                         {
 //if(jnt==RF1)
 //fprintf(stdout, "Pos:%f\t", ctrl.joint[jnt].position);
@@ -490,14 +534,14 @@ void controlLoop()
                                 H_ref.ref[jnt] += dr[jnt];*/
                             H_ref.ref[jnt] += dr[jnt];
                         }
-                        else if( ctrl.joint[jnt].mode == CTRL_HOME )
+                        else if( ctrl.joint[jnt].ctrl_mode == CTRL_HOME )
                         {
                             V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
                         }
                         else
                         {
                             fprintf(stderr, "Joint %d has invalid control mode: %d\n",
-                                jnt, (int)ctrl.joint[jnt].mode );
+                                jnt, (int)ctrl.joint[jnt].ctrl_mode );
                         }
 
 //                        timeElapse[jnt] += dt;
@@ -507,7 +551,7 @@ void controlLoop()
                     }
 
                 }
-                else if(fail[jnt]==0 && ctrl.joint[jnt].mode != CTRL_HOME)
+                else if(fail[jnt]==0 && ctrl.joint[jnt].ctrl_mode != CTRL_HOME)
                 {
                     fprintf(stderr, "JOINT %d FROZEN! Exceeded error limit(%g):%g, Ref:%f, State:%f\n", jnt,
                         fabs(errorFactor*ctrl.joint[jnt].error_limit*dtMax), err, H_ref.ref[jnt], H_state.joint[jnt].pos );
@@ -516,7 +560,7 @@ void controlLoop()
                     fail[jnt]=1;
                     C_state.status[jnt] = 1;
                 }
-                else if( ctrl.joint[jnt].mode == CTRL_RESET && reset[jnt]==0 )
+                else if( ctrl.joint[jnt].ctrl_mode == CTRL_RESET && reset[jnt]==0 )
                 {
                     fprintf(stdout, "Joint %d has been reset\n", jnt);
                     V[jnt]=0; V0[jnt]=0; dV[jnt]=0;
@@ -534,6 +578,119 @@ void controlLoop()
                     C_state.status[jnt] = 1;
                 }                    
 
+
+                
+                if( ctrl.joint[jnt].comp_mode == CTRL_COMP_ON || ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
+                {
+                    H_ref.comply[jnt] = 1;
+                    // FIXME: Remove this hack
+                    gains.joint[jnt].maxPWM = 40;
+
+                    if( ctrl.joint[jnt].torque_mode != CTRL_TORQUE_ON )
+                    {
+                        gains.joint[jnt].pwmCommand = 0;
+                        gains.joint[jnt].pwmCommand = 0;
+                    }
+                    else
+                    {
+                        // These torque calculations are based off of
+                        // Dr. Inhyeok Kim's RAINBOW code
+//                        amp = fabs(ctrl.joint[jnt].torque)/conversion.Kt[jnt]/getGearReduction(&h, jnt);
+
+                        tableType = conversion.joint[jnt].dutyType;
+                        int c = 0;
+
+                        torque = fabs(ctrl.joint[jnt].torque);
+
+                        if(conversion.table[tableType].torque[conversion.table[tableType].count-1]
+                                <= torque)
+                            c = conversion.table[tableType].count-2;
+                        else
+                            for(c=0; c<conversion.table[tableType].count-1; c++)
+                                if(conversion.table[tableType].torque[c] <= torque
+                                        && torque < conversion.table[tableType].torque[c+1])
+                                    break;
+
+                        if(tableType != 0)
+                        {
+
+                            torqueLower = conversion.table[tableType].torque[c];
+                            torqueUpper = conversion.table[tableType].torque[c+1];
+                            dutyLower   = conversion.table[tableType].duty[c];
+                            dutyUpper   = conversion.table[tableType].duty[c+1];
+
+                            if(torqueLower == torqueUpper)
+                            {
+                                gains.joint[jnt].pwmCommand = 0;
+                                fprintf(stderr, "ERROR IN DUTY TABLE! Torque entry %d is equal to entry %d!",
+                                        c, c+1);
+                            }
+                            else
+                                gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
+                                    ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
+                                        + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
+                            
+                        }
+                        else
+                        {
+                            if(torqueWarning[jnt]==0)
+                                fprintf(stderr, "You are requesting torque mode for a joint that does not support it! (%s)\n", jointNames[jnt]);
+                            torqueWarning[jnt]=1;
+                        }
+
+                    }
+
+                    if(ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON)
+                    {
+                        antifriction = conversion.joint[jnt].kF*H_state.joint[jnt].vel;
+                        if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
+                            antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
+
+                        gains.joint[jnt].pwmCommand += antifriction;
+
+                        if(jnt == RSR)
+                        if(iter==maxi)
+                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
+                    }
+
+                    if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
+                    {
+                        gains.joint[jnt].Kp = 0;
+                        gains.joint[jnt].Kd = 0;
+                    }
+                    else
+                    {
+/*
+                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
+                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
+*/
+                        gains.joint[jnt].Kp = 0;
+                        gains.joint[jnt].Kd = 0;
+
+                        jointspaceDuty = ctrl.joint[jnt].Kp*(H_ref.ref[jnt] - H_state.joint[jnt].pos)
+                                       - ctrl.joint[jnt].Kd*H_state.joint[jnt].vel;
+
+                        maxPWM = ctrl.joint[jnt].maxPWM;
+                        if(maxPWM > 100)
+                            maxPWM = 100;
+                        else if(maxPWM < 0)
+                            maxPWM = 0;
+
+                        if(fabs(jointspaceDuty) > maxPWM)
+                            jointspaceDuty = sign(jointspaceDuty)*maxPWM;
+
+                        gains.joint[jnt].pwmCommand += jointspaceDuty;
+
+                    }
+
+                }
+                else if( ctrl.joint[jnt].ctrl_mode != CTRL_PWM )
+                    H_ref.comply[jnt] = 0;
+
+
+
+
+
             } // end: for loop
 
 
@@ -543,10 +700,14 @@ void controlLoop()
                 if(presult != ACH_OK)
                     fprintf(stderr, "Error sending ref command! (%d) %s\n",
                         presult, ach_result_to_string(presult));
+                presult = ach_put( &chan_hubo_pwm, &gains, sizeof(gains) );
+                if(presult != ACH_OK)
+                    fprintf(stderr, "Error sending pwm command! (%d) %s\n",
+                        presult, ach_result_to_string(presult));
             }
             
         }// end: time test
-        else if( dt >= 0.1 )
+        else if( dt >= 0.1 && simMode==0 )
             fprintf(stderr, "Experiencing Delay of %f seconds\n", dt);
         else if( dt < 0 )
             fprintf(stderr, "Congratulations! You have traveled backwards"
@@ -567,11 +728,25 @@ void controlLoop()
 int main(int argc, char **argv)
 {
     // TODO: Parse runtime arguments
+    simMode = 0;
+    int eatTerminal = 0;
 
+    for(int i=1; i<argc; i++)
+    {
+        if( 0 == strcmp(argv[i], "-s") )
+            simMode = 1;
 
-    daemonize( "control-daemon", 49 );
+        if( 0 == strcmp(argv[i], "-t") )
+            eatTerminal = 1;
+    }
+
+    if(eatTerminal != 1)
+        daemonize( "control-daemon", 49 );
    
     int r = ach_open(&chan_hubo_ref, HUBO_CHAN_REF_NAME, NULL);
+    daemon_assert( ACH_OK == r, __LINE__ );
+
+    r = ach_open(&chan_hubo_pwm, HUBO_CHAN_PWM_GAINS_NAME, NULL);
     daemon_assert( ACH_OK == r, __LINE__ );
 
     r = ach_open(&chan_hubo_state, HUBO_CHAN_STATE_NAME, NULL);
@@ -605,7 +780,29 @@ int main(int argc, char **argv)
     daemon_assert( ACH_OK == r, __LINE__ );
 
     r = ach_open(&chan_ctrl_state, CTRL_CHAN_STATE, NULL );
-    daemon_assert( ACH_OK == r, __LINE__ ); 
+    daemon_assert( ACH_OK == r, __LINE__ );
+
+    hubo_conversion_tables_t conversion;
+    setConversionTables(&conversion);
+
+    for(int i=0; i<MAX_DUTY_TABLE_TYPES; i++)
+    {
+        fprintf(stdout, "Table #%d\t Count:%lu\n", i, conversion.table[i].count);
+        fprintf(stdout, "Duty:\t");
+        for(int j=0; j<conversion.table[i].count; j++)
+            fprintf(stdout, "\t%f", conversion.table[i].duty[j]);
+        fprintf(stdout, "\n");
+        fprintf(stdout, "Torque: \t");
+        for(int j=0; j<conversion.table[i].count; j++)
+            fprintf(stdout, "\t%f", conversion.table[i].torque[j]);
+        fprintf(stdout, "\n\n");
+    }
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        fprintf(stdout, "%s:\t%d\t%f\t%f\t%f\n",jointNames[i],
+                conversion.joint[i].dutyType, conversion.joint[i].kF,
+                conversion.joint[i].Fmax, conversion.joint[i].deadbandScale);
+
 
     controlLoop();
 
@@ -613,7 +810,7 @@ int main(int argc, char **argv)
 }
 
 
-int setCtrlDefaults( struct hubo_control *ctrl )
+int setCtrlDefaults(hubo_param_t *H_param)
 {
     struct hubo_arm_control ractrl;
     struct hubo_arm_control lactrl;
@@ -624,7 +821,6 @@ int setCtrlDefaults( struct hubo_control *ctrl )
     struct hubo_bod_control bodctrl;
     struct hubo_nck_control nckctrl;
 
-	memset( ctrl, 0, sizeof(struct hubo_control) );
 	memset( &ractrl, 0, sizeof(struct hubo_arm_control) );
 	memset( &lactrl, 0, sizeof(struct hubo_arm_control) );
 	memset( &rlctrl, 0, sizeof(struct hubo_leg_control) );
@@ -634,12 +830,22 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 	memset( &bodctrl, 0, sizeof(struct hubo_bod_control) );
     memset( &nckctrl, 0, sizeof(struct hubo_nck_control) );
 
+
+
+    struct hubo_state H_state;
+    struct hubo_pwm_gains gains;
+    memset( H_param, 0, sizeof(*H_param) );
+    memset( &H_state, 0, sizeof(H_state) );
+    memset( &gains,   0, sizeof(gains)   );
+    setJointParams( H_param, &H_state, &gains);
+
+
 	FILE *ptr_file;
 
 	// open file for read access and if it fails, return -1
 	if (!(ptr_file=fopen(ctrlFileLocation, "r")))
     {
-        fprintf(stderr, "Unable to locate %s\n -- Try reinstalling or reconfiguring!\n",ctrlFileLocation);
+        fprintf(stderr, "Unable to locate %s\n -- Try reinstalling hubo-motion-rt!\n",ctrlFileLocation);
 		return -1;
     }
 	// instantiate stucts for getting values from control.table
@@ -648,6 +854,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
     memset( &tempJC, 0, sizeof(tempJC) );
 
 
+    // TODO: Just use the hubo.h jointNames[] array instead
 	// array of joint name values from header file hubo.h
 	uint16_t jointNameValues[] =
 			{WST, NKY, NK1, NK2,
@@ -683,7 +890,7 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 		charPointer = strchr(buff, '#');
 		if (NULL != charPointer) {
 			*charPointer = '\0';
-		}
+        }
 
 		// check if a line is longer than the buffer, 'buff', and return -1 if so.
 		if ( strlen(buff) == sizeof(buff)-1 ) {
@@ -693,15 +900,17 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 		// read in the buffered line from fgets, matching the following pattern
 		// to get all the parameters for the joint on this line.
-		if (9 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%s",
+        if (11 == sscanf(buff, "%s%lf%lf%lf%lf%lf%lf%lf%lf%lf%s",
 			name,
 			&tempJC.speed,
 			&tempJC.acceleration,
+            &tempJC.maxSpeed,
             &tempJC.correctness,
 			&tempJC.error_limit,
 			&tempJC.pos_min,
 			&tempJC.pos_max,
             &tempJC.timeOut,
+            &tempJC.frequency,
             type ) ) // check that all values are found
 		{
 
@@ -726,6 +935,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &lactrl.joint[lactrl.count], &tempJC, sizeof(tempJC) );
                     lactrl.jointIndices[lactrl.count] = i;
+
+                    lactrl.joint[lactrl.count].Kp = gains.joint[i].Kp;
+                    lactrl.joint[lactrl.count].Kd = gains.joint[i].Kd;
+                    lactrl.joint[lactrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     lactrl.count++;
                 }
                 
@@ -733,6 +947,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &ractrl.joint[ractrl.count], &tempJC, sizeof(tempJC) );
                     ractrl.jointIndices[ractrl.count] = i;
+
+                    ractrl.joint[ractrl.count].Kp = gains.joint[i].Kp;
+                    ractrl.joint[ractrl.count].Kd = gains.joint[i].Kd;
+                    ractrl.joint[ractrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     ractrl.count++;
                 }
                 
@@ -740,6 +959,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &llctrl.joint[llctrl.count], &tempJC, sizeof(tempJC) );
                     llctrl.jointIndices[llctrl.count] = i;
+
+                    llctrl.joint[llctrl.count].Kp = gains.joint[i].Kp;
+                    llctrl.joint[llctrl.count].Kd = gains.joint[i].Kd;
+                    llctrl.joint[llctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     llctrl.count++;
                 }
                 
@@ -747,6 +971,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &rlctrl.joint[rlctrl.count], &tempJC, sizeof(tempJC) );
                     rlctrl.jointIndices[rlctrl.count] = i;
+
+                    rlctrl.joint[rlctrl.count].Kp = gains.joint[i].Kp;
+                    rlctrl.joint[rlctrl.count].Kd = gains.joint[i].Kd;
+                    rlctrl.joint[rlctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     rlctrl.count++;
                 }
                 
@@ -754,6 +983,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &lfctrl.joint[lfctrl.count], &tempJC, sizeof(tempJC) );
                     lfctrl.jointIndices[lfctrl.count] = i;
+
+                    lfctrl.joint[lfctrl.count].Kp = gains.joint[i].Kp;
+                    lfctrl.joint[lfctrl.count].Kd = gains.joint[i].Kd;
+                    lfctrl.joint[lfctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     lfctrl.count++;
                 }
                 
@@ -761,6 +995,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &rfctrl.joint[rfctrl.count], &tempJC, sizeof(tempJC) );
                     rfctrl.jointIndices[rfctrl.count] = i;
+
+                    rfctrl.joint[rfctrl.count].Kp = gains.joint[i].Kp;
+                    rfctrl.joint[rfctrl.count].Kd = gains.joint[i].Kd;
+                    rfctrl.joint[rfctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     rfctrl.count++;
                 }
                 
@@ -768,6 +1007,11 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &bodctrl.joint[bodctrl.count], &tempJC, sizeof(tempJC) );
                     bodctrl.jointIndices[bodctrl.count] = i;
+
+                    bodctrl.joint[bodctrl.count].Kp = gains.joint[i].Kp;
+                    bodctrl.joint[bodctrl.count].Kd = gains.joint[i].Kd;
+                    bodctrl.joint[bodctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     bodctrl.count++;
                 }
                 
@@ -775,12 +1019,20 @@ int setCtrlDefaults( struct hubo_control *ctrl )
                 {
                     memcpy( &nckctrl.joint[nckctrl.count], &tempJC, sizeof(tempJC) );
                     nckctrl.jointIndices[nckctrl.count] = i;
+
+                    nckctrl.joint[nckctrl.count].Kp = gains.joint[i].Kp;
+                    nckctrl.joint[nckctrl.count].Kd = gains.joint[i].Kd;
+                    nckctrl.joint[nckctrl.count].maxPWM = gains.joint[i].maxPWM;
+
                     nckctrl.count++;
                 }
                 
             } // end: if (jnkNameCheck != 1)
-		} // end: sscanf
-	} // end: fgets
+        } // end: if(sscanf)
+    } // end: while(fgets)
+
+
+
 
 	fclose(ptr_file);	// close file stream
     ach_put( &chan_hubo_ra_ctrl, &ractrl, sizeof(ractrl) );
@@ -800,5 +1052,192 @@ int setCtrlDefaults( struct hubo_control *ctrl )
 
 
 
+int setConversionTables( struct hubo_conversion_tables *conversion)
+{
+    memset(conversion, 0, sizeof(*conversion));
+
+    FILE *ptr_file;
+
+    if(!(ptr_file=fopen(dutyFileLocation, "r")))
+    {
+        fprintf(stderr, "Unable to locate %s\n "
+                        " -- Try using sudo!\n"
+                        " -- If that doesn\'t work, try reinstalling hubo-motion-rt\n",
+                dutyFileLocation);
+        return -1;
+    }
+
+    hubo_duty_table_t tempTable;
+    memset(&tempTable, 0, sizeof(tempTable));
+
+    char *charPointer;
+    char buff[2048];
+    char type[256];
+    size_t tableID = 0;
+    size_t currentLine = 0;
+    ctrl_table_t tableType;
+
+    fprintf(stdout, "Grabbing the %s table... ", dutyFileLocation); fflush(stdout);
+    while( fgets(buff, sizeof(buff), ptr_file) != NULL )
+    {
+        currentLine++;
+        FILE *tableLine;
+        charPointer = strchr(buff, '#');
+        if( NULL != charPointer )
+            *charPointer = '\0';
+
+
+        if( strlen(buff) == sizeof(buff)-1 )
+        {
+            fprintf(stderr, "Duty Table Parser: Line length overflow!\n");
+            return -1;
+        }
+
+        tableLine = fmemopen(buff, sizeof(buff), "r");
+
+        if(fscanf(tableLine, "%s", type)==1)
+        {
+            if(strcmp(type, "Duty")==0)
+            {
+                tableType = CTRL_TABLE_DUTY;
+            }
+            else if(strcmp(type, "Torque")==0)
+            {
+                tableType = CTRL_TABLE_TORQUE;
+            }
+            else if(strcmp(type, "Amp")==0)
+            {
+                tableType = CTRL_TABLE_AMP;
+            }
+            else if(strcmp(type, "")==0)
+                continue; // Ignore blank lines
+            else
+            {
+                fprintf(stderr, "Unknown type in Amp-Duty table! (%s, line %lu)\n"
+                                " -- Must be \'Amp\' or \'Duty\'\n", type, currentLine);
+                return -1;
+            }
+
+            if(fscanf(tableLine, "%lu", &tableID)==1)
+            {
+                if(tableID < MAX_DUTY_TABLE_TYPES)
+                {
+                    size_t entryID=0;
+                    double entry = 0;
+                    while(fscanf(tableLine, "%lf", &entry)==1)
+                    {
+                        if(entryID > MAX_DUTY_TABLE_SIZE)
+                        {
+                            fprintf(stderr, "Too many entries (%lu) in line %lu! Current max is %d\n"
+                                            " -- You must increase MAX_DUTY_TABLE_SIZE in control-daemon.h\n",
+                                            entryID, currentLine, MAX_DUTY_TABLE_SIZE);
+                        }
+
+                        if(tableType==CTRL_TABLE_DUTY)
+                            conversion->table[tableID].duty[entryID] = entry;
+                        else if(tableType==CTRL_TABLE_TORQUE)
+                            conversion->table[tableID].torque[entryID] = entry;
+                        else if(tableType==CTRL_TABLE_AMP)
+                            conversion->table[tableID].amp[entryID] = entry;
+                        else
+                        {
+                            fprintf(stderr, "setConversionTables(~) does not know how to handle a table type of %d!\n"
+                                            " -- Check line %d in hubo-motion-rt/src/control-daemon.c\n",
+                                            tableType, __LINE__-4);
+                            return -1;
+                        }
+                        entryID++;
+                    }
+                    conversion->table[tableID].count = entryID;
+                }
+                else
+                {
+                    fprintf(stderr, "Table ID (%lu) is too high on line %lu! Current max is %d\n"
+                            " -- You must increase MAX_DUTY_TABLE_TYPES in control-daemon.h\n",
+                            tableID, currentLine, MAX_DUTY_TABLE_TYPES);
+                    return -1;
+                }
+            }
+            else
+            {
+                fprintf(stderr, "Table type %s needs an ID! (line %lu)\n", type, currentLine);
+                return -1;
+            }
+        }
+    }
+    fprintf(stdout, " Got it!\n"); fflush(stdout);
+
+
+    size_t jntNameCheck = 0;
+    char name[4];
+    hubo_joint_duty_settings_t tempSet;
+    memset(&tempSet, 0, sizeof(tempSet));
+
+
+    if(!(ptr_file=fopen(torqueFileLocation, "r")))
+    {
+        fprintf(stderr, "Unable to locate %s\n"
+                        " -- Try using sudo!\n"
+                        " -- If that doesn\'t work, try reinstalling hubo-motion-rt\n",
+                        torqueFileLocation);
+        return -1;
+    }
+
+    currentLine = 0;
+    fprintf(stdout, "Grabbing the %s table... ", torqueFileLocation); fflush(stdout);
+    while( fgets(buff, sizeof(buff), ptr_file) != NULL )
+    {
+        currentLine++;
+        charPointer = strchr(buff, '#');
+        if(NULL != charPointer)
+            *charPointer = '\0';
+
+        if( strlen(buff) == sizeof(buff)-1 )
+        {
+            fprintf(stderr, "Torque Table Parser: Line length overflow!\n");
+            return -1;
+        }
+
+        if( 5 == sscanf(buff, "%s%lu%lf%lf%lf",
+                        name,
+                        &(tempSet.dutyType),
+                        &(tempSet.kF),
+                        &(tempSet.Fmax),
+                        &(tempSet.deadbandScale)) )
+        {
+            size_t x; int i; jntNameCheck = 0;
+            for( x = 0; x < sizeof(jointNames)/sizeof(jointNames[0]); x++ )
+            {
+                if(0 == strcmp(name, jointNames[x]))
+                {
+                    i = x;
+                    jntNameCheck = 1;
+                    break;
+                }
+            }
+
+            if(jntNameCheck != 1)
+            {
+                fprintf(stderr, "Joint name %s is not valid! line %lu\n",
+                        name, currentLine);
+                return -1;
+            }
+            else
+            {
+                memcpy(&(conversion->joint[i]), &tempSet, sizeof(tempSet));
+            }
+
+        } // end: if(sscanf)
+    } // end: while(fgets)
+    fprintf(stdout, "Got it!\n"); fflush(stdout);
+
+}
+
+
+
+double getGearReduction(hubo_param_t *h, int jnt)
+{
+    return h->joint[jnt].driven/h->joint[jnt].drive*h->joint[jnt].harmonic;
+}
 
 
