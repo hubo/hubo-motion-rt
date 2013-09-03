@@ -444,8 +444,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         // Don't worry about where these joint are
         if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
          && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
-         && NK1!=i && NK2!=i && NKY!=i && LWR!=i && RWR!=i && RWY!=i && RWP!=i) //FIXME
+         && NK1!=i && NK2!=i && NKY!=i ) //FIXME
         {
+            if( LSR==i || RSR==i || LEB==i )
+                std::cout << jointNames[i] << " = " << currentTrajectory->traj[0].angles[i] << "\n";
             hubo.setJointAngle( i, currentTrajectory->traj[0].angles[i] );
             hubo.setJointNominalSpeed( i, 0.4 );
             hubo.setJointNominalAcceleration( i, 0.4 );
@@ -457,7 +459,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     hubo.setJointNominalSpeed( LKN, 0.8 );
     hubo.setJointNominalAcceleration( LKN, 0.8 );
 
-    hubo.sendControls();
+    //hubo.sendControls();
 
     // Wait specified time for joints to get into initial configuration,
     // otherwise time out and alert user.
@@ -698,7 +700,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
 
-  hubo.sendControls();
+  //hubo.sendControls();
 }
 
 

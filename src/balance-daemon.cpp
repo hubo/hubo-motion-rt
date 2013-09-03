@@ -159,6 +159,9 @@ int main(int argc, char **argv)
             {
                 state.m_zmp_arm_states.should_use = cmd.use_cur_arm_positions;
                 fillArmStates(hubo, state);
+                state.m_zmp_arm_states.arm_joint_states[LEFT][SR] = M_PI/2;
+                state.m_zmp_arm_states.arm_joint_states[RIGHT][SR] = M_PI/2;
+                state.m_zmp_arm_states.arm_joint_states[LEFT][EB] = M_PI/2;
                 // Put current arm angles on ach channel
                 ach_put( &bal_state_chan, &state, sizeof(state) );
                 walk.commenceWalking(state, nudge, gains);

@@ -38,7 +38,7 @@
 #ifndef BALANCE_DAEMON_H
 #define BALANCE_DAEMON_H
 
-#include "Hubo_Control.h"
+//#include "Hubo_Control.h"
 
 #define BALANCE_CMD_CHAN "balance-cmd"
 #define BALANCE_STATE_CHAN "balance-state"
@@ -103,7 +103,7 @@ typedef struct balance_gains {
 typedef struct zmp_arm_states {
     int should_use;
     int num_arm_joints;
-    double arm_joint_states[2][ARM_JOINT_COUNT];
+    double arm_joint_states[2][10];//ARM_JOINT_COUNT];
 }__attribute__((packed)) zmp_arm_states_t;
 
 typedef struct balance_cmd {
