@@ -340,16 +340,17 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     //-------------------------
     // Figure out if we're in single or double support stance and which leg
     int side;    //!< variable for stance leg
+    int counterMax = 10;
     unsigned char swing_right[4] = {1,0,0,0};
     unsigned char swing_left[4] = {0,1,0,0};
-    if(swing_left == elem.supporting)
+    if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
         side = LEFT;
-    else if(swing_right == elem.supporting)
+    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
         side = RIGHT;
     else
         side = 100;
-    if(100 != side)
-        std::cout << "side = " << (LEFT == side ? "LEFT" : "RIGHT") << "\n";
+    if(100 != side && counter >= counterMax)
+        std::cout << (LEFT == side ? "LEFT" : "RIGHT") << " ";
 
     //------------------------
     //      CONTROLLER
@@ -405,8 +406,10 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         hubo.huboLegFK( footTF[LEFT], qPrev[LEFT], LEFT );
         hubo.huboLegFK( footTF[RIGHT], qPrev[RIGHT], RIGHT );
 
-        if(counter > 40)
-            std::cout << "Z now " << footTF[LEFT](2,3);
+        if(counter >= counterMax)
+        {
+            std::cout << "preZ " << footTF[side](2,3) << " ";
+        }
 
         //-------------------------
         //   FORCE/TORQUE ERROR
@@ -418,11 +421,16 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
         forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
         forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
-        forceTorqueErr[LEFT](2) = (-elem.forces[LEFT][2] - hubo.getLeftFootFz()); //FIXME should be positive
+        forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
 
         forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
         forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
-        forceTorqueErr[RIGHT](2) = (-elem.forces[RIGHT][2] - hubo.getRightFootFz()); //FIXME should be positive
+        forceTorqueErr[RIGHT](2) = (hubo.getRightFootFz()); //FIXME should be positive
+
+        if(counter >= counterMax)
+        {
+            std::cout << "dfz " << forceTorqueErr[side][2] << " ";
+        }
 
         // Skew matrix for torque reaction logic
         Eigen::Matrix3d skew;
@@ -495,13 +503,13 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         }
 
         hubo.huboLegFK( footTF[LEFT], qNew[LEFT], LEFT );
-        if(counter > 40)
-            std::cout << " Z after " << footTF[LEFT](2,3);
+        if(counter >= counterMax)
+            std::cout << "postZ" << footTF[side](2,3) << " ";
 
         //----------------------
         //   DEBUG PRINT OUT
         //----------------------
-        if(counter > 40)
+        if(counter >= counterMax)
         {
             if(true)
             {
@@ -510,13 +518,13 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                           //<< " TdR: " << -elem.torque[RIGHT][0] << ", " << -elem.torque[RIGHT][1]
                           //<< " MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
                           //<< " MxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
-                          << " mFz: " << hubo.getLeftFootFz()
-                          << " dFz: " << -elem.forces[LEFT][2]
-                          << " FTe: " << forceTorqueErr[LEFT].z()
+                          //<< " mFz: " << hubo.getLeftFootFz()
+                          //<< " dFz: " << -elem.forces[LEFT][2]
+                          //<< " FTe: " << forceTorqueErr[LEFT].z()
                           //<< " Fte: " << instantaneousFeetOffset.transpose()
-                          << " FeetE: " << state.dFeetOffset[side](2)
-                          << " qDfL: " << (qNew[LEFT] - qPrev[LEFT]).transpose()
-                          << "\n";
+                          << "off " << state.dFeetOffset[side](2)
+                          //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
+                          << std::endl;
             }
         }
         //-----------------------
@@ -539,9 +547,9 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             elem.angles[RAP] = qNew[RIGHT](AP);
             elem.angles[RAR] = qNew[RIGHT](AR);
         }
-        if(counter > 40)
-            counter = 0;
     }
+    if(counter > counterMax)
+        counter = 0;
 }
 
 
@@ -881,21 +889,21 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     zmp_traj_element_t tempNextElem;
     memcpy(&tempNextElem, &nextElem, sizeof(zmp_traj_element_t));
 
-    int legidx[6] = { LHY, LHR, LHP, LKN, LAP, LAR };
+//    int legidx[6] = { LHY, LHR, LHP, LKN, LAP, LAR };
     
-    std::cout << "before: ";
-    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
-    std::cout << "\n";
+//    std::cout << "before: ";
+//    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
+//    std::cout << "\n";
 
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
     //complyKnee( hubo, tempNextElem, state, gains, dt );
-    landingController( hubo, tempNextElem, state, gains, dt );
+    //landingController( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 
-    std::cout << "after: ";
-    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
-    std::cout << "\n";
+//    std::cout << "after: ";
+//    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
+//    std::cout << "\n";
 
     // For each joint set it's position to that in the trajectory for the
     // current timestep, which has been adjusted based on feedback.
