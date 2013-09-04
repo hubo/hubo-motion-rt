@@ -72,8 +72,8 @@ void trigger_limp( Hubo_Control &hubo );
 
 int main( int argc, char **argv )
 {
-//    Hubo_Control hubo("manip-daemon");
-    Hubo_Control hubo;
+    Hubo_Control hubo("manip-daemon");
+//    Hubo_Control hubo;
 
     DrcHuboKin kin;
     kin.updateHubo(hubo);

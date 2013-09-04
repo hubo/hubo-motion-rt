@@ -447,7 +447,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
          && NK1!=i && NK2!=i && NKY!=i ) //FIXME
         {
             if( LSR==i || RSR==i || LEB==i )
-                std::cout << jointNames[i] << " = " << currentTrajectory->traj[0].angles[i] << "\n";
+            {
+                std::cout << jointNames[i] << "[0] = " << currentTrajectory->traj[0].angles[i] << "\n";
+                std::cout << jointNames[i] << "[1] = " << currentTrajectory->traj[1].angles[i] << "\n";
+            }
             hubo.setJointAngle( i, currentTrajectory->traj[0].angles[i] );
             hubo.setJointNominalSpeed( i, 0.4 );
             hubo.setJointNominalAcceleration( i, 0.4 );
