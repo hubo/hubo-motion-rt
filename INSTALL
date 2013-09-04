@@ -3,7 +3,7 @@ Installation Instructions
 
 Prerequisites: 
    1) hubo-ach (https://github.com/hubo/hubo-ach)
-   2) RobotKin (https://github.com/mxgrey/RoboKin)
+   2) RobotKin (https://github.com/mxgrey/RobotKin)
    3) drchubo-v2.urdf in /etc/hubo-ach/
 
 0. This package uses cmake. If you're not sure whether you have cmake, put the following
