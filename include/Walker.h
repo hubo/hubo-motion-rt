@@ -51,8 +51,8 @@ typedef struct nudge_state {
     Eigen::Vector3d spin;
     Eigen::Vector3d integratedFeetOffset;
     Eigen::Vector3d prevIntegratedFeetOffset;
-    Eigen::Matrix<double,6,1> dFeetOffset;
-    Eigen::Matrix<double,6,1> prevdFeetOffset;
+    Eigen::Matrix<double,6,1> dFeetOffset[2];
+    Eigen::Matrix<double,6,1> prevdFeetOffset[2];
 
     double ankle_roll_compliance[2];
     double ankle_pitch_compliance[2];
