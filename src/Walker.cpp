@@ -464,9 +464,11 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //------------------------
         //    CAP BODY OFFSET
         //------------------------
-        const double dFeetOffsetTol = 0.06;
+        const double dFeetOffsetTol = 0.10; // 10 cm max offset
         double n = state.dFeetOffset[side].norm();
-        if (n > dFeetOffsetTol) {
+        if (n > dFeetOffsetTol)
+        {
+            if(counter >= counterMax) std::cout << "Hit max ";
             state.dFeetOffset[side] *= dFeetOffsetTol/n;
         }
 
