@@ -424,14 +424,17 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
         //forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
         //forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
-        //forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
+        forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
 
         //forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
         //forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
         forceTorqueErr[RIGHT](2) = (hubo.getRightFootFz()); //FIXME should be positive
-        if(forceTorqueErr[side](2) < 0)
+
+        // Prevent negative forces on the feet (ie. pulling the feet down)
+        for(int i=0; i<2; i++)
         {
-            forceTorqueErr[side](2) = 0.0;
+            if(forceTorqueErr[i](2) < 0)
+                forceTorqueErr[i](2) = 0.0;
         }
 
         if(counter >= counterMax)
@@ -456,8 +459,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         {
             if(LEFT == side || RIGHT == side)
                 // Run impedance controller on swing leg
-                //impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
-                impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
+                impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
+                //impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
             //else
                // impCtrl.run(state.dFeetOffset, (yawRot[LEFT]*skew*forceTorqueErr[LEFT] + yawRot[RIGHT]*skew*forceTorqueErr[RIGHT])/2, dt);
         }
@@ -472,7 +475,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //------------------------
         //    CAP BODY OFFSET
         //------------------------
-        const double dFeetOffsetTol = 0.10; // 10 cm max offset
+        const double dFeetOffsetTol = 0.06; // 10 cm max offset
         double n = state.dFeetOffset[side].norm();
         if (n > dFeetOffsetTol)
         {
@@ -532,7 +535,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                           //<< " dFz: " << -elem.forces[LEFT][2]
                           //<< " FTe: " << forceTorqueErr[LEFT].z()
                           //<< " Fte: " << instantaneousFeetOffset.transpose()
-                          << "off " << state.dFeetOffset[side](2)
+                          << "off " << state.dFeetOffset[side](0) << " " << state.dFeetOffset[side](1) << " " << state.dFeetOffset[side](2)
                           //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
                           << std::endl;
             }
