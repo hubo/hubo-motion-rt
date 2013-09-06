@@ -75,11 +75,11 @@ Eigen::Matrix<double,6,1> ImpedanceController::impedanceEq(const Eigen::Matrix<d
     B << 0, 0, 0, dForceTorque/m_M;
 
     dFeetDot = A*dFeet + B;
-//    std::cout << "A:\n" << A << "\nB:\n" << B << "\ndFeet: "
+//    std::cout << "A:\n" << A(5,2) << std::endl;// << "\nB:\n" << B << "\ndFeet: "
 //              << dFeet << "\ndFeetDot: " << dFeetDot << "\ndForceTorque: " << dForceTorque << std::endl;
 
     return dFeetDot;
-};
+}
 
 void ImpedanceController::rk4(Eigen::Matrix<double,6,1> &dFeet, const Eigen::Vector3d &dForceTorque, double dt )
 {
@@ -93,13 +93,13 @@ void ImpedanceController::rk4(Eigen::Matrix<double,6,1> &dFeet, const Eigen::Vec
 
     // compute new delta q
     dFeet = dFeet + dt*(k1 + 2*k2 + 2*k3 + k4)/6;
-};
+}
 
 void ImpedanceController::run(Eigen::Matrix<double,6,1> &dFeet, const Eigen::Vector3d &dForceTorque, double dt)
 {
     // Integrate using Runge-Kutta 4
     rk4(dFeet, dForceTorque, dt); // pass in dFeet(n) and get out dFeet(n+1)
-};
+}
 
 void ImpedanceController::setGains(const Eigen::Vector3d &spring_gain, const Eigen::Vector3d &damping_gain, const double mass)
 {

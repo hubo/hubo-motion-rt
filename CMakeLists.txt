@@ -68,6 +68,8 @@ target_link_libraries(balance-daemon m rt ach huboparams RobotKin ${urdfdom_LIBR
 add_executable(manip-daemon ${manip_daemon_source})
 target_link_libraries(manip-daemon m rt ach huboparams RobotKin daemonizer drchubokin huboctrl)
 
+add_executable(imp-test "src/imp-test.cpp" "src/ImpedanceController.cpp" "include/ImpedanceController.h" "include/KeyboardInput.h")
+
 # Install Libraries
 INSTALL(TARGETS daemonizer
                 huboctrl
