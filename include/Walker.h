@@ -110,6 +110,7 @@ public:
 
     bool keepWalking;   //!< Whether or not to keep walking.
     int counter;        //!< Print counter
+    walktype_t m_walkDirection;
 
 protected:
 

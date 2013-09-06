@@ -66,7 +66,10 @@ public:
      * \brief Sets the spring gains, damping gains mass in the impedance controller
      * \return void
     */
-    void setGains(const Eigen::Vector3d &spring_gain, const Eigen::Vector3d &damping_gain, const double mass=default_mass);
+    void setGains(const Eigen::Vector3d &spring_gain, const Eigen::Vector3d &damping_gain);
+    void setSpringGains(const Eigen::Vector3d &spring_gain);
+    void setDampingGains(const Eigen::Vector3d &damping_gain);
+    void setMass(const double mass);
 
     //-------------------------
     //    MEMBER VARIABLES

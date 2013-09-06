@@ -59,7 +59,8 @@ int main(int argc, char **argv)
         }
 
         // Set impedance controller gains Mass, Spring, Damper
-        impCtrl.setGains(K,Q,M);
+        impCtrl.setMass(M);
+        impCtrl.setGains(K,Q);
 
         // Run impedance controller
         impCtrl.run(dFeetOffset, forceTorqueErr, dt);

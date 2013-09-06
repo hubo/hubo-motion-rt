@@ -340,7 +340,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     //-------------------------
     // Figure out if we're in single or double support stance and which leg
     int side;    //!< variable for stance leg
-    int counterMax = 10;
+    int counterMax = 40;
     unsigned char swing_right[4] = {1,0,0,0};
     unsigned char swing_left[4] = {0,1,0,0};
     if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
@@ -349,9 +349,9 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         side = RIGHT;
     else
         side = 100;
-    if(100 != side && counter >= counterMax)
-        std::cout << (LEFT == side ? "LEFT" : "RIGHT") << " ";
-
+   // if(100 != side && counter >= counterMax)
+     //   std::cout << (LEFT == side ? "LEFT" : "RIGHT") << " ";
+    side = RIGHT;
     //------------------------
     //      CONTROLLER
     //------------------------
@@ -365,6 +365,9 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
         spring_gain.z() = gains.spring_gain[side];
         damping_gain.z() = gains.damping_gain[side];
+
+        // Set Impedance Controller gains
+        impCtrl.setGains(spring_gain, damping_gain);
 
         //-------------------------
         //    COPY JOINT ANGLES
@@ -408,7 +411,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
         if(counter >= counterMax)
         {
-            std::cout << "preZ " << footTF[side](2,3) << " ";
+           // std::cout << "preZ " << footTF[side](2,3) << " ";
         }
 
         //-------------------------
@@ -419,13 +422,17 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         // instead of torque at F/T sensor
         Eigen::Vector3d forceTorqueErr[2];
 
-        forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
-        forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
-        forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
+        //forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
+        //forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
+        //forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
 
-        forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
-        forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
+        //forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
+        //forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
         forceTorqueErr[RIGHT](2) = (hubo.getRightFootFz()); //FIXME should be positive
+        if(forceTorqueErr[side](2) < 0)
+        {
+            forceTorqueErr[side](2) = 0.0;
+        }
 
         if(counter >= counterMax)
         {
@@ -449,7 +456,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         {
             if(LEFT == side || RIGHT == side)
                 // Run impedance controller on swing leg
-                impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
+                //impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
+                impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
             //else
                // impCtrl.run(state.dFeetOffset, (yawRot[LEFT]*skew*forceTorqueErr[LEFT] + yawRot[RIGHT]*skew*forceTorqueErr[RIGHT])/2, dt);
         }
@@ -468,7 +476,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         double n = state.dFeetOffset[side].norm();
         if (n > dFeetOffsetTol)
         {
-            if(counter >= counterMax) std::cout << "Hit max ";
+            if(counter >= counterMax) std::cout << " Hit max ";
             state.dFeetOffset[side] *= dFeetOffsetTol/n;
         }
 
@@ -505,8 +513,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         }
 
         hubo.huboLegFK( footTF[LEFT], qNew[LEFT], LEFT );
-        if(counter >= counterMax)
-            std::cout << "postZ" << footTF[side](2,3) << " ";
+       // if(counter >= counterMax)
+           //  std::cout << "postZ" << footTF[side](2,3) << " ";
 
         //----------------------
         //   DEBUG PRINT OUT
@@ -864,6 +872,7 @@ bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAl
     if( ACH_OK==r || ACH_MISSED_FRAME==r )
     {
         fprintf(stdout, "Noticed new trajectory: ID #%d\n", (int)newTrajectory.trajNumber);
+        m_walkDirection = newTrajectory.walkDirection;
         return true;
     }
     else
@@ -900,7 +909,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
     //complyKnee( hubo, tempNextElem, state, gains, dt );
-    //landingController( hubo, tempNextElem, state, gains, dt );
+    if(WALK_FORWARD == m_walkDirection)
+        landingController( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 
 //    std::cout << "after: ";

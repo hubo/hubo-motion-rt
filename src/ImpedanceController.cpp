@@ -101,9 +101,24 @@ void ImpedanceController::run(Eigen::Matrix<double,6,1> &dFeet, const Eigen::Vec
     rk4(dFeet, dForceTorque, dt); // pass in dFeet(n) and get out dFeet(n+1)
 }
 
-void ImpedanceController::setGains(const Eigen::Vector3d &spring_gain, const Eigen::Vector3d &damping_gain, const double mass)
+void ImpedanceController::setGains(const Eigen::Vector3d &spring_gain, const Eigen::Vector3d &damping_gain)
 {
     m_K = spring_gain;
     m_Q = damping_gain;
+}
+
+void ImpedanceController::setSpringGains(const Eigen::Vector3d &spring_gain)
+{
+    m_K = spring_gain;
+}
+
+void ImpedanceController::setDampingGains(const Eigen::Vector3d &damping_gain)
+{
+    m_Q = damping_gain;
+}
+
+void ImpedanceController::setMass(const double mass)
+{
     m_M = mass;
 }
+
