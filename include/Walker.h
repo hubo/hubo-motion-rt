@@ -64,6 +64,7 @@ typedef struct nudge_state {
     Eigen::Vector3d prevTorqueErr[2];
     Eigen::Vector3d imu_offset;
 
+    int prevSwingFoot;
     double V0[HUBO_JOINT_COUNT];
     
 } nudge_state_t;
