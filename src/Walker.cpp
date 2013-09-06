@@ -374,20 +374,24 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //-------------------------
         // Store leg joint angels for current trajectory timestep
         Vector6d qPrev[2];
-        qPrev[LEFT](HY) = elem.angles[LHY],
-        qPrev[LEFT](HR) = elem.angles[LHR],
-        qPrev[LEFT](HP) = elem.angles[LHP],
-        qPrev[LEFT](KN) = elem.angles[LKN],
-        qPrev[LEFT](AP) = elem.angles[LAP],
-        qPrev[LEFT](AR) = elem.angles[LAR];
-
-        qPrev[RIGHT](HY) = elem.angles[RHY],
-        qPrev[RIGHT](HR) = elem.angles[RHR],
-        qPrev[RIGHT](HP) = elem.angles[RHP],
-        qPrev[RIGHT](KN) = elem.angles[RKN],
-        qPrev[RIGHT](AP) = elem.angles[RAP],
-        qPrev[RIGHT](AR) = elem.angles[RAR];
-
+        if(LEFT == side)
+        {
+            qPrev[LEFT](HY) = elem.angles[LHY];
+            qPrev[LEFT](HR) = elem.angles[LHR];
+            qPrev[LEFT](HP) = elem.angles[LHP];
+            qPrev[LEFT](KN) = elem.angles[LKN];
+            qPrev[LEFT](AP) = elem.angles[LAP];
+            qPrev[LEFT](AR) = elem.angles[LAR];
+        }
+        else
+        {
+            qPrev[RIGHT](HY) = elem.angles[RHY];
+            qPrev[RIGHT](HR) = elem.angles[RHR];
+            qPrev[RIGHT](HP) = elem.angles[RHP];
+            qPrev[RIGHT](KN) = elem.angles[RKN];
+            qPrev[RIGHT](AP) = elem.angles[RAP];
+            qPrev[RIGHT](AR) = elem.angles[RAR];
+        }
 
         //-------------------------
         //        HIP YAWS
@@ -515,9 +519,17 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             //hubo.huboLegIK(qNew[RIGHT], footTF[RIGHT], qPrev[RIGHT], RIGHT);
         }
 
-        hubo.huboLegFK( footTF[LEFT], qNew[LEFT], LEFT );
+        hubo.huboLegFK( footTF[side], qNew[side], side );
        // if(counter >= counterMax)
            //  std::cout << "postZ" << footTF[side](2,3) << " ";
+
+        double jointMax = 0;
+        for(int i=0; i<6; i++)
+        {
+            double diff = qNew[side](i) - qPrev[side](i);
+            if(diff > jointMax)
+                jointMax = diff;
+        }
 
         //----------------------
         //   DEBUG PRINT OUT
@@ -535,7 +547,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                           //<< " dFz: " << -elem.forces[LEFT][2]
                           //<< " FTe: " << forceTorqueErr[LEFT].z()
                           //<< " Fte: " << instantaneousFeetOffset.transpose()
-                          << "off " << state.dFeetOffset[side](0) << " " << state.dFeetOffset[side](1) << " " << state.dFeetOffset[side](2)
+                          << "\toff " << state.dFeetOffset[side](0) << " " << state.dFeetOffset[side](1) << " " << state.dFeetOffset[side](2)
+                          << "\tmax " << jointMax
                           //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
                           << std::endl;
             }
@@ -544,24 +557,29 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //   SET JOINT ANGLES
         //-----------------------
         // Set leg joint angles for current timestep of trajectory
-        if(false)
+        if(true)
         {
-            elem.angles[LHY] = qNew[LEFT](HY);
-            elem.angles[LHR] = qNew[LEFT](HR);
-            elem.angles[LHP] = qNew[LEFT](HP);
-            elem.angles[LKN] = qNew[LEFT](KN);
-            elem.angles[LAP] = qNew[LEFT](AP);
-            elem.angles[LAR] = qNew[LEFT](AR);
-
-            elem.angles[RHY] = qNew[RIGHT](HY);
-            elem.angles[RHR] = qNew[RIGHT](HR);
-            elem.angles[RHP] = qNew[RIGHT](HP);
-            elem.angles[RKN] = qNew[RIGHT](KN);
-            elem.angles[RAP] = qNew[RIGHT](AP);
-            elem.angles[RAR] = qNew[RIGHT](AR);
+            if(LEFT == side)
+            {
+                elem.angles[LHY] = qNew[LEFT](HY);
+                elem.angles[LHR] = qNew[LEFT](HR);
+                elem.angles[LHP] = qNew[LEFT](HP);
+                elem.angles[LKN] = qNew[LEFT](KN);
+                elem.angles[LAP] = qNew[LEFT](AP);
+                elem.angles[LAR] = qNew[LEFT](AR);
+            }
+            else
+            {
+                elem.angles[RHY] = qNew[RIGHT](HY);
+                elem.angles[RHR] = qNew[RIGHT](HR);
+                elem.angles[RHP] = qNew[RIGHT](HP);
+                elem.angles[RKN] = qNew[RIGHT](KN);
+                elem.angles[RAP] = qNew[RIGHT](AP);
+                elem.angles[RAR] = qNew[RIGHT](AR);
+            }
         }
     }
-    if(counter > counterMax)
+    if(counter > counterMax-10)
         counter = 0;
 }
 
@@ -644,6 +662,9 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         t.tv_sec += 1;
         r = ach_get( &zmp_chan, currentTrajectory, sizeof(*currentTrajectory), &fs,
                     &t, ACH_O_WAIT | ACH_O_LAST );
+
+        m_walkDirection = currentTrajectory->walkDirection;
+        std::cout << "WalkType: " << walktype_strings[m_walkDirection] << std::endl;
 
         checkCommands();
         if( cmd.cmd_request != BAL_ZMP_WALKING )
@@ -876,6 +897,7 @@ bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAl
     {
         fprintf(stdout, "Noticed new trajectory: ID #%d\n", (int)newTrajectory.trajNumber);
         m_walkDirection = newTrajectory.walkDirection;
+        std::cout << "WalkType: " << walktype_strings[m_walkDirection] << std::endl;
         return true;
     }
     else
