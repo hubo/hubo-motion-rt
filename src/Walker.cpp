@@ -369,6 +369,9 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         // Set Impedance Controller gains
         impCtrl.setGains(spring_gain, damping_gain);
 
+        if(gains.fz_response[side] > 0)
+            impCtrl.setMass(gains.fz_response[side]);
+
         //-------------------------
         //    COPY JOINT ANGLES
         //-------------------------

@@ -58,6 +58,10 @@ public:
      * \brief takes the current desired feet offset positions and velocities
      *        and adjusts it to achieve desired force in the z-direction and moment
      *        about the ankles
+     * \param dFeet integrated foot offset in the x,y,z directions based on the
+     *        impedance controller, external forces and desired position of the foot
+     * \param dForceTorque the difference between the desired and actual forces at the ankle
+     * \param dt main hardware loop time
      * \return no return value. it adjust the desired feet offset by reference
     */
     void run(Eigen::Matrix<double,6,1>  &dFeet, const Eigen::Vector3d &dForceTorque, double dt);
