@@ -97,7 +97,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         kin.lockTool(alt);
     
     
-    start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
+//    start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
+    start = kin.linkage(limb[side]).tool().withRespectTo(kin.linkage("RightLeg").tool());
 
     next = TRANSFORM::Identity();
    
@@ -202,9 +203,11 @@ if(verbose)
          << "Goal:" << endl << goal.matrix() << endl << endl;
 }
 
-    next = kin.joint("RAP").respectToRobot()*next;
+//    next = kin.joint("RAP").respectToRobot()*next;
+    next = kin.linkage("RightLeg").tool().respectToRobot()*next;
     if(dual)
-        altNext = kin.joint("RAP").respectToRobot()*altNext;
+//        altNext = kin.joint("RAP").respectToRobot()*altNext;
+        altNext = kin.linkage("RightLeg").tool().respectToRobot()*altNext;
 
     
     hubo.getArmAngles(side, armAngles[side]);
@@ -228,7 +231,8 @@ if(verbose)
 {
     cout     << "EE:  " << endl << next.matrix() << endl << endl
              << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
-             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
+//             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
+             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.linkage("RightLeg").tool()).matrix() << endl << endl;
 
     cout  << "Angles: "  << armAngles[side].transpose() << endl
           << "Last:   "  << lastAngles[side].transpose() << endl
