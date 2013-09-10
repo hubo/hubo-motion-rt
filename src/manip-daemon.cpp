@@ -162,7 +162,7 @@ int main( int argc, char **argv )
             // Update manip state mode and goal ID            
             manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
             manip_state.goalID[side] = manip_cmd[side].goalID[side];
-            
+
             // Handle arm motions
             switch( manip_cmd[side].m_mode[side] )
             {
