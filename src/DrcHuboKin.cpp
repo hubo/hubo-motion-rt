@@ -126,16 +126,14 @@ void DrcHuboKin::resetTool(int side)
 */
 }
 
-void DrcHuboKin::lockTool(int side)
+void DrcHuboKin::setTool(int side, const TRANSFORM offset)
 {
     if( side == LEFT )
         linkage("LeftArm").tool().respectToFixed(
-                  linkage("RightArm").tool().withRespectTo(
-                          joint("LWR")  ) );
+                  toolTfL*offset);
     else
         linkage("RightArm").tool().respectToFixed(
-                  linkage("LeftArm").tool().withRespectTo(
-                          joint("RWR")  ) );
+                  toolTfR*offset);
 }
 
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)

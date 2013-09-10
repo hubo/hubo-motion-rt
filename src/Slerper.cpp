@@ -22,7 +22,7 @@ Slerper::Slerper() :
     nomSpeed = 0.15;
     nomAcc   = 0.1;
 
-    nomRotSpeed = 0.2;
+    nomRotSpeed = 0.2; // TODO play with these
     nomRotAcc   = 0.1;
     
     for(int i=0; i<2; i++)
@@ -94,7 +94,17 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     kin.resetTool(side);
   
     if(dual)
-        kin.lockTool(alt);
+    {
+        RobotKin::TRANSFORM altTf;
+        altTf.translate( Vector3d(cmd.dual_offset.x,
+                                  cmd.dual_offset.y,
+                                  cmd.dual_offset.z) );
+        altTf.rotate( Quaterniond(cmd.dual_offset.w,
+                                  cmd.dual_offset.i,
+                                  cmd.dual_offset.j,
+                                  cmd.dual_offset.k) );
+        kin.setTool(alt, altTf);
+    }
     
     
 //    start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
@@ -205,9 +215,9 @@ if(verbose)
 
 //    next = kin.joint("RAP").respectToRobot()*next;
     next = kin.linkage("RightLeg").tool().respectToRobot()*next;
-    if(dual)
+//    if(dual)
 //        altNext = kin.joint("RAP").respectToRobot()*altNext;
-        altNext = kin.linkage("RightLeg").tool().respectToRobot()*altNext;
+//        altNext = kin.linkage("RightLeg").tool().respectToRobot()*altNext;
 
     
     hubo.getArmAngles(side, armAngles[side]);
@@ -253,7 +263,8 @@ if(verbose)
     hubo.passJointAngle(RWR, armAngles[side](WR));
 */
     if(dual)
-        hubo.setArmTraj(alt, armAngles[alt], (armAngles[alt]-lastAngles[alt])/dt);
+        hubo.setArmAngles(alt, armAngles[alt]);
+//        hubo.setArmTraj(alt, armAngles[alt], (armAngles[alt]-lastAngles[alt])/dt);
 
     //std::cout << goal.translation().z() << "\t:\t"
 //              << next.translation().z() << "\t:\t"

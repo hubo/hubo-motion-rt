@@ -55,7 +55,7 @@ public:
     RobotKin::TRANSFORM toolTfL;
 
     void resetTool(int side);
-    void lockTool(int side);
+    void setTool(int side, const RobotKin::TRANSFORM offset);
 
     
 protected:

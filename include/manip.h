@@ -217,6 +217,7 @@ typedef struct hubo_manip_cmd {
     double waistAngle;
     
     hubo_manip_pose_t pose[NUM_ARMS];     ///< Defines a pose target for the arm. Ignored if m_mode == manip_mode_t::MC_TRAJ
+    hubo_manip_pose_t dual_offset;
     double arm_angles[NUM_ARMS][ARM_JOINT_COUNT];   ///< Defines the joint angles for each arm
 
 
