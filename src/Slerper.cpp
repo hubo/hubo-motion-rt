@@ -95,7 +95,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
   
     if(dual)
     {
-        RobotKin::TRANSFORM altTf;
+        RobotKin::TRANSFORM altTf = RobotKin::TRANSFORM::Identity();
         altTf.translate( Vector3d(cmd.dual_offset.x,
                                   cmd.dual_offset.y,
                                   cmd.dual_offset.z) );
