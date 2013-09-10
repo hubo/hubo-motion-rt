@@ -99,7 +99,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         altTf.translate( Vector3d(cmd.dual_offset.x,
                                   cmd.dual_offset.y,
                                   cmd.dual_offset.z) );
-        altTf.rotate( Quaterniond(cmd.dual_offset.w,
+        altTf.rotate( Eigen::Quaterniond(cmd.dual_offset.w,
                                   cmd.dual_offset.i,
                                   cmd.dual_offset.j,
                                   cmd.dual_offset.k) );
