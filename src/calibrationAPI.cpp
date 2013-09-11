@@ -3,6 +3,7 @@
 #include "DrcHuboKin.h"
 #include "calibration.h"
 #include <limits>
+#include <fstream>
 
 using namespace std;
 using namespace RobotKin;
@@ -210,7 +211,8 @@ bool calibrateJoint(int joint,
     cout << " :: Ready!" << endl << endl;
 
 
-
+    std::vector<double> pwmResult;
+    std::vector<double> torqueResult;
 
     double pwm = deadBand*(rangeEnd-rangeStart)/fabs(rangeEnd-rangeStart);
 
@@ -233,10 +235,15 @@ bool calibrateJoint(int joint,
         kin.updateHubo(hubo);
 
         if( fabs(hubo.getJointAngleState(joint)-rangeStart) < fabs(rangeEnd-rangeStart) )
+        {
+            pwmResult.push_back(hubo.getJointDuty(joint));
+            torqueResult.push_back(kin.joint(jointNames[joint]).gravityTorque());
             // TODO: Print result to table
             cout << "Angle: " << hubo.getJointAngleState(joint)
                  << "\tTorque: " << kin.joint(jointNames[joint]).gravityTorque()
                  << "\t PWM: " << hubo.getJointDuty(joint) << endl;
+
+        }
     }
 
     hubo.setJointCompliance(joint, true);
@@ -253,7 +260,22 @@ bool calibrateJoint(int joint,
 
     hubo.setJointAngle(joint, rangeStart, true);
 
-    cout << endl << "Finished with joint " << jointNames[joint] << "!" << endl;
+    cout << endl << "Finished with joint " << jointNames[joint] << "!" << endl << endl;
+
+
+    FILE * myfile = fopen("output-calibration", "a+");
+    
+    fprintf(myfile, "\n0.0      ");
+    for(int i=0; i<pwmResult.size(); i++)
+        fprintf(myfile, "%-2.4f   ", pwmResult[i]-deadBand);
+    fprintf(myfile, "\n");
+    fprintf(myfile, "0.0      ");
+    for(int i=0; i<torqueResult.size(); i++)
+        fprintf(myfile, "%-2.4f   ", torqueResult[i]);
+    fprintf(myfile, "\n");
+
+    fflush(myfile);
+    fclose(myfile);    
 
     return true;
 }

@@ -172,6 +172,7 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
 void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
 {
     if(state)
+    {
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
             if( !(strcmp(jointNames[i], "RF1")==0
                     || strcmp(jointNames[i], "RF2")==0
@@ -184,8 +185,10 @@ void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
                     || strcmp(jointNames[i], "LF4")==0
                     || strcmp(jointNames[i], "LF5")==0
                     || hubo.H_State.joint[i].active==0) )
-                setJointValue(jointNames[i], hubo.getJointAngleState(i), false);
+                setJointValue(jointNames[i], hubo.getJointAngleState(i), true);
+    }
     else
+    {
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
             if( !(strcmp(jointNames[i], "RF1")==0
                     || strcmp(jointNames[i], "RF2")==0
@@ -198,8 +201,8 @@ void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
                     || strcmp(jointNames[i], "LF4")==0
                     || strcmp(jointNames[i], "LF5")==0
                     || hubo.H_State.joint[i].active==0) )
-                setJointValue(jointNames[i], hubo.getJointAngle(i), false);
-
+                setJointValue(jointNames[i], hubo.getJointAngle(i), true);
+    }
     updateFrames();
 }
 
