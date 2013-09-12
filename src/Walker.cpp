@@ -352,8 +352,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         side = 100;
     if(counter >= counterMax)
         std::cout << side << "\n";
-   // if(100 != side && counter >= counterMax)
-     //   std::cout << (LEFT == side ? "LEFT" : "RIGHT") << " ";
+    //side = RIGHT;
     //------------------------
     //      CONTROLLER
     //------------------------
@@ -363,42 +362,64 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     Eigen::Vector3d spring_gain, damping_gain;
     spring_gain.setZero(); damping_gain.setZero();
 
-    spring_gain.z() = gains.spring_gain[RIGHT];
-    damping_gain.z() = gains.damping_gain[RIGHT];
+        spring_gain.y() = gains.spring_gain[RIGHT];
+        damping_gain.y() = gains.damping_gain[RIGHT];
 
     // Set Impedance Controller gains
     impCtrl.setGains(spring_gain, damping_gain);
 
-    if(gains.fz_response[side] > 0)
+    if(gains.fz_response[RIGHT] > 0)
         impCtrl.setMass(gains.fz_response[RIGHT]);
 //    if(counter >= counterMax)
 //        std::cout << "K=" << spring_gain.z() << " Q=" << damping_gain.z() << " M=" << gains.fz_response[side];
-    //-------------------------
-    //    COPY JOINT ANGLES
-    //-------------------------
-    // Store leg joint angels for current trajectory timestep
-    Vector6d qPrev[2];
-    qPrev[LEFT](HY) = elem.angles[LHY];
-    qPrev[LEFT](HR) = elem.angles[LHR];
-    qPrev[LEFT](HP) = elem.angles[LHP];
-    qPrev[LEFT](KN) = elem.angles[LKN];
-    qPrev[LEFT](AP) = elem.angles[LAP];
-    qPrev[LEFT](AR) = elem.angles[LAR];
 
-    qPrev[RIGHT](HY) = elem.angles[RHY];
-    qPrev[RIGHT](HR) = elem.angles[RHR];
-    qPrev[RIGHT](HP) = elem.angles[RHP];
-    qPrev[RIGHT](KN) = elem.angles[RKN];
-    qPrev[RIGHT](AP) = elem.angles[RAP];
-    qPrev[RIGHT](AR) = elem.angles[RAR];
+        //-------------------------
+        //    COPY JOINT ANGLES
+        //-------------------------
+        // Store leg joint angels for current trajectory timestep
+        Vector6d qPrev[2];
+        if(LEFT == side)
+        {
+            qPrev[LEFT](HY) = elem.angles[LHY];
+            qPrev[LEFT](HR) = elem.angles[LHR];
+            qPrev[LEFT](HP) = elem.angles[LHP];
+            qPrev[LEFT](KN) = elem.angles[LKN];
+            qPrev[LEFT](AP) = elem.angles[LAP];
+            qPrev[LEFT](AR) = elem.angles[LAR];
+        }
+        else if(RIGHT == side)
+        {
+            qPrev[RIGHT](HY) = elem.angles[RHY];
+            qPrev[RIGHT](HR) = elem.angles[RHR];
+            qPrev[RIGHT](HP) = elem.angles[RHP];
+            qPrev[RIGHT](KN) = elem.angles[RKN];
+            qPrev[RIGHT](AP) = elem.angles[RAP];
+            qPrev[RIGHT](AR) = elem.angles[RAR];
+        }
+        else // if in double-support
+        {
+            qPrev[LEFT](HY) = elem.angles[LHY];
+            qPrev[LEFT](HR) = elem.angles[LHR];
+            qPrev[LEFT](HP) = elem.angles[LHP];
+            qPrev[LEFT](KN) = elem.angles[LKN];
+            qPrev[LEFT](AP) = elem.angles[LAP];
+            qPrev[LEFT](AR) = elem.angles[LAR];
 
-    //-------------------------
-    //        HIP YAWS
-    //-------------------------
-    // Get rotation matrix for each hip yaw
-    Eigen::Matrix3d yawRot[2];
-    yawRot[LEFT] = Eigen::AngleAxisd(hubo.getJointAngle(LHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
-    yawRot[RIGHT]= Eigen::AngleAxisd(hubo.getJointAngle(RHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
+            qPrev[RIGHT](HY) = elem.angles[RHY];
+            qPrev[RIGHT](HR) = elem.angles[RHR];
+            qPrev[RIGHT](HP) = elem.angles[RHP];
+            qPrev[RIGHT](KN) = elem.angles[RKN];
+            qPrev[RIGHT](AP) = elem.angles[RAP];
+            qPrev[RIGHT](AR) = elem.angles[RAR];
+        }
+
+        //-------------------------
+        //        HIP YAWS
+        //-------------------------
+        // Get rotation matrix for each hip yaw
+        Eigen::Matrix3d yawRot[2];
+        yawRot[LEFT] = Eigen::AngleAxisd(hubo.getJointAngle(LHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
+        yawRot[RIGHT]= Eigen::AngleAxisd(hubo.getJointAngle(RHY), Eigen::Vector3d::UnitZ()).toRotationMatrix();
 
     //-------------------------
     //        FOOT TFs
@@ -426,12 +447,12 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     Eigen::Vector3d forceTorqueErr[2];
 
     //forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
-    //forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
-    forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
+    forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
+    //forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
 
     //forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
-    //forceTorqueErr[RIGHT](1) = (-elem.torque[RIGHT][1] - hubo.getRightFootMy());
-    forceTorqueErr[RIGHT](2) = (hubo.getRightFootFz()); //FIXME should be positive
+    forceTorqueErr[RIGHT](1) = -elem.torque[RIGHT][1] - hubo.getRightFootMy();
+    //forceTorqueErr[RIGHT](2) = hubo.getRightFootFz(); //FIXME should be positive
 
     if(LEFT != side && RIGHT != side)
     {
@@ -446,37 +467,35 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             forceTorqueErr[i](2) = 0.0;
     }
 
-    if(counter >= counterMax)
-    {
-    //    std::cout << " dfz " << forceTorqueErr[side][2];
-    }
+        // Skew matrix for torque reaction logic
+        Eigen::Matrix3d skew;
+        skew << 1, 0, 0,
+                0, 1, 0,
+                0, 0, 1; //FIXME should be negative
+//        skew(0,1) = 0;
+//        skew(1,0) = 0;
+        //------------------------
+        //  IMPEDANCE CONTROLLER
+        //------------------------
+        // Check if we're on the ground, if not set instantaneous feet offset
+        // to zero so integrated feet offset doesn't change, but we still apply it.
+        const double forceThreshold = 0;//20; // Newtons
+        if(hubo.getLeftFootFz() + hubo.getRightFootFz() > forceThreshold)
+        {
+            if(LEFT == side || RIGHT == side)
+                // Run impedance controller on swing leg
+                impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
+                //impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
+            //else
+               // impCtrl.run(state.dFeetOffset, (yawRot[LEFT]*skew*forceTorqueErr[LEFT] + yawRot[RIGHT]*skew*forceTorqueErr[RIGHT])/2, dt);
+        }
+        else
+        {
+            // Don't add to the dFeetOffset
+        }
 
-    // Skew matrix for torque reaction logic
-    Eigen::Matrix3d skew;
-    skew << 0, 1, 0,
-           -1, 0, 0,
-            0, 0, 1; //FIXME should be negative
-    skew(0,1) = 0;
-    skew(1,0) = 0;
-    //------------------------
-    //  IMPEDANCE CONTROLLER
-    //------------------------
-    // Check if we're on the ground, if not set instantaneous feet offset
-    // to zero so integrated feet offset doesn't change, but we still apply it.
-    const double forceThreshold = 0;//20; // Newtons
-    if(hubo.getLeftFootFz() + hubo.getRightFootFz() > forceThreshold)
-    {
-        if(LEFT == side || RIGHT == side)
-            // Run impedance controller on swing leg
-            impCtrl.run(state.dFeetOffset[side], yawRot[side]*skew*forceTorqueErr[side], dt);
-            //impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
-        //else
-           // impCtrl.run(state.dFeetOffset, (yawRot[LEFT]*skew*forceTorqueErr[LEFT] + yawRot[RIGHT]*skew*forceTorqueErr[RIGHT])/2, dt);
-    }
-    else
-    {
-        // Don't add to the dFeetOffset
-    }
+        // Decay the dFeetOffset
+    //    state.dFeetOffset -= gains.decay_gain[LEFT]*state.dFeetOffset;
 
     // Decay the dFeetOffset
 //    state.dFeetOffset -= gains.decay_gain[LEFT]*state.dFeetOffset;
@@ -542,53 +561,54 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             jointMax = diff;
     }
 
-    //----------------------
-    //   DEBUG PRINT OUT
-    //----------------------
-    if(counter >= counterMax)
-    {
-        if(false)
+        //----------------------
+        //   DEBUG PRINT OUT
+        //----------------------
+        if(counter >= counterMax)
         {
+            if(true)
+            {
             std::cout << std::setprecision(4) //<< " K: " << kP 
-                      //<< " TdL: " << -elem.torque[LEFT][0] << ", " << -elem.torque[LEFT][1]
-                      //<< " TdR: " << -elem.torque[RIGHT][0] << ", " << -elem.torque[RIGHT][1]
-                      //<< " MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
-                      //<< " MxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
-                      //<< " mFz: " << hubo.getLeftFootFz()
-                      //<< " dFz: " << -elem.forces[LEFT][2]
-                      //<< " FTe: " << forceTorqueErr[LEFT].z()
-                      //<< " Fte: " << instantaneousFeetOffset.transpose()
-                      << " off " << state.dFeetOffset[side](2) << " " << state.dFeetOffset[side](5)
-                      << " max " << jointMax
-                      //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
-                      << std::endl;
+                          //<< " TdL: " << -elem.torque[LEFT][0] << ", " << -elem.torque[LEFT][1]
+                          //<< " TdR: " << -elem.torque[RIGHT][0] << ", " << -elem.torque[RIGHT][1]
+                          //<< " MyLR: " << hubo.getLeftFootMy() << ", " << hubo.getRightFootMy()
+                          //<< " MxLR: " << hubo.getLeftFootMx() << ", " << hubo.getRightFootMx()
+                          //<< " mFz: " << hubo.getLeftFootFz()
+                          //<< " dFz: " << -elem.forces[LEFT][2]
+                          //<< " FTe: " << forceTorqueErr[LEFT].z()
+                          //<< " Fte: " << instantaneousFeetOffset.transpose()
+                          << "\toff " << state.dFeetOffset[side](0) << " " << state.dFeetOffset[side](1) << " " << state.dFeetOffset[side](2)
+                          << "\tmax " << jointMax
+                          //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
+                          << std::endl;
+            }
         }
-    }
-    //-----------------------
-    //   SET JOINT ANGLES
-    //-----------------------
-    // Set leg joint angles for current timestep of trajectory
-    if(true)
-    {
-        if(LEFT == side)
+        //-----------------------
+        //   SET JOINT ANGLES
+        //-----------------------
+        // Set leg joint angles for current timestep of trajectory
+        if(true)
         {
-            elem.angles[LHY] = qNew[LEFT](HY);
-            elem.angles[LHR] = qNew[LEFT](HR);
-            elem.angles[LHP] = qNew[LEFT](HP);
-            elem.angles[LKN] = qNew[LEFT](KN);
-            elem.angles[LAP] = qNew[LEFT](AP);
-            elem.angles[LAR] = qNew[LEFT](AR);
+            if(LEFT == side)
+            {
+                elem.angles[LHY] = qNew[LEFT](HY);
+                elem.angles[LHR] = qNew[LEFT](HR);
+                elem.angles[LHP] = qNew[LEFT](HP);
+                elem.angles[LKN] = qNew[LEFT](KN);
+                elem.angles[LAP] = qNew[LEFT](AP);
+                elem.angles[LAR] = qNew[LEFT](AR);
+            }
+            else
+            {
+                elem.angles[RHY] = qNew[RIGHT](HY);
+                elem.angles[RHR] = qNew[RIGHT](HR);
+                elem.angles[RHP] = qNew[RIGHT](HP);
+                elem.angles[RKN] = qNew[RIGHT](KN);
+                elem.angles[RAP] = qNew[RIGHT](AP);
+                elem.angles[RAR] = qNew[RIGHT](AR);
+            }
         }
-        else
-        {
-            elem.angles[RHY] = qNew[RIGHT](HY);
-            elem.angles[RHR] = qNew[RIGHT](HR);
-            elem.angles[RHP] = qNew[RIGHT](HP);
-            elem.angles[RKN] = qNew[RIGHT](KN);
-            elem.angles[RAP] = qNew[RIGHT](AP);
-            elem.angles[RAR] = qNew[RIGHT](AR);
-        }
-    }
+
     if(counter > counterMax)
         counter = 0;
 
