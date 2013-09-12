@@ -91,8 +91,18 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     else
         alt = LEFT;
 
-    kin.resetTool(side);
-  
+
+    RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
+    toolTf.translate( Vector3d(cmd.m_tool[side].t_pose.x,
+                               cmd.m_tool[side].t_pose.y,
+                               cmd.m_tool[side].t_pose.z) );
+    toolTf.rotate( Eigen::Quaterniond(cmd.m_tool[side].t_pose.w,
+                                      cmd.m_tool[side].t_pose.i,
+                                      cmd.m_tool[side].t_pose.j,
+                                      cmd.m_tool[side].t_pose.k) );
+
+    kin.setTool(side, toolTf);
+
     if(dual)
     {
         RobotKin::TRANSFORM altTf = RobotKin::TRANSFORM::Identity();
@@ -106,19 +116,14 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         kin.setTool(alt, altTf);
     }
     
-    
-//    start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
-    start = kin.linkage(limb[side]).tool().withRespectTo(kin.linkage("RightLeg").tool());
+
+    if(cmd.m_frame[side] == MC_GLOBAL)
+        start = kin.linkage(limb[side]).tool().withRespectTo(kin.linkage("RightLeg").tool());
+    else if(cmd.m_frame[side] == MC_ROBOT)
+        start = kin.linkage(limb[side]).tool().respectToRobot();
 
     next = TRANSFORM::Identity();
-   
-/* 
-    if(dual)
-    {
-        altStart = kin.linkage(limb[alt]).tool().withRespectTo(kin.joint("RAP"));
-        altNext = TRANSFORM::Identity();
-    }
-*/
+
     
     goal = TRANSFORM::Identity();
     goal.translate(TRANSLATION(cmd.pose[side].x, 
@@ -131,7 +136,6 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     dr[side] = goal.translation() - start.translation();
 
-//cout << "dr " << dr[side].transpose() << "  :  ";
     
     dV[side] = dr[side].normalized()*fabs(nomSpeed) - V[side];
 
@@ -148,25 +152,17 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     if( dr[side].norm() > V[side].norm()*dt || dr[side].dot(V[side]) < 0 )
         dr[side] = V[side]*dt;
 
-//cout << "dr " << dr[side].transpose() << "  :  ";
     
     V[side] = dr[side]/dt;
     
     next.translate(dr[side]);
     next.translate(start.translation());
-/*
-    if(dual)
-    {
-        altNext.translate(dr[side]);
-        altNext.translate(altStart.translation());
-    }
-*/  
-//    angax = goal.rotation()*start.rotation().transpose();
+
+
     angax = goal.rotation()*start.rotation().transpose();
     
     angle[side] = angax.angle();
 
-//cout << "angle: " << angle[side] << "\t";
     
     if( angle[side] > M_PI )
         angle[side] = angle[side]-2*M_PI;
@@ -185,39 +181,23 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     if( fabs(angle[side]) > fabs(W[side]*dt) || angle[side]*W[side] < 0 )
         angle[side] = W[side]*dt;
-//cout << "angle: " << angle[side] << "\t";
     
     W[side] = angle[side]/dt;
     
     next.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
     next.rotate(start.rotation());
 
-/*
-    if(dual)
+    if(verbose)
     {
-        altNext.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
-        altNext.rotate(altStart.rotation());
+        cout << endl << "Start:" << endl << start.matrix() << endl << endl
+             << "Next:" << endl << next.matrix() << endl << endl
+             << "Goal:" << endl << goal.matrix() << endl << endl;
     }
-*/
-    
-//    cout << "Start : " << endl << start.matrix() << endl << endl;
-//    cout << "Next  : " << dr[side].transpose() << " (" << angle[side] << ")" << endl << next.matrix() << endl << endl;
-    //std::cout << next.translation().z() << "\t:\t";
 
 
-//    next = goal;
-if(verbose)
-{
-    cout << endl << "Start:" << endl << start.matrix() << endl << endl
-         << "Next:" << endl << next.matrix() << endl << endl 
-         << "Goal:" << endl << goal.matrix() << endl << endl;
-}
+    if(cmd.m_frame[side] == MC_GLOBAL)
+        next = kin.linkage("RightLeg").tool().respectToRobot()*next;
 
-//    next = kin.joint("RAP").respectToRobot()*next;
-    next = kin.linkage("RightLeg").tool().respectToRobot()*next;
-//    if(dual)
-//        altNext = kin.joint("RAP").respectToRobot()*altNext;
-//        altNext = kin.linkage("RightLeg").tool().respectToRobot()*altNext;
 
     
     hubo.getArmAngles(side, armAngles[side]);
@@ -248,33 +228,12 @@ if(verbose)
           << "Last:   "  << lastAngles[side].transpose() << endl
           << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
 }
-//    cout << endl << endl << goal.matrix() << endl << endl
-//         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
-    
-//    hubo.setArmTraj(side, armAngles[side], (armAngles[side]-lastAngles[side])/dt);
+
     hubo.setArmAngles(side, armAngles[side]);
-/*
-    hubo.passJointAngle(RSP, armAngles[side](SP));
-    hubo.passJointAngle(RSR, armAngles[side](SR));
-    hubo.passJointAngle(RSY, armAngles[side](SY));
-    hubo.passJointAngle(REB, armAngles[side](EB));
-    hubo.passJointAngle(RWY, armAngles[side](WY));
-    hubo.passJointAngle(RWP, armAngles[side](WP));
-    hubo.passJointAngle(RWR, armAngles[side](WR));
-*/
+
     if(dual)
         hubo.setArmAngles(alt, armAngles[alt]);
-//        hubo.setArmTraj(alt, armAngles[alt], (armAngles[alt]-lastAngles[alt])/dt);
 
-    //std::cout << goal.translation().z() << "\t:\t"
-//              << next.translation().z() << "\t:\t"
-//              << (next.translation()-start.translation()).transpose() << "\t:\t"
-      //        << V[side].z() << "\t:\t"
-
-        //      << armAngles[side].transpose()
-          //    << std::endl;
-    
-//    cout << endl;
 }
 #endif //HAVE_REFLEX
 

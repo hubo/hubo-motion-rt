@@ -69,6 +69,13 @@ typedef enum {
 
 typedef enum {
 
+    MC_GLOBAL = 0,
+    MC_ROBOT
+
+}__attribute__((packed)) manip_frame_t;
+
+typedef enum {
+
     OVR_SOVEREIGN = 0,
     OVR_ACQUIESCENT
 
@@ -199,6 +206,8 @@ typedef struct manip_tool {
     double com_y;
     double com_z;
 
+    hubo_manip_pose_t t_pose;
+
 }__attribute__((packed)) manip_tool_t;
 
 typedef struct hubo_manip_cmd {
@@ -208,6 +217,8 @@ typedef struct hubo_manip_cmd {
     manip_ctrl_t m_ctrl[NUM_ARMS];        ///< Defines the type of compliance to use
     manip_grasp_t m_grasp[NUM_ARMS];      ///< Defines at what point to perform a grasp
     manip_grasp_t trigger;
+
+    manip_frame_t m_frame[NUM_ARMS];
 
     manip_tool_t m_tool[NUM_ARMS];
     manip_wrench_t m_wrench[NUM_ARMS];
