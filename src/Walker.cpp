@@ -774,6 +774,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 worstJoint = i;
             }
         }
+        norm = sqrt(norm);
         time = hubo.getTime();
     }
     // Print timeout error if joints don't get to initial positions in time

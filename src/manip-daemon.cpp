@@ -34,13 +34,18 @@
  *   POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "DrcHuboKin.h"
 #include "manip.h"
+#include "Slerper.h"
 
 extern "C" {
 // For process management
 #include "daemonizer.h"
 }
 
+// FIXME: Comment out if reflex and amino don't exist
+manip_error_t handle_teleop(Hubo_Control &hubo, hubo_manip_state_t &state,
+                hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
 
 manip_error_t handle_trans_euler(Hubo_Control &hubo, hubo_manip_state_t &state,
                 hubo_manip_cmd_t &cmd, ArmVector &arm, int side);
@@ -61,9 +66,18 @@ void grasp_close( Hubo_Control &hubo, int side );
 void grasp_open( Hubo_Control &hubo, int side );
 void grasp_limp( Hubo_Control &hubo, int side );
 
+void trigger_close( Hubo_Control &hubo );
+void trigger_open( Hubo_Control &hubo );
+void trigger_limp( Hubo_Control &hubo );
+
 int main( int argc, char **argv )
 {
     Hubo_Control hubo("manip-daemon");
+//    Hubo_Control hubo;
+
+    DrcHuboKin kin;
+    kin.updateHubo(hubo);
+    Slerper slerp;
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
@@ -102,16 +116,38 @@ int main( int argc, char **argv )
     memset( &override_cmd, 0, sizeof(override_cmd) );
 
     ArmVector arms[2];
+    ArmVector torques[2];
+    Vector6d eeWrench[2];
     
+    
+    double time=hubo.getTime(), dt=0;
     hubo.update(true);
+    dt = hubo.getTime() - time;
+    time = hubo.getTime();
     
     size_t fs;
     while( !daemon_sig_quit )
     {
         // Update hubo, and get latest manipulation and override commands from ach
         hubo.update(true);
+        dt = hubo.getTime() - time;
+        time = hubo.getTime();
+        kin.updateHubo(hubo);
+        
         ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
+
+        if(manip_req.trigger == MC_GRASP_NOW ||
+                ( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_GRASP_AT_END
+                 && manip_state.mode_state[RIGHT]==MC_READY ) )
+            trigger_close(hubo);
+        else if(manip_req.trigger == MC_RELEASE_NOW ||
+                ( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_RELEASE_AT_END
+                && manip_state.mode_state[RIGHT]==MC_READY ) )
+            trigger_open(hubo);
+        else if( manip_cmd[RIGHT].m_grasp[RIGHT]==MC_GRASP_LIMP )
+            trigger_limp(hubo);
+
 
         manip_state.override = override_cmd.m_override;
 
@@ -126,10 +162,13 @@ int main( int argc, char **argv )
             // Update manip state mode and goal ID            
             manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
             manip_state.goalID[side] = manip_cmd[side].goalID[side];
-            
+
             // Handle arm motions
             switch( manip_cmd[side].m_mode[side] )
             {
+                case MC_TELEOP:
+                case MC_DUAL_TELEOP:
+                    slerp.commenceSlerping(side, manip_cmd[side], hubo, dt); break;
                 case MC_TRANS_EULER:
                     handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRANS_QUAT:
@@ -167,6 +206,53 @@ int main( int argc, char **argv )
 
             for(int i=0; i<3; i++)
                 manip_state.pose[side].data[i] = transreal(i);
+
+
+            // Handle Control Mode
+            if(manip_cmd[side].m_ctrl[side]!=MC_RIGID  && side==RIGHT)
+                kin.linkage("RightArm").tool().massProperties.setMass(
+                            manip_cmd[side].m_tool[side].mass,
+                            Vector3d(manip_cmd[side].m_tool[side].com_x,
+                                     manip_cmd[side].m_tool[side].com_y,
+                                     manip_cmd[side].m_tool[side].com_z));
+            else if(manip_cmd[side].m_ctrl[side]!=MC_RIGID  && side==LEFT)
+                kin.linkage("LeftArm").tool().massProperties.setMass(
+                            manip_cmd[side].m_tool[side].mass,
+                            Vector3d(manip_cmd[side].m_tool[side].com_x,
+                                     manip_cmd[side].m_tool[side].com_y,
+                                     manip_cmd[side].m_tool[side].com_z));
+
+
+            if( manip_cmd[side].m_ctrl[side] == MC_RIGID )
+            {
+                hubo.setArmCompliance(side, false);
+                hubo.releaseArmTorques(side); // Just in case
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_COMPLIANT )
+            {
+                hubo.setArmCompliance(side, true);
+                kin.armTorques(side, torques[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_FORCE )
+            {
+                for(int i=0; i<6; i++)
+                    eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
+
+                hubo.setArmCompliance(side, false);
+                kin.armTorques(side, torques[side], eeWrench[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+            else if( manip_cmd[side].m_ctrl[side] == MC_HYBRID )
+            {
+                for(int i=0; i<6; i++)
+                    eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
+
+                hubo.setArmCompliance(side, true);
+                kin.armTorques(side, torques[side], eeWrench[side]);
+                hubo.setArmTorques(side, torques[side]);
+            }
+
         }
 
         hubo.setJointAngle( WST, manip_req.waistAngle );
@@ -191,18 +277,10 @@ void grasp_close( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, 1);
-        hubo.passJointAngle(RF2, 1);
-        hubo.passJointAngle(RF3, 1);
-        hubo.passJointAngle(RF4, 1);
-        hubo.passJointAngle(RF5, 1);
     }
     else
     {
         hubo.passJointAngle(LF1, 1);
-        hubo.passJointAngle(LF2, 1);
-        hubo.passJointAngle(LF3, 1);
-        hubo.passJointAngle(LF4, 1);
-        hubo.passJointAngle(LF5, 1);
     }
 }
 
@@ -211,18 +289,10 @@ void grasp_open( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, -1);
-        hubo.passJointAngle(RF2, -1);
-        hubo.passJointAngle(RF3, -1);
-        hubo.passJointAngle(RF4, -1);
-        hubo.passJointAngle(RF5, -1);
     }
     else
     {
         hubo.passJointAngle(LF1, -1);
-        hubo.passJointAngle(LF2, -1);
-        hubo.passJointAngle(LF3, -1);
-        hubo.passJointAngle(LF4, -1);
-        hubo.passJointAngle(LF5, -1);
     }
 }
 
@@ -231,19 +301,26 @@ void grasp_limp( Hubo_Control &hubo, int side )
     if( side == RIGHT )
     {
         hubo.passJointAngle(RF1, 0);
-        hubo.passJointAngle(RF2, 0);
-        hubo.passJointAngle(RF3, 0);
-        hubo.passJointAngle(RF4, 0);
-        hubo.passJointAngle(RF5, 0);
     }
     else
     {
         hubo.passJointAngle(LF1, 0);
-        hubo.passJointAngle(LF2, 0);
-        hubo.passJointAngle(LF3, 0);
-        hubo.passJointAngle(LF4, 0);
-        hubo.passJointAngle(LF5, 0);
     }
+}
+
+void trigger_close( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, 1);
+}
+
+void trigger_open( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, -1);
+}
+
+void trigger_limp( Hubo_Control &hubo )
+{
+    hubo.passJointAngle(RF2, 0);
 }
 
 manip_error_t handle_halt(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
@@ -341,6 +418,15 @@ manip_error_t handle_trans_quat(Hubo_Control &hubo, hubo_manip_state_t &state, h
 
     hubo.getArmAngleStates( side, arm );
 }
+
+
+
+
+
+
+
+
+
 
 manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
 {
