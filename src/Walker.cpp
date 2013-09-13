@@ -345,9 +345,9 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     unsigned char swing_right[4] = {1,0,0,0};
     unsigned char swing_left[4] = {0,1,0,0};
     if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
-        side = LEFT;
-    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
         side = RIGHT;
+    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
+        side = LEFT;
     else
         side = 100;
     if(counter >= counterMax)
@@ -438,6 +438,14 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
        // std::cout << "preZ " << footTF[side](2,3) << " ";
     }
 
+    //------------------
+    //  DESIRED TORQUE
+    //------------------
+    Eigen::Vector2d imuAngle, desTorque;
+    double Kp = 158.6;
+    imuAngle << hubo.getAngleX(), hubo.getAngleY();
+    desTorque = Kp * imuAngle;
+
     //-------------------------
     //   FORCE/TORQUE ERROR
     //-------------------------
@@ -447,11 +455,11 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     Eigen::Vector3d forceTorqueErr[2];
 
     //forceTorqueErr[LEFT](0) = (-elem.torque[LEFT][0] - hubo.getLeftFootMx());
-    forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] - hubo.getLeftFootMy());
+    forceTorqueErr[LEFT](1) = (-elem.torque[LEFT][1] + desTorque.y() - hubo.getLeftFootMy());
     //forceTorqueErr[LEFT](2) = (hubo.getLeftFootFz()); //FIXME should be positive
 
     //forceTorqueErr[RIGHT](0) = (-elem.torque[RIGHT][0] - hubo.getRightFootMx());
-    forceTorqueErr[RIGHT](1) = -elem.torque[RIGHT][1] - hubo.getRightFootMy();
+    forceTorqueErr[RIGHT](1) = -elem.torque[RIGHT][1] + desTorque.y() - hubo.getRightFootMy();
     //forceTorqueErr[RIGHT](2) = hubo.getRightFootFz(); //FIXME should be positive
 
     if(LEFT != side && RIGHT != side)
@@ -587,7 +595,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //   SET JOINT ANGLES
         //-----------------------
         // Set leg joint angles for current timestep of trajectory
-        if(true)
+        if(false)
         {
             if(LEFT == side)
             {
