@@ -4,7 +4,13 @@
 control-daemon
 proto-manip-daemon
 tech-console
-
+manip-daemon
+balance-daemon
+calibrate
+gravityTest
+imp-test
+manipTest
+trajTest
 
 #################
 ## Hubo Specific
@@ -25,6 +31,7 @@ Makefile.in
 config*
 *.lo
 *.la
+*.so
 m4/*
 depcomp
 install-sh
