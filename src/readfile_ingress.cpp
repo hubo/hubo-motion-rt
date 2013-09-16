@@ -43,9 +43,13 @@ void readTraj(std::string filename)
     AngleAxisd tempRotLeg;
     
     double time = 0, dt = 0;
+
+//    bool live = false;
+    bool live = true;
+
     DrcHuboKin robot;
 //    Hubo_Control hubo(false);
-    Hubo_Control hubo;
+    Hubo_Control hubo(live);
 //    daemon_prioritize(40);
 
     robot.updateHubo(hubo);		// current state of hubo
@@ -148,16 +152,17 @@ void readTraj(std::string filename)
 
     do {
         
-        hubo.update();
+        hubo.update(live);
         hubo.getRightArmAngleStates(qRAprev);
         hubo.getLeftArmAngleStates(qLAprev);
         hubo.getRightLegAngleStates(qRLprev);
         hubo.getLeftLegAngleStates(qLLprev);
         
-    } while(   (qRA-qRAprev).norm() > 0.075
-            || (qLA-qLAprev).norm() > 0.075
-            || (qLL-qLLprev).norm() > 0.075
-            || (qRL-qRLprev).norm() > 0.075 );
+    } while( (  (qRA-qRAprev).norm() > 0.075
+              || (qLA-qLAprev).norm() > 0.075
+              || (qLL-qLLprev).norm() > 0.075
+              || (qRL-qRLprev).norm() > 0.075 )
+             && live );
 
     RobotKin::TRANSFORM tfArm[2], tfLeg[2], startTfPelvis, stepTfPelvis, tfPelvis, stepTfArm[2], stepTfLeg[2], startTfArm[2], startTfLeg[2];
 
@@ -185,7 +190,7 @@ void readTraj(std::string filename)
 
     //std::ofstream myfile("joint_angles_taegoo_computer1.txt");
 
-    hubo.update(false);   // set it as true when running on robot
+    hubo.update(live);   // set it as true when running on robot
     //dt = hubo.getTime() - time;
     //time = hubo.getTime();
 
@@ -213,8 +218,7 @@ void readTraj(std::string filename)
 
 
         // Initialization
-//        hubo.update(false);   // set it as true when running on robot
-        hubo.update();
+        hubo.update(live);
         dt = hubo.getTime() - time;
         time = hubo.getTime();
 //        robot.updateHubo(hubo);
@@ -266,30 +270,60 @@ void readTraj(std::string filename)
         }
 
 
-        //std::cout << "Step Pelvis:\n" << stepTfPelvis.matrix() << std::endl;
-        //std::cout << "Before Pelvis:\n" << startTfPelvis.matrix()<< std::endl;
+        if(!live)
+        {
+            std::cout << "Step Pelvis:\n" << stepTfPelvis.matrix() << std::endl;
+            std::cout << "Before Pelvis:\n" << startTfPelvis.matrix()<< std::endl;
+        }
 
         tfPelvis = startTfPelvis * stepTfPelvis;
-        //std::cout << "After Pelvis:\n" << tfPelvis.matrix()<< std::endl;
 
-        //std::cout << "Step Arm:\n" << stepTfArm[RIGHT].matrix() << std::endl;
-        //std::cout << "Before Arm:\n" << startTfArm[RIGHT].matrix()<< std::endl;
+        if(!live)
+            std::cout << "After Pelvis:\n" << tfPelvis.matrix()<< std::endl;
+
+        if(!live)
+        {
+            std::cout << "Step Right Arm:\n" << stepTfArm[RIGHT].matrix() << std::endl;
+            std::cout << "Before Right Arm:\n" << startTfArm[RIGHT].matrix()<< std::endl;
+        }
+        tfArm[RIGHT] = startTfArm[RIGHT]*stepTfArm[RIGHT];
+        if(!live)
+            std::cout << "After Right Arm:\n" << tfArm[RIGHT].matrix() << std::endl;
 
         //tfArm[RIGHT] = startTfArm[RIGHT] * stepTfPelvis.inverse()*stepTfArm[RIGHT];
         //tfArm[LEFT] = startTfArm[LEFT] * stepTfPelvis.inverse()*stepTfArm[LEFT];
-        tfArm[RIGHT] = startTfArm[RIGHT]*stepTfArm[RIGHT];
+
+        if(!live)
+        {
+            std::cout << "Step Left Arm:\n" << stepTfArm[LEFT].matrix() << std::endl;
+            std::cout << "Before Left Arm:\n" << startTfArm[LEFT].matrix()<< std::endl;
+        }
         tfArm[LEFT]  = startTfArm[LEFT]*stepTfArm[LEFT];
+        if(!live)
+            std::cout << "After Left Arm:\n" << tfArm[LEFT].matrix() << std::endl;
 
-        //std::cout << "After Arm:\n" << tfArm[RIGHT].matrix() << std::endl;
 
-
-        //std::cout << "Step Leg:\n" << stepTfLeg[RIGHT].matrix() << std::endl;
-        //std::cout << "Before Leg:\n" << startTfLeg[RIGHT].matrix()<< std::endl;
+        if(!live)
+        {
+            std::cout << "Step Right Leg:\n" << stepTfLeg[RIGHT].matrix() << std::endl;
+            std::cout << "Before Right Leg:\n" << startTfLeg[RIGHT].matrix()<< std::endl;
+        }
 
         tfLeg[RIGHT] = startTfLeg[RIGHT]*stepTfLeg[RIGHT];
-        tfLeg[LEFT]  = startTfLeg[LEFT]*stepTfLeg[LEFT];
+        if(!live)
+            std::cout << "After Right Leg:\n" << tfLeg[RIGHT].matrix() << std::endl;
 
-        //std::cout << "After Leg:\n" << tfLeg[RIGHT].matrix() << std::endl;
+
+        if(!live)
+        {
+            std::cout << "Step Left Leg:\n" << stepTfLeg[LEFT].matrix() << std::endl;
+            std::cout << "Before Left Leg:\n" << startTfLeg[LEFT].matrix()<< std::endl;
+        }
+        tfLeg[LEFT]  = startTfLeg[LEFT]*stepTfLeg[LEFT];
+        if(!live)
+            std::cout << "After Left Leg:\n" << tfLeg[LEFT].matrix() << std::endl;
+
+
 
         // solving IK
 
@@ -313,10 +347,16 @@ void readTraj(std::string filename)
         robot.legIK(RIGHT, qRL, tfLeg[RIGHT]);
         robot.legIK(LEFT, qLL, tfLeg[LEFT]);
         // print out joint angles
-        //std::cout << "rightarmangles\t" << qRA.transpose() << std::endl;
-        //std::cout << "leftarmangles\t" << qLA.transpose() << std::endl;
-        //std::cout << "rightlegangles\t" << qRL.transpose() << std::endl;
-        //std::cout << "leftlegangles\t" << qLL.transpose() << std::endl;
+
+        if(!live)
+        {
+            std::cout << "right arm angles\t" << qRA.transpose() << std::endl;
+            std::cout << "left arm angles\t" << qLA.transpose() << std::endl;
+            std::cout << "right leg angles\t" << qRL.transpose() << std::endl;
+            std::cout << "left leg angles\t" << qLL.transpose() << std::endl;
+
+            std::cout << "_________________________________________________________________" << std::endl;
+        }
 
 
     //     write joint angles to textfile
