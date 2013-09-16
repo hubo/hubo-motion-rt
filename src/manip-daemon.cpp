@@ -179,6 +179,8 @@ int main( int argc, char **argv )
                     handle_halt(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_ANGLES:
                     handle_angles(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                case MC_READY:
+                    hubo.releaseArm(side); break;
             }
             
             // Handle grasping

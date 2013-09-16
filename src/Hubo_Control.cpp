@@ -827,11 +827,11 @@ ctrl_flag_t Hubo_Control::releaseJointTorque(int joint)
             case CtrlRA:
                 H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque = 0;
                 H_Arm_Ctrl[RIGHT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_OFF;
-                H_Arm_Ctrl[RIGHT].active=1; ctrlOn[CtrlRA] = true; break;
+                break;
             case CtrlLA:
                 H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque = 0;
                 H_Arm_Ctrl[LEFT].joint[localMap[joint]].torque_mode = CTRL_TORQUE_OFF;
-                H_Arm_Ctrl[LEFT].active=1; ctrlOn[CtrlLA] = true; break;
+                break;
             default:
                 return JOINT_OOB;
             // NOTE: Torque mode is not currently supported on any other joints
