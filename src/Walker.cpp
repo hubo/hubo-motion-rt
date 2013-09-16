@@ -771,7 +771,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
     double norm = m_jointSpaceTolerance+1; // make sure this fails initially
-    while( !daemon_sig_quit && (sqrt(norm) > m_jointSpaceTolerance && time-stime < m_maxInitTime)) {
+    while( !daemon_sig_quit && (norm > m_jointSpaceTolerance && time-stime < m_maxInitTime)) {
 //    while(false) { // FIXME TODO: SWITCH THIS BACK!!!
         hubo.update(true);
         norm = 0;
