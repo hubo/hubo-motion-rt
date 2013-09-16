@@ -335,6 +335,9 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, balance_gains_t &gains, double dt )
 {
+
+    kin.updateHubo(hubo);
+
     counter++;
     //-------------------------
     //      STANCE TYPE
@@ -445,9 +448,13 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //------------------
         Eigen::Vector2d imuAngle, desTorque;
         double Kp = 158.6;
-        imuAngle << hubo.getAngleX(), hubo.getAngleY();
+        Eigen::Isometry3d legFK = kin.legFK(side);
+        double imuHeight = fabs(legFK(2,3));
+        double zmp_x_offset = elem.zmp[0];
+        double imuOffset = M_PI/2 - atan(imuHeight/zmp_x_offset);
+        imuAngle << hubo.getAngleX(), imuOffset - hubo.getAngleY();
         desTorque = Kp * imuAngle;
-
+        
         //-------------------------
         //   FORCE/TORQUE ERROR
         //-------------------------
@@ -504,6 +511,15 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                 // Don't add to the dFeetOffset
             }
 
+            const double anklePitchTol = 0.04;
+            double n = fabs(state.dFeetOffset[side](1));
+            if(n > anklePitchTol)
+                state.dFeetOffset[side](2) *= anklePitchTol/n;
+            const double anklePitchVelTol = anklePitchTol / dt;
+            double v = fabs(state.dFeetOffset[side](4));
+            if(v > anklePitchVelTol)
+                state.dFeetOffset[side](4) *= anklePitchVelTol/v;
+
             // Decay the dFeetOffset
         //    state.dFeetOffset -= gains.decay_gain[LEFT]*state.dFeetOffset;
 
@@ -513,7 +529,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         //------------------------
         //    CAP BODY OFFSET
         //------------------------
-        const double dFeetOffsetTol = 0.01; // max offset in z (cm)
+/*        const double dFeetOffsetTol = 0.01; // max offset in z (cm)
         const double dFeetOffsetVelTol = dFeetOffsetTol / dt;
         double n = fabs(state.dFeetOffset[side](2)); // grab abs of z offset
         double v = fabs(state.dFeetOffset[side](5)); // grab abs of z velocity
@@ -554,7 +570,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         }
         else // use previous integrated feet offset to get joint angles
         {
-            std::cout << "IK Failed in impedance controller. Using previous feet TF.\n";
+            //std::cout << "IK Failed in impedance controller. Using previous feet TF.\n";
             // Pretranslate feet TF by integrated feet error translation vector
             Eigen::Vector3d zOffsetPrev;
             zOffsetPrev << 0, 0, state.prevdFeetOffset[side](0,2);
@@ -576,7 +592,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             if(diff > jointMax)
                 jointMax = diff;
         }
-
+*/
             //----------------------
             //   DEBUG PRINT OUT
             //----------------------
@@ -594,7 +610,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                               //<< " FTe: " << forceTorqueErr[LEFT].z()
                               //<< " Fte: " << instantaneousFeetOffset.transpose()
                               << "\toff " << state.dFeetOffset[side](0) << " " << state.dFeetOffset[side](1) << " " << state.dFeetOffset[side](2)
-                              << "\tmax " << jointMax
+                              << "\telem " << elem.angles[RAP] << "\tnew " << elem.angles[RAP] + state.dFeetOffset[RIGHT](1)
+                              //<< "\tmax " << jointMax
                               //<< " qDf " << (qNew[side] - qPrev[side]).transpose()
                               << std::endl;
                 }
@@ -603,26 +620,28 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             //   SET JOINT ANGLES
             //-----------------------
             // Set leg joint angles for current timestep of trajectory
-            if(false)
+            if(true)
             {
                 if(LEFT == side)
                 {
-                    elem.angles[LHY] = qNew[LEFT](HY);
+                    elem.angles[LAP] += state.dFeetOffset[LEFT](1);
+/*                    elem.angles[LHY] = qNew[LEFT](HY);
                     elem.angles[LHR] = qNew[LEFT](HR);
                     elem.angles[LHP] = qNew[LEFT](HP);
                     elem.angles[LKN] = qNew[LEFT](KN);
                     elem.angles[LAP] = qNew[LEFT](AP);
                     elem.angles[LAR] = qNew[LEFT](AR);
-                }
+*/                }
                 else
                 {
-                    elem.angles[RHY] = qNew[RIGHT](HY);
+                    elem.angles[RAP] += state.dFeetOffset[RIGHT](1);
+/*                    elem.angles[RHY] = qNew[RIGHT](HY);
                     elem.angles[RHR] = qNew[RIGHT](HR);
                     elem.angles[RHP] = qNew[RIGHT](HP);
                     elem.angles[RKN] = qNew[RIGHT](KN);
                     elem.angles[RAP] = qNew[RIGHT](AP);
                     elem.angles[RAR] = qNew[RIGHT](AR);
-                }
+*/                }
             }
 
         if(counter > counterMax)
