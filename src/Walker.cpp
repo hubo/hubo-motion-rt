@@ -713,7 +713,6 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                     &t, ACH_O_WAIT | ACH_O_LAST );
 
         m_walkDirection = currentTrajectory->walkDirection;
-        std::cout << "WalkType: " << walktype_strings[m_walkDirection] << std::endl;
 
         checkCommands();
         if( cmd.cmd_request != BAL_ZMP_WALKING )
@@ -748,7 +747,8 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         // Don't worry about where these joint are
         if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
          && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
-         && NK1!=i && NK2!=i && NKY!=i && LWR!=i && RWR!=i && RWY!=i && RWP!=i) //FIXME
+         && NK1!=i && NK2!=i && NKY!=i && LWR!=i 
+         && RWR!=i && RWY!=i && RWP!=i && REB!=i && RSY!=i && RSR!=i && RSP!=i) //FIXME
         {
             hubo.setJointAngle( i, currentTrajectory->traj[0].angles[i] );
             hubo.setJointNominalSpeed( i, 0.4 );
@@ -781,7 +781,8 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             // Don't worry about waiting for these joints to get into position.
             if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
              && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
-             && NK1!=i && NK2!=i && NKY!=i && LWR!=i && RWR!=i && RWY!=i && RWP!=i) //FIXME
+             && NK1!=i && NK2!=i && NKY!=i && LWR!=i 
+             && RWR!=i && RWY!=i && RWP!=i && REB!=i && RSY!=i && RSR!=i && RSP!=i) //FIXME
                 err = (hubo.getJointAngleState( i )-currentTrajectory->traj[0].angles[i]);
 
             norm += err*err;
@@ -947,7 +948,6 @@ bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAl
     {
         fprintf(stdout, "Noticed new trajectory: ID #%d\n", (int)newTrajectory.trajNumber);
         m_walkDirection = newTrajectory.walkDirection;
-        std::cout << "WalkType: " << walktype_strings[m_walkDirection] << std::endl;
         return true;
     }
     else
@@ -984,7 +984,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
     //complyKnee( hubo, tempNextElem, state, gains, dt );
-    if(GOTO_BIPED != m_walkDirection && GOTO_QUADRUPED != m_walkDirection)
+    //if(GOTO_BIPED != m_walkDirection && GOTO_QUADRUPED != m_walkDirection)
         landingController( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 
