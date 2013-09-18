@@ -353,6 +353,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         side = RIGHT;
     else
         side = 100;
+    side = RIGHT;
     curSide = side;
     // Set side to previous swing foot if in double support
     if(LEFT != side && RIGHT != side)
@@ -494,7 +495,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     //   SET JOINT ANGLES
     //-----------------------
     // Set leg joint angles for current timestep of trajectory
-    if(false)
+    if(true)
     {
         if(LEFT == side)
         {
