@@ -810,6 +810,14 @@ public:
     */
     double getMx( hubo_sensor_index_t sensor );
     /**
+     * Extension of getMx() where you specifiy LEFT or RIGHT
+    */
+    double getHandMx( int side );
+    /**
+     * Extension of getMx() where you specifiy LEFT or RIGHT
+    */
+    double getFootMx( int side );
+    /**
      * Extension of getMx() where sensor = HUBO_FT_R_HAND
     */
     double getRightHandMx();
@@ -830,6 +838,14 @@ public:
      * Similar to getMx() but about the y-axis
     */
     double getMy( hubo_sensor_index_t sensor );
+    /**
+     * Extension of getMy() where you specifiy LEFT or RIGHT
+    */
+    double getHandMy( int side );
+    /**
+     * Extension of getMy() where you specifiy LEFT or RIGHT
+    */
+    double getFootMy( int side );
     /**
      * Extension of getMy() where sensor = HUBO_FT_R_HAND
     */
@@ -857,6 +873,14 @@ public:
      * \li HUBO_FT_L_FOOT
     */
     double getFz( hubo_sensor_index_t sensor );
+    /**
+     * Extension of getFz() where you specifiy LEFT or RIGHT
+    */
+    double getHandFz( int side );
+    /**
+     * Extension of getFz() where you specifiy LEFT or RIGHT
+    */
+    double getFootFz( int side );
     /**
      * Extension of getFz() where sensor = HUBO_FT_R_HAND
     */

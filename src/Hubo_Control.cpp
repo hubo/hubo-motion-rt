@@ -1933,6 +1933,27 @@ double Hubo_Control::getMx(hubo_sensor_index_t sensor)
     else
         return 0;
 }
+
+double Hubo_Control::getHandMx(int side)
+{
+    if(LEFT == side)
+        return getMx(HUBO_FT_L_HAND);
+    else if(RIGHT == side)
+        return getMx(HUBO_FT_R_HAND);
+    else
+        return 0;
+}
+
+double Hubo_Control::getFootMx(int side)
+{
+    if(LEFT == side)
+        return getMx(HUBO_FT_L_FOOT);
+    else if(RIGHT == side)
+        return getMx(HUBO_FT_R_FOOT);
+    else
+        return 0;
+}
+
 double Hubo_Control::getRightHandMx() { return getMx(HUBO_FT_R_HAND); }
 double Hubo_Control::getLeftHandMx()  { return getMx(HUBO_FT_L_HAND); }
 double Hubo_Control::getRightFootMx() { return getMx(HUBO_FT_R_FOOT); }
@@ -1947,6 +1968,27 @@ double Hubo_Control::getMy(hubo_sensor_index_t sensor)
     else
         return 0;
 }
+
+double Hubo_Control::getHandMy(int side)
+{
+    if(LEFT == side)
+        return getMy(HUBO_FT_L_HAND);
+    else if(RIGHT == side)
+        return getMy(HUBO_FT_R_HAND);
+    else
+        return 0;
+}
+
+double Hubo_Control::getFootMy(int side)
+{
+    if(LEFT == side)
+        return getMy(HUBO_FT_L_FOOT);
+    else if(RIGHT == side)
+        return getMy(HUBO_FT_R_FOOT);
+    else
+        return 0;
+}
+
 double Hubo_Control::getRightHandMy() { return getMy(HUBO_FT_R_HAND); }
 double Hubo_Control::getLeftHandMy()  { return getMy(HUBO_FT_L_HAND); }
 double Hubo_Control::getRightFootMy() { return getMy(HUBO_FT_R_FOOT); }
@@ -1961,6 +2003,27 @@ double Hubo_Control::getFz(hubo_sensor_index_t sensor)
     else
         return 0;
 }
+
+double Hubo_Control::getHandFz(int side)
+{
+    if(LEFT == side)
+        return getFz(HUBO_FT_L_HAND);
+    else if(RIGHT == side)
+        return getFz(HUBO_FT_R_HAND);
+    else
+        return 0;
+}
+
+double Hubo_Control::getFootFz(int side)
+{
+    if(LEFT == side)
+        return getFz(HUBO_FT_L_FOOT);
+    else if(RIGHT == side)
+        return getFz(HUBO_FT_R_FOOT);
+    else
+        return 0;
+}
+
 double Hubo_Control::getRightHandFz(){ return getFz(HUBO_FT_R_HAND); }
 double Hubo_Control::getLeftHandFz(){ return getFz(HUBO_FT_L_HAND); }
 double Hubo_Control::getRightFootFz(){ return getFz(HUBO_FT_R_FOOT); }
