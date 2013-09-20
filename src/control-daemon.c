@@ -629,6 +629,13 @@ void controlLoop()
                                 gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
                                     ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
                                         + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
+
+                            if(simMode==1 && iter==maxi)
+                                fprintf(stdout, "%s | %06.3f : [%06.3f %06.3f] [%04.1f %04.1f] (%05.2f) : %04.1f ",
+                                        jointNames[jnt], ctrl.joint[jnt].torque,
+                                        torqueLower, torqueUpper, dutyLower, dutyUpper,
+                                        fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale),
+                                        gains.joint[jnt].pwmCommand);
                             
                         }
                         else
@@ -648,9 +655,9 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += antifriction;
 
-                        if(jnt == RSR)
-                        if(iter==maxi)
-                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
+
+                        if(simMode==1 && iter==maxi)
+                            fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
                     }
 
                     if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
