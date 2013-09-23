@@ -72,8 +72,8 @@ void trigger_limp( Hubo_Control &hubo );
 
 int main( int argc, char **argv )
 {
-    Hubo_Control hubo("manip-daemon");
-//    Hubo_Control hubo;
+//    Hubo_Control hubo("manip-daemon");
+    Hubo_Control hubo;
 
     DrcHuboKin kin;
     kin.updateHubo(hubo);
@@ -124,6 +124,15 @@ int main( int argc, char **argv )
     hubo.update(true);
     dt = hubo.getTime() - time;
     time = hubo.getTime();
+
+    ArmVector defaultNomSpeed, defaultNomAcc; defaultNomSpeed.setOnes(); defaultNomAcc.setOnes();
+    defaultNomSpeed *= 1.0;
+    defaultNomAcc *= 0.8;
+
+    hubo.setLeftArmNomSpeeds(defaultNomSpeed);
+    hubo.setRightArmNomSpeeds(defaultNomSpeed);
+    hubo.setLeftArmNomAcc(defaultNomAcc);
+    hubo.setRightArmNomAcc(defaultNomAcc);
 
     hubo.storeArmDefaults(LEFT);
     hubo.storeArmDefaults(RIGHT);

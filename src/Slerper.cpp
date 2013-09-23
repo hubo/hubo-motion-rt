@@ -35,12 +35,15 @@ Slerper::Slerper() :
         W[i] = 0;
         dW[i] = 0;
     }
+
+    worstOffender = -2;
+    worstOffense = 0;
     
     
     limb[RIGHT] = "RightArm";
     limb[LEFT]  = "LeftArm";
 
-    
+    dump = fopen("output-waypoints", "a+");    
 
 }
 
@@ -73,8 +76,36 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
-//    bool verbose = true;
-    bool verbose = false;
+    bool verbose = true;
+//    bool verbose = false;
+
+if(worstOffender == -2)
+{
+    worstOffender = -1;
+    hubo.getLeftArmAngles(armAngles[LEFT]);
+}
+
+
+if(verbose)
+{
+    kin.updateHubo(hubo, true);
+    cout << "State Error: " << (next.translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << "\t||\t";
+    ArmVector final;
+    hubo.getLeftArmAngles(final);
+    for(int w=0; w < 7; w++)
+    {
+        if( fabs(final(w)-armAngles[LEFT](w)) > worstOffense )
+        {
+            worstOffense = final(w)-armAngles[LEFT][w];
+            worstOffender = w;
+        }
+    }
+    cout << "WO: " << worstOffender << " (" << worstOffense << ")\t||\t";
+}
+
+
+
+
 
     kin.updateHubo(hubo, false);
     
@@ -93,7 +124,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 
     ArmVector nomJointSpeed, nomJointAcc; nomJointSpeed.setOnes(); nomJointAcc.setOnes();
     nomJointSpeed = 2.0*nomJointSpeed;
-    nomJointAcc   = 6.0*nomJointAcc;
+    nomJointAcc   = 10.0*nomJointAcc;
 
     hubo.setArmNomSpeeds(side, nomJointSpeed);
     hubo.setArmNomAcc(side, nomJointAcc);
@@ -148,7 +179,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     dr[side] = goal.translation() - start.translation();
 
-    
+/*    
     dV[side] = dr[side].normalized()*fabs(nomSpeed) - V[side];
 
     
@@ -166,6 +197,23 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 
     
     V[side] = dr[side]/dt;
+*/
+    
+    dV[side] = dr[side]/dt;
+    stopSpeed = sqrt(2*nomAcc*dr[side].norm());
+    maxVel = std::min(nomSpeed, stopSpeed);
+    
+    if( dV[side].norm() > maxVel )
+        dV[side] *= maxVel/dV[side].norm();
+    
+    accel = (dV[side]-V[side])/dt;
+    if( accel.norm() > nomAcc )
+        accel *= nomAcc / accel.norm();
+
+    V[side] += accel*dt;
+    dr[side] = V[side]*dt;
+
+
     
     next.translate(dr[side]);
     next.translate(start.translation());
@@ -199,12 +247,31 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     next.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
     next.rotate(start.rotation());
 
-    if(verbose)
-    {
-        cout << endl << "Start:" << endl << start.matrix() << endl << endl
-             << "Next:" << endl << next.matrix() << endl << endl
-             << "Goal:" << endl << goal.matrix() << endl << endl;
-    }
+
+if(verbose)
+{
+
+    fprintf(dump, "%f\t%f\t%f\t%f\t", hubo.getTime(),
+                    next.translation().x(),
+                    next.translation().y(),
+                    next.translation().z() );
+
+    fprintf(dump, "%f\t%f\t%f\t",
+                    V[LEFT](0), V[LEFT](1), V[LEFT](2));
+
+    fprintf(dump, "%f\t%f\t\t%f\t",
+                    dV[LEFT](0), dV[LEFT](1), dV[LEFT](2));
+
+    ArmVector final;
+    hubo.getLeftArmAngles(final);
+    
+    for(int j=0; j<7; j++)
+        fprintf(dump, "%f\t", armAngles[LEFT](j)-final(j));
+
+    fprintf(dump, "\n");
+    fflush(dump);
+
+}
 
 
     if(cmd.m_frame[side] == MC_GLOBAL)
@@ -230,6 +297,12 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         cout << rk_result_to_string(result) << " "; fflush(stdout);
 
 if(verbose)
+{
+    cout << "Error: " << (next.translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << endl;
+}
+
+//if(verbose)
+if(false)
 {
     cout     << "EE:  " << endl << next.matrix() << endl << endl
              << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl

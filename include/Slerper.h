@@ -39,7 +39,9 @@ protected:
     
     double nomSpeed;
     double nomAcc;
-    double adr;
+    double stopSpeed;
+    double maxVel;
+    RobotKin::TRANSLATION accel;
     
     Eigen::AngleAxisd angax;
     double angle[2];
@@ -49,11 +51,16 @@ protected:
     double nomRotSpeed;
     double nomRotAcc;
     double ada;
+
+    double worstOffense;
+    int worstOffender;
     
     std::string limb[2];
     
     ArmVector armAngles[2];
     ArmVector lastAngles[2];
+
+    FILE * dump;
 
 #ifdef HAVE_REFLEX
     aa_mem_region_t reg;
