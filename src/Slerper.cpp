@@ -91,6 +91,18 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     else
         alt = LEFT;
 
+    ArmVector nomJointSpeed, nomJointAcc; nomJointSpeed.setOnes(); nomJointAcc.setOnes();
+    nomJointSpeed = 2.0*nomJointSpeed;
+    nomJointAcc   = 6.0*nomJointAcc;
+
+    hubo.setArmNomSpeeds(side, nomJointSpeed);
+    hubo.setArmNomAcc(side, nomJointAcc);
+
+    if(dual)
+    {
+        hubo.setArmNomSpeeds(alt, nomJointSpeed);
+        hubo.setArmNomAcc(side, nomJointAcc);
+    }
 
     RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
     toolTf.translate( Vector3d(cmd.m_tool[side].t_pose.x,

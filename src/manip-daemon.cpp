@@ -124,6 +124,9 @@ int main( int argc, char **argv )
     hubo.update(true);
     dt = hubo.getTime() - time;
     time = hubo.getTime();
+
+    hubo.storeArmDefaults(LEFT);
+    hubo.storeArmDefaults(RIGHT);
     
     size_t fs;
     while( !daemon_sig_quit )
@@ -170,14 +173,19 @@ int main( int argc, char **argv )
                 case MC_DUAL_TELEOP:
                     slerp.commenceSlerping(side, manip_cmd[side], hubo, dt); break;
                 case MC_TRANS_EULER:
+                    hubo.resetArmDefaults(side);
                     handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRANS_QUAT:
+                    hubo.resetArmDefaults(side);
                     handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRAJ:
+                    hubo.resetArmDefaults(side);
                     handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_HALT:
+                    hubo.resetArmDefaults(side);
                     handle_halt(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_ANGLES:
+                    hubo.resetArmDefaults(side);
                     handle_angles(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_READY:
                     hubo.releaseArm(side); break;

@@ -42,9 +42,16 @@ using namespace RobotKin;
 
 int main(int argc, char **argv)
 {
+    bool constrained = false;
 
-    double kp = atof(argv[1]);
-    double kd = atof(argv[2]);
+    double kp = 0;
+    double kd = 0;
+
+    if(constrained)
+    {
+        kp = atof(argv[1]);
+        kd = atof(argv[2]);
+    }
 
     if( !(0 <= kp && kp < 1000) )
         return -1;
@@ -154,7 +161,7 @@ int main(int argc, char **argv)
 
 //        if(iter==maxi)
 //            std::cout << torques(EB) << "\t";
-
+/*
         currentR = kin.linkage("RightArm").tool().respectToRobot();
 
         err = startR.translation() - currentR.translation();
@@ -184,19 +191,21 @@ int main(int argc, char **argv)
 //        kin.armTorques(RIGHT, gravity);
         kin.armTorques(RIGHT, torques);
         
-        hubo.setJointTorque(RSP, torques(SP));
-        hubo.setJointTorque(RSR, torques(SR));
-        hubo.setJointTorque(RSY, torques(SY));
-        hubo.setJointTorque(REB, torques(EB));
-        hubo.setJointTorque(RWY, torques(WY));
-        hubo.setJointTorque(RWP, torques(WP));
-
+//        hubo.setJointTorque(RSP, torques(SP));
+//        hubo.setJointTorque(RSR, torques(SR));
+//        hubo.setJointTorque(RSY, torques(SY));
+//        hubo.setJointTorque(REB, torques(EB));
+//        hubo.setJointTorque(RWY, torques(WY));
+//        hubo.setJointTorque(RWP, torques(WP));
+*/
         if(iter==maxi)
         {
+/*
             std::cout << "Total: " << torques.transpose() << std::endl;
             std::cout << "Grav:  " << gravity.transpose() << std::endl;
             std::cout << "Diff:  " << (torques-gravity).transpose() << std::endl;
-////            std::cout << torques.transpose() << std::endl;
+*/
+            std::cout << "Torque: " << torques(WY) << "\tVel:" << qdot(WY) << std::endl;
         }
 
         hubo.sendControls();
