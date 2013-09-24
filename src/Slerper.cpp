@@ -78,13 +78,12 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 {
     bool verbose = true;
 //    bool verbose = false;
-
+/*
 if(worstOffender == -2)
 {
     worstOffender = -1;
     hubo.getLeftArmAngles(armAngles[LEFT]);
 }
-
 
 if(verbose)
 {
@@ -102,7 +101,7 @@ if(verbose)
     }
     cout << "WO: " << worstOffender << " (" << worstOffense << ")\t||\t";
 }
-
+*/
 
 
 
@@ -176,9 +175,30 @@ if(verbose)
                             cmd.pose[side].i,
                             cmd.pose[side].j,
                             cmd.pose[side].k));
+
+    
+    J = kin.armJacobian(side);
+
+    hubo.getArmRefVels(side, qdotC);
+//    hubo.getArmAngles(side, qdotC);
+//    qdotC = (qdotC - lastAngles[side])/dt;
+    for(int i=0; i<7; i++)
+        qdot(i) = qdotC(i);
+
+    mscrew = J*qdot;
+
+    for(int i=0; i<3; i++)
+        V[side](i) = mscrew(i);
+
     
     dr[side] = goal.translation() - start.translation();
 
+
+if(verbose)
+{
+    std::cout << "Remaining: " << (goal.translation()-start.translation()).transpose() << "\t||\t";
+    std::cout << "Vel : " << V[side].transpose() << "\t||\t";
+}
 /*    
     dV[side] = dr[side].normalized()*fabs(nomSpeed) - V[side];
 
@@ -197,8 +217,7 @@ if(verbose)
 
     
     V[side] = dr[side]/dt;
-*/
-    
+*/    
     dV[side] = dr[side]/dt;
     stopSpeed = sqrt(2*nomAcc*dr[side].norm());
     maxVel = std::min(nomSpeed, stopSpeed);
@@ -211,9 +230,10 @@ if(verbose)
         accel *= nomAcc / accel.norm();
 
     V[side] += accel*dt;
-    dr[side] = V[side]*dt;
 
-
+    if( dr[side].norm() > V[side].norm()*dt || dr[side].dot(V[side]) < 0 )
+        dr[side] = V[side]*dt;
+    
     
     next.translate(dr[side]);
     next.translate(start.translation());

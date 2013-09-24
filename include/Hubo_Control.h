@@ -543,6 +543,10 @@ public:
      * Returns the current velocity of the joint specified by "joint"
     */
     double getJointVelocity( int joint );
+    /**
+     * Returns the current reference velocity of the joint specified by "joint"
+    */
+    double getJointRefVelocity( int joint );
     // Velocity control
     /**
      * Returns the current velocity command value of the joint specified by "joint".
@@ -620,6 +624,11 @@ public:
      * Extension of getArmVels() where side = RIGHT
     */
     void getRightArmVels( ArmVector &vels );
+    /**
+     * Get the velocity of an arm's reference
+    */
+    ctrl_flag_t getArmRefVels( int side, ArmVector &vels );
+
     // Velocity control
     /**
      * Extension of getJointVelocityCtrl() for the arm corresponding to "side" (LEFT or RIGHT).

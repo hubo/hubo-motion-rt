@@ -1524,6 +1524,15 @@ double Hubo_Control::getJointVelocity(int joint)
         return 0;
 }
 
+double Hubo_Control::getJointRefVelocity(int joint)
+{
+    if( joint < HUBO_JOINT_COUNT )
+        return C_State.requested_vel[joint];
+    else
+        return 0;
+}
+
+
 // Velocity control
 double Hubo_Control::getJointVelocityCtrl(int joint)
 {
@@ -1664,6 +1673,20 @@ void Hubo_Control::getLeftArmVels(ArmVector &vels)
 { getArmVels(LEFT, vels); }
 void Hubo_Control::getRightArmVels(ArmVector &vels)
 { getArmVels(RIGHT, vels); }
+
+
+ctrl_flag_t Hubo_Control::getArmRefVels(int side, ArmVector &vels)
+{
+    if( side==LEFT || side==RIGHT )
+    {
+        for(int i=0; i<H_Arm_Ctrl[side].count; i++)
+            vels[i] = getJointRefVelocity(armjoints[side][i]);
+    }
+    else
+        return BAD_SIDE;
+
+    return SUCCESS;
+}
 
 
 // Velocity control

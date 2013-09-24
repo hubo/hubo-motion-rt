@@ -36,6 +36,11 @@ protected:
     RobotKin::TRANSFORM altNext;
     RobotKin::TRANSFORM eepose;
     RobotKin::TRANSFORM alteepose;
+
+    ArmVector qdotC;
+    Eigen::Matrix< double, 7, 1 > qdot;
+    Eigen::Matrix< double, 6, 1 > mscrew;
+    ArmJacobian J;
     
     double nomSpeed;
     double nomAcc;
