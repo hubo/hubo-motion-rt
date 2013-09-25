@@ -18,6 +18,7 @@ class Slerper
 public:
     Slerper();
 
+    void resetSlerper(int side, Hubo_Control &hubo);
     void commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt);
 
 
@@ -31,7 +32,7 @@ protected:
     
     RobotKin::TRANSFORM start;
     RobotKin::TRANSFORM goal;
-    RobotKin::TRANSFORM next;
+    RobotKin::TRANSFORM next[2];
     RobotKin::TRANSFORM altStart;
     RobotKin::TRANSFORM altNext;
     RobotKin::TRANSFORM eepose;

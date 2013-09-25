@@ -43,8 +43,27 @@ Slerper::Slerper() :
     limb[RIGHT] = "RightArm";
     limb[LEFT]  = "LeftArm";
 
-    dump = fopen("output-waypoints", "a+");    
+    dump = fopen("output-waypoints", "a+");
 
+}
+
+void Slerper::resetSlerper(int side, Hubo_Control &hubo)
+{
+    kin.updateHubo(hubo, false);
+    
+
+    next[side] = kin.linkage(limb[side]).tool().respectToRobot();
+    
+    for(int i=0; i<2; i++)
+    {
+        dr[side] = TRANSLATION::Zero();
+        V[side] = TRANSLATION::Zero();
+        dV[side] = TRANSLATION::Zero();
+        
+        angle[side] = 0;
+        W[side] = 0;
+        dW[side] = 0;
+    }
 }
 
 #ifdef HAVE_REFLEX
@@ -88,7 +107,7 @@ if(worstOffender == -2)
 if(verbose)
 {
     kin.updateHubo(hubo, true);
-    cout << "State Error: " << (next.translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << "\t||\t";
+    cout << "State Error: " << (next[side].translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << "\t||\t";
     ArmVector final;
     hubo.getLeftArmAngles(final);
     for(int w=0; w < 7; w++)
@@ -159,12 +178,9 @@ if(verbose)
     }
     
 
-    if(cmd.m_frame[side] == MC_GLOBAL)
-        start = kin.linkage(limb[side]).tool().withRespectTo(kin.linkage("RightLeg").tool());
-    else if(cmd.m_frame[side] == MC_ROBOT)
-        start = kin.linkage(limb[side]).tool().respectToRobot();
+    start = next[side];
 
-    next = TRANSFORM::Identity();
+    next[side] = TRANSFORM::Identity();
 
     
     goal = TRANSFORM::Identity();
@@ -176,20 +192,9 @@ if(verbose)
                             cmd.pose[side].j,
                             cmd.pose[side].k));
 
+    if(cmd.m_frame[side] == MC_GLOBAL)
+        goal = kin.linkage("RightLeg").tool().respectToRobot() * goal;
     
-    J = kin.armJacobian(side);
-
-    hubo.getArmRefVels(side, qdotC);
-//    hubo.getArmAngles(side, qdotC);
-//    qdotC = (qdotC - lastAngles[side])/dt;
-    for(int i=0; i<7; i++)
-        qdot(i) = qdotC(i);
-
-    mscrew = J*qdot;
-
-    for(int i=0; i<3; i++)
-        V[side](i) = mscrew(i);
-
     
     dr[side] = goal.translation() - start.translation();
 
@@ -234,9 +239,10 @@ if(verbose)
     if( dr[side].norm() > V[side].norm()*dt || dr[side].dot(V[side]) < 0 )
         dr[side] = V[side]*dt;
     
+    V[side] = dr[side]/dt;
     
-    next.translate(dr[side]);
-    next.translate(start.translation());
+    next[side].translate(dr[side]);
+    next[side].translate(start.translation());
 
 
     angax = goal.rotation()*start.rotation().transpose();
@@ -264,17 +270,17 @@ if(verbose)
     
     W[side] = angle[side]/dt;
     
-    next.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
-    next.rotate(start.rotation());
+    next[side].rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
+    next[side].rotate(start.rotation());
 
 
 if(verbose)
 {
 
     fprintf(dump, "%f\t%f\t%f\t%f\t", hubo.getTime(),
-                    next.translation().x(),
-                    next.translation().y(),
-                    next.translation().z() );
+                    next[side].translation().x(),
+                    next[side].translation().y(),
+                    next[side].translation().z() );
 
     fprintf(dump, "%f\t%f\t%f\t",
                     V[LEFT](0), V[LEFT](1), V[LEFT](2));
@@ -294,8 +300,8 @@ if(verbose)
 }
 
 
-    if(cmd.m_frame[side] == MC_GLOBAL)
-        next = kin.linkage("RightLeg").tool().respectToRobot()*next;
+//    if(cmd.m_frame[side] == MC_GLOBAL)
+//        next[side] = kin.linkage("RightLeg").tool().respectToRobot()*next[side];
 
 
     
@@ -307,9 +313,9 @@ if(verbose)
     if(dual)
         lastAngles[alt] = armAngles[alt];
     
-    rk_result_t result = kin.armIK(side, armAngles[side], next);
+    rk_result_t result = kin.armIK(side, armAngles[side], next[side]);
     if(dual)
-        kin.armIK(alt, armAngles[alt], next);
+        kin.armIK(alt, armAngles[alt], next[side]);
 
 
 
@@ -318,13 +324,13 @@ if(verbose)
 
 if(verbose)
 {
-    cout << "Error: " << (next.translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << endl;
+    cout << "Error: " << (next[side].translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << endl;
 }
 
 //if(verbose)
 if(false)
 {
-    cout     << "EE:  " << endl << next.matrix() << endl << endl
+    cout     << "EE:  " << endl << next[side].matrix() << endl << endl
              << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
 //             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
              << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.linkage("RightLeg").tool()).matrix() << endl << endl;

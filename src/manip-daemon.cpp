@@ -78,6 +78,8 @@ int main( int argc, char **argv )
     DrcHuboKin kin;
     kin.updateHubo(hubo);
     Slerper slerp;
+    slerp.resetSlerper(LEFT, hubo);
+    slerp.resetSlerper(RIGHT, hubo);
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
@@ -183,20 +185,26 @@ int main( int argc, char **argv )
                     slerp.commenceSlerping(side, manip_cmd[side], hubo, dt); break;
                 case MC_TRANS_EULER:
                     hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRANS_QUAT:
                     hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRAJ:
                     hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_HALT:
                     hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_halt(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_ANGLES:
                     hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_angles(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_READY:
+                    slerp.resetSlerper(side, hubo);
                     hubo.releaseArm(side); break;
             }
             
