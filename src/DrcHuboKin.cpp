@@ -136,6 +136,14 @@ void DrcHuboKin::setTool(int side, const TRANSFORM offset)
                   toolTfR*offset);
 }
 
+RobotKin::TRANSFORM DrcHuboKin::getTool(int side)
+{
+    if( side == LEFT )
+        return toolTfL.inverse() * linkage("LeftArm").tool().respectToFixed();
+    else
+        return toolTfR.inverse() * linkage("RightArm").tool().respectToFixed();
+}
+
 RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench)
 {
     VectorXd torques;

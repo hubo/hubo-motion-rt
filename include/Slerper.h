@@ -56,6 +56,9 @@ protected:
     
     double nomRotSpeed;
     double nomRotAcc;
+    double stopRotSpeed;
+    double maxRotVel;
+    double rotAccel;
     double ada;
 
     double worstOffense;

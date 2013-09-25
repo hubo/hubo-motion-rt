@@ -70,10 +70,14 @@ void trigger_close( Hubo_Control &hubo );
 void trigger_open( Hubo_Control &hubo );
 void trigger_limp( Hubo_Control &hubo );
 
+void initializeHubo(Hubo_Control &hubo);
+
+
 int main( int argc, char **argv )
 {
 //    Hubo_Control hubo("manip-daemon");
     Hubo_Control hubo;
+    initializeHubo(hubo);
 
     DrcHuboKin kin;
     kin.updateHubo(hubo);
@@ -121,6 +125,12 @@ int main( int argc, char **argv )
     ArmVector torques[2];
     Vector6d eeWrench[2];
     
+    ArmVector highGainsP, highGainsD; highGainsP.setOnes(); highGainsD.setZero(); 
+    highGainsP *= 80;
+    highGainsP(SR) = 100;
+    highGainsP(SY) = 100;
+    highGainsP(WY) = 100;
+    highGainsP(WP) = 120;
     
     double time=hubo.getTime(), dt=0;
     hubo.update(true);
@@ -257,7 +267,7 @@ int main( int argc, char **argv )
             }
             else if( manip_cmd[side].m_ctrl[side] == MC_COMPLIANT )
             {
-                hubo.setArmCompliance(side, true);
+                hubo.setArmCompliance(side, true, highGainsP, highGainsD);
                 kin.armTorques(side, torques[side]);
                 hubo.setArmTorques(side, torques[side]);
             }
@@ -275,7 +285,7 @@ int main( int argc, char **argv )
                 for(int i=0; i<6; i++)
                     eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
 
-                hubo.setArmCompliance(side, true);
+                hubo.setArmCompliance(side, true, highGainsP, highGainsD);
                 kin.armTorques(side, torques[side], eeWrench[side]);
                 hubo.setArmTorques(side, torques[side]);
             }
@@ -298,6 +308,18 @@ int main( int argc, char **argv )
 
     return 0;
 }
+
+void initializeHubo( Hubo_Control &hubo )
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        hubo.setJointMaxPWM(i, 8);
+
+    hubo.setJointMaxPWM(LSR, 10);
+    hubo.setJointMaxPWM(LSY, 10);
+    hubo.setJointMaxPWM(LWY, 10);
+    hubo.setJointMaxPWM(LWP, 10);
+}
+
 
 void grasp_close( Hubo_Control &hubo, int side )
 {

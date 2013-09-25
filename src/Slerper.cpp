@@ -95,8 +95,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
-    bool verbose = true;
-//    bool verbose = false;
+//    bool verbose = true;
+    bool verbose = false;
 /*
 if(worstOffender == -2)
 {
@@ -153,6 +153,11 @@ if(verbose)
         hubo.setArmNomAcc(side, nomJointAcc);
     }
 
+    start = next[side];
+
+    next[side] = TRANSFORM::Identity();
+    
+
     RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
     toolTf.translate( Vector3d(cmd.m_tool[side].t_pose.x,
                                cmd.m_tool[side].t_pose.y,
@@ -161,6 +166,15 @@ if(verbose)
                                       cmd.m_tool[side].t_pose.i,
                                       cmd.m_tool[side].t_pose.j,
                                       cmd.m_tool[side].t_pose.k) );
+    
+    start = start * kin.getTool(side) * toolTf;
+
+if(verbose)
+//if(false)
+{
+    std::cout << "start:" << endl << start.matrix() << endl << endl << (kin.getTool(side)*toolTf).matrix() << endl << endl;
+
+}
 
     kin.setTool(side, toolTf);
 
@@ -178,11 +192,6 @@ if(verbose)
     }
     
 
-    start = next[side];
-
-    next[side] = TRANSFORM::Identity();
-
-    
     goal = TRANSFORM::Identity();
     goal.translate(TRANSLATION(cmd.pose[side].x, 
                                cmd.pose[side].y,
@@ -198,31 +207,6 @@ if(verbose)
     
     dr[side] = goal.translation() - start.translation();
 
-
-if(verbose)
-{
-    std::cout << "Remaining: " << (goal.translation()-start.translation()).transpose() << "\t||\t";
-    std::cout << "Vel : " << V[side].transpose() << "\t||\t";
-}
-/*    
-    dV[side] = dr[side].normalized()*fabs(nomSpeed) - V[side];
-
-    
-    adr = sqrt(fabs(2.0*nomAcc*dr[side].norm()));
-    if( V[side].norm() >= adr )
-        dV[side] = dr[side].normalized()*adr - V[side];
-    else
-        clampMag(dV[side], fabs(nomAcc*dt));
-    
-    V[side] += dV[side];
-    
-    
-    if( dr[side].norm() > V[side].norm()*dt || dr[side].dot(V[side]) < 0 )
-        dr[side] = V[side]*dt;
-
-    
-    V[side] = dr[side]/dt;
-*/    
     dV[side] = dr[side]/dt;
     stopSpeed = sqrt(2*nomAcc*dr[side].norm());
     maxVel = std::min(nomSpeed, stopSpeed);
@@ -253,6 +237,19 @@ if(verbose)
     if( angle[side] > M_PI )
         angle[side] = angle[side]-2*M_PI;
     
+    dW[side] = sign(angle[side])/dt;
+    stopRotSpeed = sqrt(2*nomRotAcc*fabs(angle[side]));
+    maxRotVel = std::min( nomRotSpeed, stopRotSpeed );
+
+    if( fabs(dW[side]) > maxRotVel )
+        dW[side] *= maxRotVel/fabs(dW[side]);
+
+    rotAccel = (dW[side] - W[side])/dt;
+    if( fabs(rotAccel) > nomRotAcc )
+        rotAccel *= nomRotAcc/fabs(rotAccel);
+
+    W[side] += rotAccel*dt;
+/*
     dW[side] = sign(angle[side])*nomRotSpeed - W[side];
     
     ada = sqrt(fabs(2.0*nomRotAcc*angle[side]));
@@ -264,6 +261,7 @@ if(verbose)
         dW[side] = -fabs(nomRotAcc*dt);
     
     W[side] += dW[side];
+*/
     
     if( fabs(angle[side]) > fabs(W[side]*dt) || angle[side]*W[side] < 0 )
         angle[side] = W[side]*dt;
