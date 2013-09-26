@@ -95,35 +95,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
-//    bool verbose = true;
     bool verbose = false;
-/*
-if(worstOffender == -2)
-{
-    worstOffender = -1;
-    hubo.getLeftArmAngles(armAngles[LEFT]);
-}
-
-if(verbose)
-{
-    kin.updateHubo(hubo, true);
-    cout << "State Error: " << (next[side].translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << "\t||\t";
-    ArmVector final;
-    hubo.getLeftArmAngles(final);
-    for(int w=0; w < 7; w++)
-    {
-        if( fabs(final(w)-armAngles[LEFT](w)) > worstOffense )
-        {
-            worstOffense = final(w)-armAngles[LEFT][w];
-            worstOffender = w;
-        }
-    }
-    cout << "WO: " << worstOffender << " (" << worstOffense << ")\t||\t";
-}
-*/
-
-
-
+//    bool verbose = true;
 
     kin.updateHubo(hubo, false);
     
@@ -167,12 +140,12 @@ if(verbose)
                                       cmd.m_tool[side].t_pose.j,
                                       cmd.m_tool[side].t_pose.k) );
     
-    start = start * kin.getTool(side) * toolTf;
+    start = start * kin.getTool(side).inverse() * toolTf;
 
 if(verbose)
 //if(false)
 {
-    std::cout << "start:" << endl << start.matrix() << endl << endl << (kin.getTool(side)*toolTf).matrix() << endl << endl;
+    std::cout << "start:" << endl << start.matrix() << endl << endl;
 
 }
 

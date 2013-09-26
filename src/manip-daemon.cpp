@@ -128,7 +128,7 @@ int main( int argc, char **argv )
     ArmVector highGainsP, highGainsD; highGainsP.setOnes(); highGainsD.setZero(); 
     highGainsP *= 80;
     highGainsP(SR) = 100;
-    highGainsP(SY) = 100;
+    highGainsP(SY) = 150;
     highGainsP(WY) = 100;
     highGainsP(WP) = 120;
     
@@ -314,10 +314,10 @@ void initializeHubo( Hubo_Control &hubo )
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         hubo.setJointMaxPWM(i, 8);
 
-    hubo.setJointMaxPWM(LSR, 10);
-    hubo.setJointMaxPWM(LSY, 10);
-    hubo.setJointMaxPWM(LWY, 10);
-    hubo.setJointMaxPWM(LWP, 10);
+    hubo.setJointMaxPWM(LSR, 15);
+    hubo.setJointMaxPWM(LSY, 15);
+    hubo.setJointMaxPWM(LWY, 15);
+    hubo.setJointMaxPWM(LWP, 15);
 }
 
 
