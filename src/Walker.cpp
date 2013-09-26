@@ -43,30 +43,30 @@
 #include <iomanip>
 
 void Walker::flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
-			nudge_state_t &state, balance_gains_t &gains, double dt )
+            nudge_state_t &state, walking_gains_t &gains, double dt )
 {
      
-    state.ankle_roll_compliance[LEFT] -= gains.decay_gain[LEFT]*state.ankle_roll_compliance[LEFT];
-    state.ankle_roll_compliance[RIGHT] -= gains.decay_gain[RIGHT]*state.ankle_roll_compliance[RIGHT];
+    state.ankle_roll_compliance[LEFT] -= gains.decay_gain*state.ankle_roll_compliance[LEFT];
+    state.ankle_roll_compliance[RIGHT] -= gains.decay_gain*state.ankle_roll_compliance[RIGHT];
 
-    state.ankle_pitch_compliance[LEFT] -= gains.decay_gain[LEFT]*state.ankle_pitch_compliance[LEFT];
-    state.ankle_pitch_compliance[RIGHT] -= gains.decay_gain[RIGHT]*state.ankle_pitch_compliance[RIGHT];
+    state.ankle_pitch_compliance[LEFT] -= gains.decay_gain*state.ankle_pitch_compliance[LEFT];
+    state.ankle_pitch_compliance[RIGHT] -= gains.decay_gain*state.ankle_pitch_compliance[RIGHT];
 
-    if( gains.force_min_threshold[RIGHT] < hubo.getRightFootFz() 
-     && hubo.getRightFootFz() < gains.force_max_threshold[RIGHT] )
+    if( gains.force_min_threshold < hubo.getRightFootFz()
+     && hubo.getRightFootFz() < gains.force_max_threshold )
     {
-        state.ankle_roll_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
+        state.ankle_roll_compliance[RIGHT] += dt*gains.flattening_gain
                                                 *( hubo.getRightFootMx() );
-        state.ankle_pitch_compliance[RIGHT] += dt*gains.flattening_gain[RIGHT]
+        state.ankle_pitch_compliance[RIGHT] += dt*gains.flattening_gain
                                                  *( hubo.getRightFootMy() );
     }
 
-    if( gains.force_min_threshold[LEFT] < hubo.getLeftFootFz()
-     && hubo.getLeftFootFz() < gains.force_max_threshold[LEFT] )
+    if( gains.force_min_threshold < hubo.getLeftFootFz()
+     && hubo.getLeftFootFz() < gains.force_max_threshold )
     {
-        state.ankle_roll_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
+        state.ankle_roll_compliance[LEFT] += dt*gains.flattening_gain
                                                *( hubo.getLeftFootMx() );
-        state.ankle_pitch_compliance[LEFT] += dt*gains.flattening_gain[LEFT]
+        state.ankle_pitch_compliance[LEFT] += dt*gains.flattening_gain
                                                 *( hubo.getLeftFootMy() );
     }
 
@@ -79,21 +79,21 @@ void Walker::flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
 }
 
 void Walker::straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt )
+        nudge_state_t &state, walking_gains_t &gains, double dt )
 {
     if( elem.effector_frame == EFFECTOR_L_FOOT )
     {
-        state.ankle_pitch_resistance[LEFT] += dt*gains.straightening_pitch_gain[LEFT]
+        state.ankle_pitch_resistance[LEFT] += dt*gains.straightening_pitch_gain
                                                 *( hubo.getAngleY() );
-        state.ankle_roll_resistance[LEFT]  += dt*gains.straightening_roll_gain[LEFT]
+        state.ankle_roll_resistance[LEFT]  += dt*gains.straightening_roll_gain
                                                 *( hubo.getAngleX() );
     }
 
     if( elem.effector_frame == EFFECTOR_R_FOOT )
     {
-        state.ankle_pitch_resistance[RIGHT] += dt*gains.straightening_pitch_gain[RIGHT]
+        state.ankle_pitch_resistance[RIGHT] += dt*gains.straightening_pitch_gain
                                                  *( hubo.getAngleY() );
-        state.ankle_roll_resistance[RIGHT]  += dt*gains.straightening_roll_gain[RIGHT]
+        state.ankle_roll_resistance[RIGHT]  += dt*gains.straightening_roll_gain
                                                  *( hubo.getAngleX() );
     }
     
@@ -105,17 +105,17 @@ void Walker::straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
 }
 /*
 void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt )
+        nudge_state_t &state, walking_gains_t &gains, double dt )
 {
     state.knee_velocity_offset[LEFT] =
-                   gains.spring_gain[LEFT]*( elem.angles[LKN] - hubo.getJointAngle(LKN))
-                 + gains.damping_gain[LEFT]*( -state.knee_velocity_offset[LEFT] )
-                 + gains.fz_response[LEFT]*( hubo.getLeftFootFz() );
+                   gains.spring_gain*( elem.angles[LKN] - hubo.getJointAngle(LKN))
+                 + gains.damping_gain*( -state.knee_velocity_offset[LEFT] )
+                 + gains.fz_response*( hubo.getLeftFootFz() );
 
     state.knee_velocity_offset[RIGHT] =
-                   gains.spring_gain[RIGHT]*( elem.angles[LKN] - hubo.getJointAngle(LKN))
-                 + gains.damping_gain[RIGHT]*( -state.knee_velocity_offset[RIGHT] )
-                 + gains.fz_response[RIGHT]*( hubo.getRightFootFz() );
+                   gains.spring_gain*( elem.angles[LKN] - hubo.getJointAngle(LKN))
+                 + gains.damping_gain*( -state.knee_velocity_offset[RIGHT] )
+                 + gains.fz_response*( hubo.getRightFootFz() );
    
     for(int i=0; i<2; i++)
         state.knee_offset[i] += dt*state.knee_velocity_offset[i];
@@ -131,7 +131,7 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
 */
 
 //void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
-//        nudge_state_t &state, balance_gains_t &gains, double dt )
+//        nudge_state_t &state, walking_gains_t &gains, double dt )
 //{
 //    counter++;
 //    //-------------------------
@@ -336,7 +336,7 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
  * M = .8, K = 1102, Q = 59
  */
 void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt )
+        nudge_state_t &state, walking_gains_t &gains, double dt )
 {
     counter++;
     //-------------------------
@@ -365,13 +365,13 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     Eigen::Vector3d spring_gain, damping_gain;
 
     spring_gain.setZero(); damping_gain.setZero();
-    spring_gain.z() = gains.spring_gain[RIGHT];
-    damping_gain.z() = gains.damping_gain[RIGHT];
+    spring_gain.z() = gains.spring_gain;
+    damping_gain.z() = gains.damping_gain;
 
     // Set Impedance Controller gains
     impCtrl.setGains(spring_gain, damping_gain);
-    if(gains.fz_response[RIGHT] > 0)
-        impCtrl.setMass(gains.fz_response[RIGHT]);
+    if(gains.fz_response > 0)
+        impCtrl.setMass(gains.fz_response);
 
     //-------------------------
     //    COPY JOINT ANGLES
@@ -524,7 +524,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 // END of landingController()
 
 void Walker::straighteningController( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt )
+        nudge_state_t &state, walking_gains_t &gains, double dt )
 {
 
     kin.updateHubo(hubo);
@@ -558,16 +558,16 @@ void Walker::straighteningController( Hubo_Control &hubo, zmp_traj_element_t &el
         Eigen::Vector3d spring_gain, damping_gain;
         spring_gain.setZero(); damping_gain.setZero();
 
-        spring_gain.x() = gains.spring_gain[LEFT];
-        damping_gain.x() = gains.damping_gain[LEFT];
-        spring_gain.y() = gains.spring_gain[RIGHT];
-        damping_gain.y() = gains.damping_gain[RIGHT];
+        spring_gain.x() = gains.spring_gain;
+        damping_gain.x() = gains.damping_gain;
+        spring_gain.y() = gains.spring_gain;
+        damping_gain.y() = gains.damping_gain;
 
         // Set Impedance Controller gains
         impCtrl.setGains(spring_gain, damping_gain);
 
-        if(gains.fz_response[RIGHT] > 0)
-            impCtrl.setMass(gains.fz_response[RIGHT]);
+        if(gains.fz_response > 0)
+            impCtrl.setMass(gains.fz_response);
     //    if(counter >= counterMax)
     //        std::cout << "K=" << spring_gain.z() << " Q=" << damping_gain.z() << " M=" << gains.fz_response[side];
 
@@ -625,11 +625,11 @@ void Walker::straighteningController( Hubo_Control &hubo, zmp_traj_element_t &el
         Eigen::Vector2d imuAngle, imuVel, imuTorque;
 
         // Spring Kp and Kd gains for Ankle Roll
-        double KpR = gains.straightening_roll_gain[LEFT];
-        double KdR = gains.straightening_roll_gain[RIGHT];
+        double KpR = gains.straightening_roll_gain;
+        //double KdR = gains.straightening_roll_gain;
         // Spring Kp and Kd gains for Ankle Pitch
-        double KpP = gains.straightening_pitch_gain[LEFT];
-        double KdP = gains.straightening_pitch_gain[RIGHT];
+        double KpP = gains.straightening_pitch_gain;
+        //double KdP = gains.straightening_pitch_gain;
 
         // Get COM height and compute imu offset due to zmp_x_offset in trajectory
         Eigen::Isometry3d legFK = kin.legFK(side);
@@ -640,8 +640,8 @@ void Walker::straighteningController( Hubo_Control &hubo, zmp_traj_element_t &el
         // Get imu angle and rotational velocity about x and y axes
         imuAngle << hubo.getAngleX(), imuOffset - hubo.getAngleY();
         imuVel << hubo.getRotVelX(), hubo.getRotVelY();
-        imuTorque(0) = KpR * imuAngle(0) + KdR * imuVel(0);
-        imuTorque(1) = KpP * imuAngle(1) + KdP * imuVel(0);
+        imuTorque(0) = KpR * imuAngle(0);// + KdR * imuVel(0);
+        imuTorque(1) = KpP * imuAngle(1);// + KdP * imuVel(0);
         
         //-------------------------
         //   FORCE/TORQUE ERROR
@@ -779,7 +779,7 @@ Walker::~Walker()
     ach_close( &bal_state_chan );
 }
 
-void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_gains_t &gains)
+void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, walking_gains_t &gains)
 {
     int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
     keepWalking = true;
@@ -1071,7 +1071,7 @@ bool Walker::validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_eleme
 
 void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, balance_gains_t &gains, double dt )
+            nudge_state_t &state, walking_gains_t &gains, double dt )
 {
     // Make copy of zmp_traj_element so we don't effect the trajectory that's
     // being recycled or it will be like recycling a changing trajectory. Not Good!

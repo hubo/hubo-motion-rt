@@ -80,17 +80,17 @@ typedef enum {
 
 typedef struct balance_gains {
 
-    double flattening_gain[2];
-    double decay_gain[2];
-    double force_min_threshold[2];
-    double force_max_threshold[2];
+    double flattening_gain;
+    double decay_gain;
+    double force_min_threshold;
+    double force_max_threshold;
 
-    double straightening_pitch_gain[2];
-    double straightening_roll_gain[2];
+    double straightening_pitch_gain;
+    double straightening_roll_gain;
     
-    double spring_gain[2];
-    double damping_gain[2];
-    double fz_response[2];
+    double spring_gain;
+    double damping_gain;
+    double fz_response;
 
     double single_support_hip_nudge_kp;
     double single_support_hip_nudge_kd;
@@ -99,8 +99,28 @@ typedef struct balance_gains {
 
 }__attribute__((packed)) balance_gains_t;
 
+typedef struct walking_gains {
 
+    double flattening_gain;
+    double decay_gain;
+    double force_min_threshold;
+    double force_max_threshold;
 
+    double straightening_pitch_gain;
+    double straightening_roll_gain;
+
+    double spring_gain;
+    double damping_gain;
+    double fz_response;
+
+}__attribute__((packed)) walking_gains_t;
+
+typedef struct balance_params {
+
+    balance_gains_t balance_gains;
+    walking_gains_t walking_gains;
+
+}__attribute__((packed)) balance_params_t;
 
 typedef struct balance_cmd {
 

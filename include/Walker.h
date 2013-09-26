@@ -100,7 +100,7 @@ public:
      * \param state Nudge state which stores the integrated states
      * \param gains Gains for balancing
     */
-    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_gains_t &gains);
+    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, walking_gains_t &walking_gains);
 
     double m_jointSpaceTolerance;   //!< Joint space tolerance in radians.
     double m_jointVelContTol;       //!< Joint velocity tolerance in radians/s.
@@ -139,7 +139,7 @@ protected:
     */
     void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, balance_gains_t &gains, double dt );
+            nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief Checks for a new trajectory from the ach channel.
@@ -173,7 +173,7 @@ protected:
      * \return void
     */
     void flattenFoot( Hubo_Control &hubo, zmp_traj_element_t &elem,
-			nudge_state_t &state, balance_gains_t &gains, double dt );
+            nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief Straightens the back by adjusting the ankle pitch and
@@ -189,7 +189,7 @@ protected:
      * \return void
     */
     void straightenBack( Hubo_Control &hubo, zmp_traj_element_t &elem,
-            nudge_state_t &state, balance_gains_t &gains, double dt );
+            nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief Complies the knee joints (as well as the ankle and hip
@@ -203,7 +203,7 @@ protected:
      * \return void
     */
     void complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt );
+        nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief During single support phase if the swing foot feels
@@ -218,7 +218,7 @@ protected:
      * \return void
     */
     void landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt );
+        nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief During single support phase the support ankle will be adjusted
@@ -232,7 +232,7 @@ protected:
      * \return void
     */
     void straighteningController( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, balance_gains_t &gains, double dt );
+        nudge_state_t &state, walking_gains_t &gains, double dt );
 
     /**
      * \brief Send balance state, which include balance mode, walk

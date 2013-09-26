@@ -104,14 +104,14 @@ int main(int argc, char **argv)
 
     balance_cmd_t cmd;
     balance_state_t state;
-    balance_gains_t gains;
+    balance_params_t params;
     nudge_state_t nudge;
     manip_override_t ovr;
     hubo_manip_state_t manip_state;
 
     memset( &cmd, 0, sizeof(cmd) );
     memset( &state, 0, sizeof(state) );
-    memset( &gains, 0, sizeof(gains) );
+    memset( &params, 0, sizeof(params) );
     memset( &nudge, 0, sizeof(nudge) );
     memset( &ovr, 0, sizeof(ovr) );
     memset( &manip_state, 0, sizeof(manip_state) );
@@ -132,14 +132,14 @@ int main(int argc, char **argv)
         }
 
         ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
-        ach_get( &bal_param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
+        ach_get( &bal_param_chan, &params, sizeof(balance_gains), &fs, NULL, ACH_O_LAST );
 
         state.m_balance_mode = cmd.cmd_request;
 
         
         if( BAL_LEGS_ONLY == cmd.cmd_request )
         {
-            staticBalance(hubo, kin, cmd, gains, dt);
+            staticBalance(hubo, kin, cmd, params.balance_gains, dt);
         }
         else if( BAL_ZMP_WALKING == cmd.cmd_request )
         {
@@ -151,11 +151,11 @@ int main(int argc, char **argv)
                 ovr.m_override = OVR_ACQUIESCENT;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
 
-                //staticBalance(hubo, kin, cmd, gains, dt);
+                //staticBalance(hubo, kin, cmd, params.balance_gains, dt);
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
-                walk.commenceWalking(state, nudge, gains);
+                walk.commenceWalking(state, nudge, params.walking_gains);
                 ovr.m_override = OVR_SOVEREIGN;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
                 // Probably not necessary...
@@ -219,20 +219,20 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     double kneeAngleErrorL = knee - hubo.getJointAngle( LKN );
     double kneeAngleErrorR = knee - hubo.getJointAngle( RKN );
 
-    double kneeVelL = gains.spring_gain[LEFT]*kneeAngleErrorL + legJointVels[LEFT](KN);
-    double kneeVelR = gains.spring_gain[RIGHT]*kneeAngleErrorR + legJointVels[RIGHT](KN);
+    double kneeVelL = gains.spring_gain*kneeAngleErrorL + legJointVels[LEFT](KN);
+    double kneeVelR = gains.spring_gain*kneeAngleErrorR + legJointVels[RIGHT](KN);
 
-    double pitchL = gains.straightening_pitch_gain[LEFT]*hubo.getAngleY()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMy()    //FOR CORRECT F/T DIRECTIONS
+    double pitchL = gains.straightening_pitch_gain*hubo.getAngleY()
+                    + gains.flattening_gain*hubo.getLeftFootMy()    //FOR CORRECT F/T DIRECTIONS
                     - kneeVelL/2;
-    double rollL  = gains.straightening_roll_gain[LEFT]*hubo.getAngleX()
-                    + gains.flattening_gain[LEFT]*hubo.getLeftFootMx();    //FOR CORRECT F/T DIRECTIONS
+    double rollL  = gains.straightening_roll_gain*hubo.getAngleX()
+                    + gains.flattening_gain*hubo.getLeftFootMx();    //FOR CORRECT F/T DIRECTIONS
     
-    double pitchR = gains.straightening_pitch_gain[RIGHT]*hubo.getAngleY()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMy()    //FOR CORRECT F/T DIRECTIONS
+    double pitchR = gains.straightening_pitch_gain*hubo.getAngleY()
+                    + gains.flattening_gain*hubo.getRightFootMy()    //FOR CORRECT F/T DIRECTIONS
                     - kneeVelR/2;
-    double rollR  = gains.straightening_roll_gain[RIGHT]*hubo.getAngleX()
-                    + gains.flattening_gain[RIGHT]*hubo.getRightFootMx();    //FOR CORRECT F/T DIRECTIONS
+    double rollR  = gains.straightening_roll_gain*hubo.getAngleX()
+                    + gains.flattening_gain*hubo.getRightFootMx();    //FOR CORRECT F/T DIRECTIONS
 
     hubo.setJointVelocity( LAP, pitchL + legJointVels[LEFT](AP));
     hubo.setJointVelocity( LAR, rollL + legJointVels[LEFT](AR));
