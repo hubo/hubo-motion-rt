@@ -51,26 +51,6 @@ enum bipedStance_t {
 };
 
 /**
- * \brief Different stance types for atomic trajectories, used
- * for all walk types.
-*/
-typedef enum {
-  EVEN,             //!< feet are even and normal width
-  LEFT_DOM,         //!< left foot is dominant or in front
-  RIGHT_DOM,        //!< right foot is dominant or in front
-  NUM_OF_STANCES = 3//!< number of stance types. used for 3D trajectory array
-} stepStance_t;
-
-/*
-/// String constants for stepStance enum
-static const char* stepStanceStrings[NUM_OF_STANCES] = {"EVEN",
-                                                        "LEFT_DOM",
-                                                        "RIGHT_DOM"};
-*/
-
-const char* stepStanceString(int i);
-
-/**
  * \brief: walk type
 */
 typedef enum walktype {
@@ -243,7 +223,7 @@ typedef struct zmp_params {
   double fixed_com_offset_y;    //!< Offset of fixed com from trunk (m)
   double fixed_com_offset_z;    //!< Offset of fixed com from trunk (m)
 
-  
+
 
 }__attribute__((packed)) zmp_params_t;
 
