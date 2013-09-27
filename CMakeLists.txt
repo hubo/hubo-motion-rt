@@ -140,8 +140,8 @@ INSTALL(FILES include/Hubo_Control.h
 
 # Install Tables
 INSTALL(FILES tables/control.table  DESTINATION /etc/hubo-ach/)
-#INSTALL(FILES tables/duty.table DESTINATION /etc/hubo-ach/)
-#INSTALL(FILES tables/torque.table   DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/duty.table DESTINATION /etc/hubo-ach/)
+INSTALL(FILES tables/torque.table   DESTINATION /etc/hubo-ach/)
 
 # Install Service
 INSTALL(PROGRAMS scripts/hubo-motion DESTINATION /etc/init.d/)

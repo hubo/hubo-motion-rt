@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
         hubo.update(true);
         kin.updateHubo(hubo);
-
+/*
         currentL = kin.linkage("LeftArm").tool().respectToRobot();
 
         err = startL.translation() - currentL.translation();
@@ -147,16 +147,16 @@ int main(int argc, char **argv)
 
         wrench << err, rot;
         wrench += vel;
+*/
 
+//        kin.armTorques(LEFT, torques, wrench);
 
-        kin.armTorques(LEFT, torques, wrench);
-
-        hubo.setJointTorque(LSP, torques(SP));
-        hubo.setJointTorque(LSR, torques(SR));
-        hubo.setJointTorque(LSY, torques(SY));
-        hubo.setJointTorque(LEB, torques(EB));
-        hubo.setJointTorque(LWY, torques(WY));
-        hubo.setJointTorque(LWP, torques(WP));
+//        hubo.setJointTorque(LSP, torques(SP));
+//        hubo.setJointTorque(LSR, torques(SR));
+//        hubo.setJointTorque(LSY, torques(SY));
+//        hubo.setJointTorque(LEB, torques(EB));
+//        hubo.setJointTorque(LWY, torques(WY));
+//        hubo.setJointTorque(LWP, torques(WP));
 ////        hubo.setArmTorques(LEFT, torques);
 
 //        if(iter==maxi)
@@ -185,19 +185,19 @@ int main(int argc, char **argv)
 
         wrench << err, rot;
         wrench += vel;
-
+*/
 
 //        kin.armTorques(RIGHT, torques, wrench);
 //        kin.armTorques(RIGHT, gravity);
         kin.armTorques(RIGHT, torques);
         
-//        hubo.setJointTorque(RSP, torques(SP));
-//        hubo.setJointTorque(RSR, torques(SR));
-//        hubo.setJointTorque(RSY, torques(SY));
-//        hubo.setJointTorque(REB, torques(EB));
-//        hubo.setJointTorque(RWY, torques(WY));
-//        hubo.setJointTorque(RWP, torques(WP));
-*/
+        hubo.setJointTorque(RSP, torques(SP));
+        hubo.setJointTorque(RSR, torques(SR));
+        hubo.setJointTorque(RSY, torques(SY));
+        hubo.setJointTorque(REB, torques(EB));
+        hubo.setJointTorque(RWY, torques(WY));
+        hubo.setJointTorque(RWP, torques(WP));
+
         if(iter==maxi)
         {
 /*

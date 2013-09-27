@@ -220,6 +220,11 @@ typedef struct hubo_manip_cmd {
 
     manip_frame_t m_frame[NUM_ARMS];
 
+    int eeSpeedOverride;
+    double eeNomSpeed;
+    int eeRotationalSpeedOverride;
+    double eeNomRotationalSpeed;
+
     manip_tool_t m_tool[NUM_ARMS];
     manip_wrench_t m_wrench[NUM_ARMS];
 

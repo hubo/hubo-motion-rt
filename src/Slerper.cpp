@@ -106,6 +106,11 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     else
         dual = false;
     
+    if(cmd.eeSpeedOverride==1)
+        nomSpeed = cmd.eeNomSpeed;
+
+    if(cmd.eeRotationalSpeedOverride==1)
+        nomSpeed = cmd.eeNomRotationalSpeed;
     
     int alt;
     if(side==LEFT)
@@ -177,6 +182,7 @@ if(verbose)
     if(cmd.m_frame[side] == MC_GLOBAL)
         goal = kin.linkage("RightLeg").tool().respectToRobot() * goal;
 
+/*
     com = RobotKin::TRANSLATION(cmd.m_tool[side].com_x,
                                 cmd.m_tool[side].com_y,
                                 cmd.m_tool[side].com_z);
@@ -184,7 +190,7 @@ if(verbose)
     com = kin.getTool(side).rotation().transpose() * (com - kin.getTool(side).translation());
 
     kin.linkage(limb[side]).tool().massProperties.setMass(cmd.m_tool[side].mass, com);
-    
+*/    
     
     dr[side] = goal.translation() - start.translation();
 
