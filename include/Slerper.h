@@ -29,6 +29,8 @@ protected:
     RobotKin::TRANSLATION dr[2];
     RobotKin::TRANSLATION V[2];
     RobotKin::TRANSLATION dV[2];
+
+    RobotKin::TRANSLATION com;
     
     RobotKin::TRANSFORM start;
     RobotKin::TRANSFORM goal;

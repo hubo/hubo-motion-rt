@@ -176,6 +176,14 @@ if(verbose)
 
     if(cmd.m_frame[side] == MC_GLOBAL)
         goal = kin.linkage("RightLeg").tool().respectToRobot() * goal;
+
+    com = RobotKin::TRANSLATION(cmd.m_tool[side].com_x,
+                                cmd.m_tool[side].com_y,
+                                cmd.m_tool[side].com_z);
+
+    com = kin.getTool(side).rotation().transpose() * (com - kin.getTool(side).translation());
+
+    kin.linkage(limb[side]).tool().massProperties.setMass(cmd.m_tool[side].mass, com);
     
     
     dr[side] = goal.translation() - start.translation();
