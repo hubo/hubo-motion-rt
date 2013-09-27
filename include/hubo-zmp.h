@@ -140,8 +140,6 @@ typedef struct zmp_traj {
   size_t periodStartTick;   //!< start timestep of periodic portion of trajectory
   size_t periodEndTick;     //!< end timestep of periodic portion of trajectory
   walktype_t walkDirection;//!< walk direction for trajectory
-  stepStance_t startStance; //!< start stance for trajectory
-  stepStance_t goalStance;  //!< goal stance for trajectory
   int reuse;               //!< whether or not to reuse the current trajectory's periodic portion
 }__attribute__((packed)) zmp_traj_t;
 
@@ -235,8 +233,6 @@ typedef struct zmp_params {
 */
 typedef struct walker_state {
   walktype_t walkDirection;    //!< walk direction being executed
-  stepStance_t startStance;     //!< start stance of current step
-  stepStance_t goalStance;      //!< goal stance of current step
   int cyclesLeft;               //!< cycles left in current step trajectory
 }__attribute__((packed)) walker_state_t;
 
