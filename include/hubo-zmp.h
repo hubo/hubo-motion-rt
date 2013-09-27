@@ -39,42 +39,33 @@ enum effector_t {
 };
 
 /**
- * \brief Different stance types for atomic trajectories, used
- * for all walk types.
+ * \brief Current stance. The first four are set for each
+ * timestep of the zmp trajectory. The last three are used
+ * to determine which atomic trajectory to used
 */
-typedef enum {
-  EVEN,             //!< feet are even and normal width
-  LEFT_DOM,         //!< left foot is dominant or in front
-  RIGHT_DOM,        //!< right foot is dominant or in front
-  NUM_OF_STANCES = 3//!< number of stance types. used for 3D trajectory array
-} stepStance_t;
-
-/*
-/// String constants for stepStance enum
-static const char* stepStanceStrings[NUM_OF_STANCES] = {"EVEN",
-                                                        "LEFT_DOM",
-                                                        "RIGHT_DOM"};
-*/
-
-const char* stepStanceString(int i);
-
+enum bipedStance_t {
+  DOUBLE_LEFT  = 0, //!< double support stance, left dominant
+  DOUBLE_RIGHT = 1, //!< double support stance, right dominant
+  SINGLE_LEFT  = 2, //!< single support stance, left dominant
+  SINGLE_RIGHT = 3, //!< single support stance, right dominant
+};
 
 /**
  * \brief: walk type
 */
 typedef enum walktype {
-  WALK_FORWARD,     //!< walk forward or backward in a straight line
-  WALK_BACKWARD,   //!< walk a circle of specified radius forward or backward
-  SIDESTEP_LEFT, //!< sidestep left or right
-  SIDESTEP_RIGHT,
-  ROTATE_LEFT, //!< turn in place left or right
-  ROTATE_RIGHT,
-  GOTO_BIPED,
-  GOTO_QUADRUPED,
-  STOP_WALKING,
-  NUM_OF_WALKTYPES
+  WALK_FORWARD,      //!< walking forward state
+  WALK_BACKWARD,     //!< walking backward state
+  SIDESTEP_LEFT,     //!< sidestepping to the left state
+  SIDESTEP_RIGHT,    //!< sidestepping to the right state
+  ROTATE_LEFT,       //!< turning-in-place to the left state
+  ROTATE_RIGHT,      //!< turning-in-place to the right state
+  GOTO_BIPED,        //!< go from biped stance into quadruped stance
+  GOTO_QUADRUPED,    //!< go from quadruped stance into biped stance
+  STOP_WALKING,      //!< stop walking
+  NUM_OF_WALKTYPES   //!< number of walk types
 } walktype_t;
-
+             
 static const char* walktype_strings[NUM_OF_WALKTYPES] = {"WALK_FORWARD",
                                                          "WALK_BACKWARD",
                                                          "SIDESTEP_LEFT",
@@ -92,39 +83,29 @@ static std::string walktype_to_string(walktype_t walkType)
     else
         return "Invalid Walk Type";
 }
-///**
-// * \brief Walk direction command
-//*/
-//typedef enum {
-//  WALK_FORWARD = 0, //!< walking forward state
-//  WALK_BACKWARD,    //!< walking backward state
-//  ROTATE_LEFT,      //!< turning-in-place to the left state
-//  ROTATE_RIGHT,     //!< turning-in-place to the right state
-//  SIDESTEP_LEFT,    //!< sidestepping to the left state
-//  SIDESTEP_RIGHT,   //!< sidestepping to the right state
-//  GOTO_QUADRUPED,   //!< go from biped stance into quadruped stance
-//  GOTO_BIPED,       //!< go from quadruped stance into biped stance
-//  TURN_LEFT,        //!< turning left while walking forward/backward state
-//  TURN_RIGHT,       //!< turning right while walking forward/backward state
-//  STOP,             //!< stopped state
-//  NUM_OF_WALKSTATES //!< number of walk states to get trajectories for
-//} walkState_t;
 
+/**
+ * \brief Walk mode enum
+*/
+typedef enum
+{
+  MODELESS = 0,     //!< Not in a mode
+  BIPED_MODE,       //!< Biped walking mode
+  QUADRUPED_MODE,   //!< Quadruped walking mode
+  NUM_OF_WALKMODES
+} walkMode_t;
 
-///// String constants for walkState enum
-//static const char* walkStateStrings[NUM_OF_WALKSTATES] = {"WALK_FORWARD", "WALK_BACKWARD",
-//                                                        "ROTATE_LEFT", "ROTATE_RIGHT",
-//                                                        "SIDESTEP_LEFT", "SIDESTEP_RIGHT",
-//                                                        "GOTO_QUADRUPED", "GOTO_BIPED",
-//                                                        "TURN_LEFT", "TURN_RIGHT", "STOP"};
+static const char* walkMode_strings[NUM_OF_WALKMODES] = {"MODELESS",
+                                                         "BIPED_MODE",
+                                                         "QUADRUPED_MODE"};
 
-//static std::string walkState_to_string(walkState_t walkState)
-//{
-//    if(0 <= walkState && walkState < NUM_OF_WALKSTATES)
-//        return walkStateStrings[walkState];
-//    else
-//        return "Invalid Walk State";
-//}
+static std::string walkMode_to_string(walkMode_t walkMode)
+{
+    if(0 <= walkMode && walkMode < NUM_OF_WALKMODES)
+        return walkMode_strings[walkMode];
+    else
+        return "Invalid Walk Mode";
+}
 
 /// ZMP trajectory constants
 enum {
@@ -143,6 +124,7 @@ typedef struct zmp_traj_element {
   double torque[4][3];  //!< right/left predicted moments XYZ at ankles
   effector_t effector_frame;    //!< Frame the end effector is in
   unsigned char supporting[4];  //!< Supporting limb
+  bipedStance_t bipedStance;
   // TODO: add orientation for IMU
 }__attribute__((packed)) zmp_traj_element_t;
 
@@ -180,7 +162,7 @@ static std::string ik_sense_to_string(ik_error_sensitivity ikSense)
     if(0 <= ikSense && ikSense < num_of_ik_senses)
         return ik_error_sensitivity_strings[ikSense];
     else
-        return "Invalid Walk Mode";
+        return "Invalid IK Sense";
 }
 
 /**
@@ -196,11 +178,15 @@ typedef struct zmp_params {
   double zmpoff_x;            //!< Sagittal (front/back) displacement between zmp and ankle (m)
   double zmpoff_y;            //!< Lateral displacement between zmp and ankle (m)
   double lookahead_time;      //!< Seconds to look ahead in preview controller
+
+  double nominal_foot_pos_rate; //!< nominal velocity of swing foot during swing (m/s)
+  double nominal_foot_rot_rate; //!< nominal angular vel. of swing foot during swing (rad/s)
   
   double com_ik_angle_weight; //!< Scale factor on center of mass rotation for solving IK
 
   double min_single_support_time; //!< Seconds that a single foot is on the ground during each step
   double min_double_support_time; //!< Seconds that both feet are on the ground during each step
+  double zmp_dist_gain;           //!< additional seconds of double support per meter of ZMP motion
   double min_pause_time;          //!< Seconds that we hold ZMP stationary before/after double/quad support
   double walk_startup_time;       //!< Seconds to be stationary at startup
   double walk_shutdown_time;      //!< Seconds to be stationary at end of trajectory (includes equalizing)
@@ -223,14 +209,24 @@ typedef struct zmp_params {
   double quad_stability_margin; //!< Desired distance inside support polygon for ZMP in quad mode
 
   double half_peg_width;        //!< Half of horizontal separation distance between pegs (m)
+  double peg_radius;            //!< Radius of pegs for quad walking (m)
+
   int constant_body_z;          //!< If non-zero, holds body z constant during walking
+  int use_fixed_com;            //!< If non-zero, places COM relative to body instead of getting it from mass model
 
   double footrect_x0;           //!< Negative ankle to rear of foot distance (m)
   double footrect_y0;           //!< Negative ankle to right of foot distance (m)
   double footrect_x1;           //!< Positive ankle to front of foot distance (m)
   double footrect_y1;           //!< Positive ankle to left of foot distance (m)
 
+  double fixed_com_offset_x;    //!< Offset of fixed com from trunk (m)
+  double fixed_com_offset_y;    //!< Offset of fixed com from trunk (m)
+  double fixed_com_offset_z;    //!< Offset of fixed com from trunk (m)
+
+
+
 }__attribute__((packed)) zmp_params_t;
+
 
 
 /**
