@@ -348,6 +348,14 @@ void Hubo_Control::releaseNeck()
     ctrlOn[CtrlNK] = false;
 }
 
+void Hubo_Control::releaseUpperBody()
+{
+    releaseLeftArm();
+    releaseRightArm();
+    releaseBody();
+    releaseNeck();
+}
+
 double Hubo_Control::getTime() { return H_State.time; }
 
 ctrl_flag_t Hubo_Control::update(bool stateWait, double quitSec, bool printError)

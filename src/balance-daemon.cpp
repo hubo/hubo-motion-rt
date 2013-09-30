@@ -75,7 +75,6 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
 void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
                 balance_cmd_t &cmd, const balance_gains_t &gains, const double dt); 
 
-
 int main(int argc, char **argv)
 {
     //Hubo_Control hubo("balance-daemon", 35);
@@ -136,11 +135,12 @@ int main(int argc, char **argv)
 
         state.m_balance_mode = cmd.cmd_request;
 
-        
+        // if just balancing
         if( BAL_LEGS_ONLY == cmd.cmd_request )
         {
             staticBalance(hubo, kin, cmd, params.balance_gains, dt);
         }
+        // if zmp walking
         else if( BAL_ZMP_WALKING == cmd.cmd_request )
         {
             ach_get( &manip_state_chan, &manip_state, sizeof(manip_state),
@@ -159,10 +159,26 @@ int main(int argc, char **argv)
                 ovr.m_override = OVR_SOVEREIGN;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
                 // Probably not necessary...
-                hubo.releaseLeftArm();
-                hubo.releaseRightArm();
-                hubo.releaseBody();
-                hubo.releaseNeck();
+                hubo.releaseUpperBody();
+            }
+        }
+        // if running posture controller
+        else if( BAL_CRPC == cmd.cmd_request )
+        {
+            ach_get( &manip_state_chan, &manip_state, sizeof(manip_state),
+                     &fs, NULL, ACH_O_LAST );
+
+            if( OVR_SOVEREIGN == manip_state.override )
+            {
+                ovr.m_override = OVR_ACQUIESCENT;
+                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+            }
+            else if( OVR_ACQUIESCENT == manip_state.override )
+            {
+                //crpc.run();
+                ovr.m_override = OVR_SOVEREIGN;
+                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+                hubo.releaseUpperBody();
             }
         }
 
@@ -172,9 +188,6 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-
-
 
 
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)

@@ -1106,6 +1106,8 @@ public:
     void releaseBody();
     void releaseNeck();
 
+    void releaseUpperBody();
+
 
 protected:
 
