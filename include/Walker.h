@@ -247,6 +247,8 @@ protected:
     */
     void checkCommands();
 
+    bipedStance_t getBipedStance( zmp_traj_element_t &elem );
+
 };
 
 

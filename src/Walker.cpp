@@ -1068,6 +1068,17 @@ bool Walker::validateNextTrajectory( zmp_traj_element_t &current, zmp_traj_eleme
     return valid;
 }
 
+bipedStance_t Walker::getBipedStance( zmp_traj_element_t &elem )
+{
+    unsigned char single_left[4] = {1,0,0,0};
+    unsigned char single_right[4] = {0,1,0,0};
+    if(single_left[0] == elem.supporting[0] && single_left[1] == elem.supporting[1])
+        return SINGLE_LEFT;
+    else if(single_right[0] == elem.supporting[0] && single_right[1] == elem.supporting[1])
+        return SINGLE_RIGHT;
+    else
+        return DOUBLE_LEFT;
+}
 
 void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
@@ -1077,7 +1088,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     // being recycled or it will be like recycling a changing trajectory. Not Good!
     zmp_traj_element_t tempNextElem;
     memcpy(&tempNextElem, &nextElem, sizeof(zmp_traj_element_t));
-    bal_state.biped_stance = nextElem.bipedStance;
+
+    bal_state.biped_stance = getBipedStance(nextElem);
 
 //    int legidx[6] = { LHY, LHR, LHP, LKN, LAP, LAR };
     
