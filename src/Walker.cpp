@@ -779,7 +779,7 @@ Walker::~Walker()
     ach_close( &bal_state_chan );
 }
 
-void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, walking_gains_t &gains)
+void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains)
 {
     int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
     keepWalking = true;
@@ -937,7 +937,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, prevTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains, dt );
+                                   state, gains.walking_gains, dt );
             
         }
         else if( timeIndex == currentTrajectory->periodEndTick && haveNewTrajectory )
@@ -949,7 +949,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        nextTrajectory->traj[nextTimeIndex],
-                                       state, gains, dt );
+                                       state, gains.walking_gains, dt );
                 
                 memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                 memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
@@ -964,7 +964,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        currentTrajectory->traj[nextTimeIndex],
-                                       state, gains, dt );
+                                       state, gains.walking_gains, dt );
             }
             haveNewTrajectory = false;
         }
@@ -982,7 +982,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains, dt );
+                                   state, gains.walking_gains, dt );
         }
         else if( timeIndex < currentTrajectory->count-1 )
         {
@@ -990,7 +990,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains, dt );
+                                   state, gains.walking_gains, dt );
         }
         else if( timeIndex == currentTrajectory->count-1 && haveNewTrajectory )
         {
@@ -1008,7 +1008,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                     executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                            currentTrajectory->traj[timeIndex],
                                            nextTrajectory->traj[nextTimeIndex],
-                                           state, gains, dt );
+                                           state, gains.walking_gains, dt );
                     
                     memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                     memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );

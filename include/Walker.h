@@ -100,7 +100,7 @@ public:
      * \param state Nudge state which stores the integrated states
      * \param gains Gains for balancing
     */
-    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, walking_gains_t &walking_gains);
+    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains);
 
     double m_jointSpaceTolerance;   //!< Joint space tolerance in radians.
     double m_jointVelContTol;       //!< Joint velocity tolerance in radians/s.

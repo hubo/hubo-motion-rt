@@ -155,7 +155,7 @@ int main(int argc, char **argv)
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
-                walk.commenceWalking(state, nudge, params.walking_gains);
+                walk.commenceWalking(state, nudge, params);
                 ovr.m_override = OVR_SOVEREIGN;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
                 // Probably not necessary...
