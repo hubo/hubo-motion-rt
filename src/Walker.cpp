@@ -1077,6 +1077,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     // being recycled or it will be like recycling a changing trajectory. Not Good!
     zmp_traj_element_t tempNextElem;
     memcpy(&tempNextElem, &nextElem, sizeof(zmp_traj_element_t));
+    bal_state.biped_stance = nextElem.bipedStance;
 
 //    int legidx[6] = { LHY, LHR, LHP, LKN, LAP, LAR };
     

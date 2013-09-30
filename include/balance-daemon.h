@@ -42,6 +42,7 @@
 #define BALANCE_CMD_CHAN "balance-cmd"
 #define BALANCE_STATE_CHAN "balance-state"
 #define BALANCE_PARAM_CHAN "balance-param"
+#include "hubo-zmp.h"
 
 typedef enum {
 
@@ -137,6 +138,7 @@ typedef struct balance_state {
 
     walk_mode_t m_walk_mode;
     walk_error_t m_walk_error;
+    bipedStance_t biped_stance;
 
 }__attribute__((packed)) balance_state_t;
 
