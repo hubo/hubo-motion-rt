@@ -50,15 +50,6 @@ typedef enum {
     BAL_LEGS_ONLY,
     BAL_ZMP_WALKING,
     BAL_CRPC
-    
-/*
-    STATE_INVALID,
-    S_HORSE,
-    S_CRANE,
-    Q_SHIFTDIST,
-    Q_LIFTLEG,
-    Q_CROUCH
-*/
 
 } balance_mode_t;
 
@@ -78,6 +69,28 @@ typedef enum {
     WALK_FAILED_SWAP
 
 } walk_error_t;
+
+typedef struct crpc_params {
+
+    double kp_upper_body;
+    double kp_mass_distrib;
+    double kp_zmp_diff;
+    double kp_zmp_com;
+    double zmp_ref_x;
+    double zmp_ref_y;
+
+    double tau_sign;
+
+}__attribute__((packed)) crpc_params_t;
+
+typedef struct crpc_state {
+
+    double body_angle[2];
+    double body_com[2];
+    double leg_length[2];
+    double foot_angle[2];
+
+}__attribute__((packed)) crpc_state_t;
 
 
 typedef struct balance_gains {
