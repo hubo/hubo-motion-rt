@@ -688,6 +688,36 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += jointspaceDuty;
 
+                        if( ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON )
+                        {
+
+                            if( sign(H_state.joint[jnt].vel) != sign(H_ref.ref[jnt] - H_state.joint[jnt].pos) )
+                            {
+                                antifriction = -conversion.joint[jnt].kF*H_state.joint[jnt].vel;
+                                if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
+                                    antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
+
+                                gains.joint[jnt].pwmCommand += antifriction;
+                            }
+
+                        }
+
+                        if( ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
+                        {
+
+                            if( sign(ctrl.joint[jnt].torque) != sign(H_ref.ref[jnt] - H_state.joint[jnt].pos) )
+                            {
+                                gains.joint[jnt].pwmCommand += -0.0*sign(ctrl.joint[jnt].torque)
+                                                               *fabs(conversion.joint[jnt].Fmax
+                                                               *conversion.joint[jnt].deadbandScale);
+                            }
+
+                        }
+/*
+                        gains.joint[jnt].pwmCommand += fabs(conversion.joint[jnt].Fmax
+                                                      *conversion.joint[jnt].deadbandScale)
+                                                      *sign(H_ref.ref[jnt]-H_state.joint[jnt].pos);
+*/
                     }
 
                 }

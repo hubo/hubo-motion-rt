@@ -215,7 +215,6 @@ int main( int argc, char **argv )
                     handle_angles(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_READY:
                     slerp.resetSlerper(side, hubo);
-                    hubo.releaseArm(side); break;
             }
             
             // Handle grasping
@@ -297,6 +296,8 @@ int main( int argc, char **argv )
         // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
         if( OVR_SOVEREIGN == manip_state.override )
             hubo.sendControls();
+        hubo.releaseArm(LEFT);
+        hubo.releaseArm(RIGHT);
 
         ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }

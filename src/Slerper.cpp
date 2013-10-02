@@ -128,7 +128,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     if(dual)
     {
         hubo.setArmNomSpeeds(alt, nomJointSpeed);
-        hubo.setArmNomAcc(side, nomJointAcc);
+        hubo.setArmNomAcc(alt, nomJointAcc);
     }
 
     start = next[side];
@@ -147,12 +147,6 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     
     start = start * kin.getTool(side).inverse() * toolTf;
 
-if(verbose)
-//if(false)
-{
-    std::cout << "start:" << endl << start.matrix() << endl << endl;
-
-}
 
     kin.setTool(side, toolTf);
 
@@ -259,30 +253,6 @@ if(verbose)
     next[side].rotate(start.rotation());
 
 
-if(verbose)
-{
-
-    fprintf(dump, "%f\t%f\t%f\t%f\t", hubo.getTime(),
-                    next[side].translation().x(),
-                    next[side].translation().y(),
-                    next[side].translation().z() );
-
-    fprintf(dump, "%f\t%f\t%f\t",
-                    V[LEFT](0), V[LEFT](1), V[LEFT](2));
-
-    fprintf(dump, "%f\t%f\t\t%f\t",
-                    dV[LEFT](0), dV[LEFT](1), dV[LEFT](2));
-
-    ArmVector final;
-    hubo.getLeftArmAngles(final);
-    
-    for(int j=0; j<7; j++)
-        fprintf(dump, "%f\t", armAngles[LEFT](j)-final(j));
-
-    fprintf(dump, "\n");
-    fflush(dump);
-
-}
 
 
 //    if(cmd.m_frame[side] == MC_GLOBAL)
@@ -299,30 +269,21 @@ if(verbose)
         lastAngles[alt] = armAngles[alt];
     
     rk_result_t result = kin.armIK(side, armAngles[side], next[side]);
-    if(dual)
-        kin.armIK(alt, armAngles[alt], next[side]);
-
-
-
     if( result != RK_SOLVED )
         cout << rk_result_to_string(result) << " "; fflush(stdout);
+    if(dual)
+    {
+        result = kin.armIK(alt, armAngles[alt], next[side]);
+        if( result != RK_SOLVED )
+            cout << "Alt arm " << rk_result_to_string(result) << " "; fflush(stdout);
+    }
+
+
 
 if(verbose)
 {
-    cout << "Error: " << (next[side].translation() - kin.linkage("LeftArm").tool().respectToRobot().translation()).transpose() << endl;
-}
-
-//if(verbose)
-if(false)
-{
-    cout     << "EE:  " << endl << next[side].matrix() << endl << endl
-             << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
-//             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
-             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.linkage("RightLeg").tool()).matrix() << endl << endl;
-
-    cout  << "Angles: "  << armAngles[side].transpose() << endl
-          << "Last:   "  << lastAngles[side].transpose() << endl
-          << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
+    if(dual)
+        cout << next[side].matrix() << endl << endl << armAngles[alt].transpose() << endl << endl;
 }
 
     hubo.setArmAngles(side, armAngles[side]);
