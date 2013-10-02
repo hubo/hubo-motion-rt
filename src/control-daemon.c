@@ -667,10 +667,6 @@ void controlLoop()
                     }
                     else
                     {
-/*
-                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
-                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
-*/
                         gains.joint[jnt].Kp = 0;
                         gains.joint[jnt].Kd = 0;
 
@@ -719,6 +715,9 @@ void controlLoop()
                                                       *sign(H_ref.ref[jnt]-H_state.joint[jnt].pos);
 */
                     }
+
+                    if(simMode==1 && iter==maxi)
+                        fprintf(stdout, "\n");
 
                 }
                 else if( ctrl.joint[jnt].ctrl_mode != CTRL_PWM )

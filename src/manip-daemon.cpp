@@ -145,6 +145,8 @@ int main( int argc, char **argv )
     hubo.setRightArmNomSpeeds(defaultNomSpeed);
     hubo.setLeftArmNomAcc(defaultNomAcc);
     hubo.setRightArmNomAcc(defaultNomAcc);
+    hubo.setArmAntiFriction(LEFT, true);
+    hubo.setArmAntiFriction(RIGHT, true);
 
     hubo.storeArmDefaults(LEFT);
     hubo.storeArmDefaults(RIGHT);
