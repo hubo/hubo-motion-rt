@@ -690,6 +690,9 @@ void controlLoop()
 
                     }
 
+                    if(simMode==1 && iter==maxi)
+                        fprintf(stdout, "\n");
+
                 }
                 else if( ctrl.joint[jnt].ctrl_mode != CTRL_PWM )
                     H_ref.comply[jnt] = 0;
