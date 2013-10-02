@@ -348,12 +348,12 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 //    neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
 
     limits <<
-            linkage(limb).joint(0).min(), tempLinkage.joint(0).max(),
-            linkage(limb).joint(1).min(), tempLinkage.joint(1).max(),
-            linkage(limb).joint(2).min(), tempLinkage.joint(2).max(),
-            linkage(limb).joint(3).min(), tempLinkage.joint(3).max(),
-            linkage(limb).joint(4).min(), tempLinkage.joint(4).max(),
-            linkage(limb).joint(5).min(), tempLinkage.joint(5).max();
+            linkage(limb).joint(0).min(), linkage(limb).joint(0).max(),
+            linkage(limb).joint(1).min(), linkage(limb).joint(1).max(),
+            linkage(limb).joint(2).min(), linkage(limb).joint(2).max(),
+            linkage(limb).joint(3).min(), linkage(limb).joint(3).max(),
+            linkage(limb).joint(4).min(), linkage(limb).joint(4).max(),
+            linkage(limb).joint(5).min(), linkage(limb).joint(5).max();
 
 
     if (side == LEFT) {
