@@ -667,10 +667,6 @@ void controlLoop()
                     }
                     else
                     {
-/*
-                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
-                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
-*/
                         gains.joint[jnt].Kp = 0;
                         gains.joint[jnt].Kd = 0;
 
