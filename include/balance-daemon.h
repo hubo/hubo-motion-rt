@@ -70,6 +70,16 @@ typedef enum {
 
 } walk_error_t;
 
+typedef enum {
+
+    CRPC_READY=0,
+    CRPC_PHASE_1,
+    CRPC_PHASE_2,
+    CRPC_PHASE_3,
+    CRPC_DONE
+
+} crpc_phase_t;
+
 typedef struct crpc_params {
 
     double kp_upper_body;
@@ -79,7 +89,9 @@ typedef struct crpc_params {
     double zmp_ref_x;
     double zmp_ref_y;
 
-    double tau_sign;
+    int negate_moments;
+
+    double hip_height;
 
 }__attribute__((packed)) crpc_params_t;
 
@@ -89,6 +101,8 @@ typedef struct crpc_state {
     double body_com[2];
     double leg_length[2];
     double foot_angle[2];
+
+    crpc_phase_t phase;
 
 }__attribute__((packed)) crpc_state_t;
 
