@@ -312,20 +312,26 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
     double S2, S4, S6;
     double C2, C4, C5, C6;
 
-    RobotKin::Linkage tempLinkage;
+//    RobotKin::Linkage tempLinkage;
+//    if(side==LEFT)
+//        tempLinkage = linkage("LeftLeg");
+//    else
+//        tempLinkage = linkage("RightLeg");
+    std::string limb;
     if(side==LEFT)
-        tempLinkage = linkage("LeftLeg");
+        limb = "LeftLeg";
     else
-        tempLinkage = linkage("RightLeg");
+        limb = "RightLeg";
+    
 
     // Parameters
     // TODO: Consider removing some of these
 //    double l1 = (79.5+107)/1000.0;      // Neck to waist Z
-    double l2 = fabs(tempLinkage.joint(1).respectToRobot().translation()[1]); //88.43/1000.0;           // Waist to hip  Y
-    double l3 = fabs(tempLinkage.joint(1).respectToRobot().translation()[2]); //(289.47-107)/1000.0;   // Waist to hip  Z
-    double l4 = fabs(tempLinkage.joint(3).respectToFixed().translation()[2]); //300.03/1000.0;          // Hip to knee   Z
-    double l5 = fabs(tempLinkage.joint(4).respectToFixed().translation()[2]); //300.38/1000.0;          // Knee to ankle Z
-    double l6 = fabs(tempLinkage.joint(6).respectToFixed().translation()[2]);           // Ankle to foot Z
+    double l2 = fabs(linkage(limb).joint(1).respectToRobot().translation()[1]); //88.43/1000.0;           // Waist to hip  Y
+    double l3 = fabs(linkage(limb).joint(1).respectToRobot().translation()[2]); //(289.47-107)/1000.0;   // Waist to hip  Z
+    double l4 = fabs(linkage(limb).joint(3).respectToFixed().translation()[2]); //300.03/1000.0;          // Hip to knee   Z
+    double l5 = fabs(linkage(limb).joint(4).respectToFixed().translation()[2]); //300.38/1000.0;          // Knee to ankle Z
+    double l6 = fabs(linkage(limb).joint(6).respectToFixed().translation()[2]);           // Ankle to foot Z
 
 //    double l1 = 0;          // Neck to waist Z
 //    double l2 = 0.0885;     // Waist to hip  Y
@@ -342,12 +348,12 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
 //    neck(3,0) = 0; neck(3,1) =  0; neck(3,2) = 0; neck(3,3) =   1;
 
     limits <<
-            tempLinkage.joint(0).min(), tempLinkage.joint(0).max(),
-            tempLinkage.joint(1).min(), tempLinkage.joint(1).max(),
-            tempLinkage.joint(2).min(), tempLinkage.joint(2).max(),
-            tempLinkage.joint(3).min(), tempLinkage.joint(3).max(),
-            tempLinkage.joint(4).min(), tempLinkage.joint(4).max(),
-            tempLinkage.joint(5).min(), tempLinkage.joint(5).max();
+            linkage(limb).joint(0).min(), tempLinkage.joint(0).max(),
+            linkage(limb).joint(1).min(), tempLinkage.joint(1).max(),
+            linkage(limb).joint(2).min(), tempLinkage.joint(2).max(),
+            linkage(limb).joint(3).min(), tempLinkage.joint(3).max(),
+            linkage(limb).joint(4).min(), tempLinkage.joint(4).max(),
+            linkage(limb).joint(5).min(), tempLinkage.joint(5).max();
 
 
     if (side == LEFT) {
