@@ -102,7 +102,8 @@ typedef struct crpc_state {
     double body_angle[2];
     double body_com[2];
     double leg_length[2];
-    double foot_angle[2];
+    double foot_angle_x[2];
+    double foot_angle_y[2];
 
     crpc_phase_t phase;
 

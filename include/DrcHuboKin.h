@@ -4,6 +4,7 @@
 
 #include <RobotKin/Robot.h>
 #include <Hubo_Control.h>
+#include "balance-daemon.h"
 
 typedef Eigen::Matrix< double, 6, 7 > ArmJacobian;
 
@@ -14,6 +15,18 @@ class DrcConstraints : public RobotKin::Constraints
 public:
     void iterativeJacobianSeed(RobotKin::Robot &robot, size_t attemptNumber, const std::vector<size_t> &indices, Eigen::VectorXd &values);
 };
+
+
+class BalanceOffsets
+{
+public:
+    crpc_state_t crpcOffsets;
+
+    static BalanceOffsets Empty();
+
+
+};
+
 
 class DrcHuboKin : public RobotKin::Robot
 {
@@ -38,6 +51,8 @@ public:
 
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench=Vector6d::Zero());
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);
+
+    void applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets);
 
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
