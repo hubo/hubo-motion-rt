@@ -42,6 +42,8 @@
 #define BALANCE_CMD_CHAN "balance-cmd"
 #define BALANCE_STATE_CHAN "balance-state"
 #define BALANCE_PARAM_CHAN "balance-param"
+#define CRPC_PARAM_CHAN "crpc-param"
+#define CRPC_STATE_CHAN "crpc-state"
 #include "hubo-zmp.h"
 
 typedef enum {
