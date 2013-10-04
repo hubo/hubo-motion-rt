@@ -75,9 +75,9 @@ typedef enum {
 typedef enum {
 
     CRPC_READY=0,
-    CRPC_PHASE_1,
-    CRPC_PHASE_2,
-    CRPC_PHASE_3,
+    CRPC_PHASE_1=1,
+    CRPC_PHASE_2=2,
+    CRPC_PHASE_3=3,
     CRPC_DONE
 
 } crpc_phase_t;
@@ -92,8 +92,10 @@ typedef struct crpc_params {
     double zmp_ref_y;
 
     int negate_moments;
+    
+    bool from_current_ref;
 
-    double hip_height;
+    double hip_crouch;
 
 }__attribute__((packed)) crpc_params_t;
 

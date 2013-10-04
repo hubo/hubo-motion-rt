@@ -5,6 +5,7 @@
 #include <RobotKin/Robot.h>
 #include <Hubo_Control.h>
 #include "balance-daemon.h"
+#include "hubo-zmp.h"
 
 typedef Eigen::Matrix< double, 6, 7 > ArmJacobian;
 
@@ -20,7 +21,12 @@ public:
 class BalanceOffsets
 {
 public:
+    
+    BalanceOffsets();
+    
     crpc_state_t crpcOffsets;
+    
+    Vector3d foot_translation;
 
     static BalanceOffsets Empty();
 
@@ -53,6 +59,7 @@ public:
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);
 
     void applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets);
+    void applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffsets &offsets);
 
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);

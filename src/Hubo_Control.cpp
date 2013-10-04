@@ -41,6 +41,8 @@ extern "C" {
 #include "daemonizer.h"
 }
 
+using namespace Eigen;
+
 Hubo_Control::Hubo_Control(bool live)
 {
     controlInit(live);
@@ -281,6 +283,61 @@ void Hubo_Control::controlInit(bool live)
     ach_get( &chan_hubo_ref, &H_Ref, sizeof(H_Ref), &fs, NULL, ACH_O_LAST );
     ach_get( &chan_hubo_state, &H_State, sizeof(H_State), &fs, NULL, ACH_O_WAIT );
 
+}
+
+bool Hubo_Control::computeZMPs(const Isometry3d Bfoot[], Vector2d foot_zmp[], Vector2d &total_zmp, double fz_threshold, double tau_sign)
+{
+    for(int side=0; side<2; side++)
+    {
+        computeFootZMP(side, foot_zmp[side], fz_threshold, tau_sign);
+    }
+    
+    return computeTotalZMP(Bfoot, foot_zmp, total_zmp);
+}
+
+bool Hubo_Control::computeFootZMP(int side, Vector2d &zmp, double fz_threshold, double tau_sign)
+{
+    double fz = getFootFz(side);
+    if( fz < fz_threshold )
+    {
+        fz = 0;
+        zmp = Vector2d(0,0);
+        return false;
+    }
+    else
+    {
+        zmp = tau_sign * Vector2d( getFootMy(side)/fz, -getFootMx(side)/fz );
+        return true;
+    }
+}
+
+bool Hubo_Control::computeTotalZMP(const Isometry3d Bfoot[], const Vector2d foot_zmp[], Vector2d &total_zmp)
+{
+    total_zmp = Vector2d(0,0);
+    double total_fz = 0;
+    
+    for(int side=0; side<2; side++)
+    {
+        if(getFootFz(side)>0)
+        {
+            Vector3d s = Bfoot[side] * Vector3d(foot_zmp[side].x(),
+                                                foot_zmp[side].y(),
+                                                0.0);
+            total_zmp += getFootFz(side) * Vector2d(s.x(), s.y());
+            total_fz += getFootFz(side);
+        }
+    }
+    
+    if(total_fz)
+    {
+        total_zmp /= total_fz;
+        return true;
+    }
+    else
+    {
+        total_zmp = Vector2d(0,0);
+        return false;
+    }
 }
 
 

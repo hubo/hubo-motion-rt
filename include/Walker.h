@@ -41,6 +41,7 @@
 
 #include "hubo-zmp.h"
 #include "ImpedanceController.h"
+#include "DrcHuboKin.h"
 
 typedef struct nudge_state {
 
@@ -100,7 +101,7 @@ public:
      * \param state Nudge state which stores the integrated states
      * \param gains Gains for balancing
     */
-    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains);
+    void commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains, BalanceOffsets &offsets);
 
     double m_jointSpaceTolerance;   //!< Joint space tolerance in radians.
     double m_jointVelContTol;       //!< Joint velocity tolerance in radians/s.
@@ -139,7 +140,7 @@ protected:
     */
     void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, walking_gains_t &gains, double dt );
+            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt );
 
     /**
      * \brief Checks for a new trajectory from the ach channel.

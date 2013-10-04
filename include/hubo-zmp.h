@@ -47,7 +47,7 @@ enum bipedStance_t {
   DOUBLE_LEFT  = 0, //!< double support stance, left dominant
   DOUBLE_RIGHT = 1, //!< double support stance, right dominant
   SINGLE_LEFT  = 2, //!< single support stance, left dominant
-  SINGLE_RIGHT = 3, //!< single support stance, right dominant
+  SINGLE_RIGHT = 3  //!< single support stance, right dominant
 };
 
 /**

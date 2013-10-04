@@ -286,18 +286,32 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     return result;
 }
 
+void DrcHuboKin::applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffsets &offsets)
+{
+    LegVector q; q.setZero();
+    
+    
+    for(int i=LHY; i<LHY+6; i++)
+        q[i-LHY] = traj.angles[i];
+    applyBalanceOffsets(LEFT, q, offsets);
+    for(int i=LHY; i<LHY+6; i++)
+        traj.angles[i] = q[i-LHY];
+    
+    
+    for(int i=RHY; i<RHY+6; i++)
+        q[i-RHY] = traj.angles[i];
+    applyBalanceOffsets(RIGHT, q, offsets);
+    for(int i=RHY; i<RHY+6; i++)
+        traj.angles[i] = q[i-RHY];
+}
+
 
 void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets)
 {
-    std::string limb;
-    if(side==LEFT)
-        limb = "LeftLeg";
-    else
-        limb = "RightLeg";
-
     updateLegJoints(side, q);
     TRANSFORM target = legFK(side);
-
+    target.pretranslate(offsets.foot_translation);
+    
     TRANSFORM startTrunk = TRANSFORM::Identity();
     startTrunk.translate((linkage("LeftLeg").joint(1).respectToRobot().translation()
                          +linkage("RightLeg").joint(1).respectToRobot().translation())/2);
@@ -316,11 +330,12 @@ void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffset
 
     target = dCom * dTrunk * target * dFoot;
 
-
-
-
+    legIK(side, q, target);
 
     // TODO: Why is the foot angle offset applied at the joints instead of to the foot frame?
+    
+    q(AP) += offsets.crpcOffsets.foot_angle_y[side];
+    q(AR) += offsets.crpcOffsets.foot_angle_x[side];
 
 }
 
@@ -640,6 +655,12 @@ void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
             values(WP) = sign(values(WP))*10*M_PI/180;
 
     }
+}
+
+BalanceOffsets::BalanceOffsets()
+{
+    memset(&crpcOffsets, 0, sizeof(crpcOffsets));
+    foot_translation.setZero();
 }
 
 

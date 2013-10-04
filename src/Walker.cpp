@@ -779,7 +779,7 @@ Walker::~Walker()
     ach_close( &bal_state_chan );
 }
 
-void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains)
+void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state, balance_params_t &gains, BalanceOffsets &offsets)
 {
     int timeIndex=0, nextTimeIndex=0, prevTimeIndex=0;
     keepWalking = true;
@@ -845,6 +845,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
     // Set all the joints to the initial posiiton in the trajectory
     // using the control daemon to interpolate in joint space.
+    kin.applyBalanceOffsets(currentTrajectory->traj[0],offsets);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
         // Don't worry about where these joint are
@@ -937,7 +938,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, prevTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, dt );
+                                   state, gains.walking_gains, offsets, dt );
             
         }
         else if( timeIndex == currentTrajectory->periodEndTick && haveNewTrajectory )
@@ -949,7 +950,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        nextTrajectory->traj[nextTimeIndex],
-                                       state, gains.walking_gains, dt );
+                                       state, gains.walking_gains, offsets, dt );
                 
                 memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                 memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
@@ -964,7 +965,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        currentTrajectory->traj[nextTimeIndex],
-                                       state, gains.walking_gains, dt );
+                                       state, gains.walking_gains, offsets, dt );
             }
             haveNewTrajectory = false;
         }
@@ -982,7 +983,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, dt );
+                                   state, gains.walking_gains, offsets, dt );
         }
         else if( timeIndex < currentTrajectory->count-1 )
         {
@@ -990,7 +991,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, dt );
+                                   state, gains.walking_gains, offsets, dt );
         }
         else if( timeIndex == currentTrajectory->count-1 && haveNewTrajectory )
         {
@@ -1008,7 +1009,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                     executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                            currentTrajectory->traj[timeIndex],
                                            nextTrajectory->traj[nextTimeIndex],
-                                           state, gains.walking_gains, dt );
+                                           state, gains.walking_gains, offsets, dt );
                     
                     memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                     memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
@@ -1082,7 +1083,7 @@ bipedStance_t Walker::getBipedStance( zmp_traj_element_t &elem )
 
 void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, walking_gains_t &gains, double dt )
+            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt )
 {
     // Make copy of zmp_traj_element so we don't effect the trajectory that's
     // being recycled or it will be like recycling a changing trajectory. Not Good!
@@ -1109,6 +1110,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 
     // For each joint set it's position to that in the trajectory for the
     // current timestep, which has been adjusted based on feedback.
+    kin.applyBalanceOffsets(tempNextElem, offsets);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
         hubo.passJointAngle( i, tempNextElem.angles[i] );

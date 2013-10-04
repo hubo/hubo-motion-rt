@@ -954,7 +954,13 @@ public:
      * Returns the IMU-sensor reading of the rotational velocity around the y-axis
     */
     double getRotVelY();
+    
+    bool computeZMPs(const Eigen::Isometry3d Bfoot[2], Eigen::Vector2d foot_zmp[2],
+                     Eigen::Vector2d &total_zmp, double fz_threshold=10, double tau_sign=1);
 
+    bool computeFootZMP(int side, Eigen::Vector2d &zmp, double fz_threshold=0, double tau_sign=1);
+    
+    bool computeTotalZMP(const Eigen::Isometry3d Bfoot[2], const Eigen::Vector2d foot_zmp[2], Eigen::Vector2d &total_zmp);
 
     // ~~~*** Kinematics ***~~~ //
     inline double wrapToPi(double fAng)

@@ -41,11 +41,14 @@
 #include "Hubo_Control.h"
 #include "manip.h"
 
+using namespace Eigen;
+
 ach_channel_t bal_cmd_chan;
 ach_channel_t bal_state_chan;
 ach_channel_t bal_param_chan;
 ach_channel_t manip_override_chan;
 ach_channel_t manip_state_chan;
+ach_channel_t crpc_param_chan;
 
 /**
  * \brief Balance while not moving the legs (in a static lower body pose)
@@ -73,7 +76,11 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
  * \return void
 */
 void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen::aligned_allocator<LegVector> > &legJointVels,
-                balance_cmd_t &cmd, const balance_gains_t &gains, const double dt); 
+                balance_cmd_t &cmd, const balance_gains_t &gains, const double dt);
+
+
+void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, BalanceOffsets &offsets);
+
 
 int main(int argc, char **argv)
 {
@@ -98,6 +105,9 @@ int main(int argc, char **argv)
 
     r= ach_open( &manip_state_chan, CHAN_HUBO_MANIP_STATE, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
+    
+    r = ach_open( &crpc_param_chan, CRPC_PARAM_CHAN, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
 
     Walker walk;
 
@@ -107,6 +117,9 @@ int main(int argc, char **argv)
     nudge_state_t nudge;
     manip_override_t ovr;
     hubo_manip_state_t manip_state;
+    crpc_params_t crpc;
+    
+    BalanceOffsets offsets;
 
     memset( &cmd, 0, sizeof(cmd) );
     memset( &state, 0, sizeof(state) );
@@ -114,6 +127,19 @@ int main(int argc, char **argv)
     memset( &nudge, 0, sizeof(nudge) );
     memset( &ovr, 0, sizeof(ovr) );
     memset( &manip_state, 0, sizeof(manip_state) );
+    memset( &crpc, 0, sizeof(crpc) );
+    
+    crpc.kp_upper_body = 1e-2;
+    crpc.kp_mass_distrib = 2e-7;
+    crpc.kp_zmp_diff = 4e-3;
+    crpc.kp_zmp_com = 1e-3;
+    crpc.zmp_ref_x = 0;
+    crpc.zmp_ref_y = 0;
+    crpc.hip_crouch = 0.05;
+    crpc.from_current_ref = false;
+    
+    
+    ach_put(&crpc_param_chan, &crpc, sizeof(crpc));
 
     hubo.update();
 
@@ -155,7 +181,7 @@ int main(int argc, char **argv)
             }
             else if( OVR_ACQUIESCENT == manip_state.override )
             {
-                walk.commenceWalking(state, nudge, params);
+                walk.commenceWalking(state, nudge, params, offsets);
                 ovr.m_override = OVR_SOVEREIGN;
                 ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
                 // Probably not necessary...
@@ -165,21 +191,24 @@ int main(int argc, char **argv)
         // if running posture controller
         else if( BAL_CRPC == cmd.cmd_request )
         {
-            ach_get( &manip_state_chan, &manip_state, sizeof(manip_state),
-                     &fs, NULL, ACH_O_LAST );
+            // I don't see why we need to take control of the arms
+//            ach_get( &manip_state_chan, &manip_state, sizeof(manip_state),
+//                     &fs, NULL, ACH_O_LAST );
 
-            if( OVR_SOVEREIGN == manip_state.override )
-            {
-                ovr.m_override = OVR_ACQUIESCENT;
-                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
-            }
-            else if( OVR_ACQUIESCENT == manip_state.override )
-            {
-                //crpc.run();
-                ovr.m_override = OVR_SOVEREIGN;
-                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
-                hubo.releaseUpperBody();
-            }
+//            if( OVR_SOVEREIGN == manip_state.override )
+//            {
+//                ovr.m_override = OVR_ACQUIESCENT;
+//                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+//            }
+//            else if( OVR_ACQUIESCENT == manip_state.override )
+//            {
+//                //crpc.run();
+//                ovr.m_override = OVR_SOVEREIGN;
+//                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+//                hubo.releaseUpperBody();
+//            }
+            ach_get(&crpc_param_chan, &crpc, sizeof(crpc), &fs, NULL, ACH_O_LAST);
+            crpcPostureController(hubo, kin, cmd, crpc, offsets);
         }
 
         ach_put( &bal_state_chan, &state, sizeof(state) );
@@ -188,6 +217,180 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+
+void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, BalanceOffsets &offsets)
+{
+    if(!crpc.from_current_ref)
+    {
+        LegVector legSpeed; legSpeed.setOnes();
+        legSpeed *= 0.4;
+        legSpeed(KN) *= 2;
+        
+        hubo.setLegNomSpeeds(LEFT, legSpeed);
+        hubo.setLegNomAcc(LEFT, legSpeed);
+        hubo.setLegNomSpeeds(RIGHT, legSpeed);
+        hubo.setLegNomAcc(RIGHT, legSpeed);
+        
+        
+        LegVector q[2]; q[LEFT].setZero(); q[RIGHT].setZero();
+        
+        for(int side=0; side<2; side++)
+        {
+            kin.updateLegJoints(side, q[side]);
+            RobotKin::TRANSFORM B = kin.legFK(side);
+            B.pretranslate(Vector3d(0,0,crpc.hip_crouch));
+            kin.legIK(side, q[side], B);
+            hubo.setLegAngles(side, q[side]);
+        }
+        
+        hubo.sendControls();
+        
+        LegVector qreal[2]; qreal[LEFT].setZero(); qreal[RIGHT].setZero();
+        double max_time = 10, stime, time, tolerance = 0.0075;
+        stime = hubo.getTime();
+        
+        do {
+            
+            hubo.update();
+            time = hubo.getTime();
+            for(int side=0; side<2; side++)
+                hubo.getLegAngles(side, qreal[side]);
+            
+        } while(!daemon_sig_quit && time-stime < max_time
+                    && ( (q[LEFT]-qreal[LEFT]).norm() > tolerance
+                         || (q[RIGHT]-qreal[RIGHT]).norm() > tolerance )
+                );
+        
+        if( time-stime >= max_time )
+        {
+            fprintf(stderr, "Warning: could not reach the initial stance in within %f seconds\n", max_time);
+            cmd.cmd_request = BAL_READY;
+            return;
+        }
+    }
+    
+    Isometry3d Bfoot[2];
+    kin.updateHubo(hubo);
+    Bfoot[LEFT] = kin.legFK(LEFT);
+    Bfoot[RIGHT] = kin.legFK(RIGHT);
+    Isometry3d center = Isometry3d::Identity();
+    center.translate((Bfoot[LEFT].translation()+Bfoot[RIGHT].translation())/2);
+    // TODO: Account for rotations of the feet
+    Bfoot[LEFT] = center.inverse() * Bfoot[LEFT];
+    Bfoot[RIGHT] = center.inverse() * Bfoot[RIGHT];
+    
+    
+    
+    for(int phase=1; phase<4; phase++)
+    {
+        int active_leg;
+        bool do_upper_body;
+        bool do_zmp_diff;
+        bool do_zmp_com;
+        bool do_mass_distrib = (crpc.kp_mass_distrib != 0);
+        
+        switch(phase)
+        {
+        case CRPC_PHASE_1:
+            active_leg = LEFT;
+            do_upper_body = (crpc.kp_upper_body != 0);
+            do_zmp_diff = false;
+            do_zmp_com = false;
+            break;
+        case CRPC_PHASE_2:
+            active_leg = RIGHT;
+            do_upper_body = (crpc.kp_upper_body != 0);
+            do_zmp_diff = (crpc.kp_zmp_diff != 0);
+            do_zmp_com = false;
+            break;
+        default:
+            active_leg = LEFT;
+            do_upper_body = false;
+            do_zmp_diff = false;
+            do_zmp_com = (crpc.kp_zmp_com != 0);
+            break;
+        }
+        
+        bool done = false;
+        
+        while(!done)
+        {
+            hubo.update();
+            
+            Vector2d foot_zmp[2];
+            Vector2d total_zmp(0,0);
+            
+            hubo.computeZMPs(Bfoot, foot_zmp, total_zmp); // TODO: Account for fz threshold and tau sign
+            
+            Vector2d body_angle_meas(hubo.getAngleX(), hubo.getAngleY());
+            Vector2d body_angle_ref(0,0);
+            Vector2d upper_body_err = (body_angle_ref - body_angle_meas);
+            
+            double mass_distrib_err = hubo.getFootFz(RIGHT) - hubo.getFootFz(LEFT);
+            
+            Vector2d zmp_diff_err = foot_zmp[RIGHT] - foot_zmp[LEFT];
+            
+            Vector2d zmp_ref(crpc.zmp_ref_x, crpc.zmp_ref_y);
+            
+            Vector2d zmp_com_err = zmp_ref - total_zmp;
+            
+            done = true;
+            
+            if(do_upper_body)
+            {
+                if(upper_body_err.norm() > 0.02 * M_PI/180) {
+                    done = false;
+                }
+                offsets.crpcOffsets.body_angle[0] += crpc.kp_upper_body * upper_body_err.x();
+                offsets.crpcOffsets.body_angle[1] += crpc.kp_upper_body * upper_body_err.y();
+            }
+            
+            if(do_mass_distrib)
+            {
+                if( fabs(mass_distrib_err) > 2) {
+                    done = false;
+                }
+                double sign = (active_leg == LEFT) ? 1 : -1;
+                offsets.crpcOffsets.leg_length[active_leg] += sign * crpc.kp_mass_distrib * mass_distrib_err;
+            }
+            
+            if(do_zmp_diff)
+            {
+                if(zmp_diff_err.norm() > 0.2 * 1e-3) {
+                    done = false;
+                }
+                double sign = (active_leg == LEFT) ? 1 : -1;
+                offsets.crpcOffsets.foot_angle_x[active_leg] += crpc.kp_zmp_diff * sign * -zmp_diff_err[1];
+                offsets.crpcOffsets.foot_angle_y[active_leg] += crpc.kp_zmp_diff * sign * zmp_diff_err[0];
+            }
+            
+            if(do_zmp_com)
+            {
+                if(zmp_com_err.norm() > 0.001) {
+                    done = false;
+                }
+                offsets.crpcOffsets.body_com[0] += crpc.kp_zmp_com * zmp_com_err.x();
+                offsets.crpcOffsets.body_com[1] += crpc.kp_zmp_com * zmp_com_err.y();
+            }
+            
+            for(int side=0; side<2; side++)
+            {
+                LegVector q;
+                hubo.getLegAngles(side, q);
+                kin.applyBalanceOffsets(side, q, offsets);
+                hubo.setLegAngles(side, q);
+            }
+            
+            hubo.sendControls();
+            
+        }
+    }
+    
+    fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
+    
+}
+
 
 
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
