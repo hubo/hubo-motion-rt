@@ -311,22 +311,38 @@ void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffset
 {
     updateLegJoints(side, q);
     TRANSFORM target = legFK(side);
-    target.pretranslate(offsets.foot_translation);
+
+    double k = q(KN);
+
+    const double k1 = 0.2;
+    const double k2 = 0.1;
+
+    double scl;
+
+    if (k > k1) {
+        scl = 1.0;
+    } else if (k > k2) {
+        scl = (k-k2) / (k1-k2); // 1 at k1, 0 at k2
+    } else {
+        scl = 0;
+    }
+
+    target.pretranslate(scl*offsets.foot_translation);
     
     TRANSFORM startTrunk = TRANSFORM::Identity();
     startTrunk.translate((linkage("LeftLeg").joint(1).respectToRobot().translation()
                          +linkage("RightLeg").joint(1).respectToRobot().translation())/2);
 
     TRANSFORM dCom = TRANSFORM::Identity();
-    dCom.translate(Vector3d(-offsets.crpcOffsets.body_com[0], -offsets.crpcOffsets.body_com[1], 0));
+    dCom.translate(scl*Vector3d(-offsets.crpcOffsets.body_com[0], -offsets.crpcOffsets.body_com[1], 0));
 
-    Quaterniond qrot = AngleAxisd(-offsets.crpcOffsets.body_angle[0], Vector3d::UnitX())*
-                       AngleAxisd(-offsets.crpcOffsets.body_angle[1], Vector3d::UnitY());
+    Quaterniond qrot = AngleAxisd(-scl*offsets.crpcOffsets.body_angle[0], Vector3d::UnitX())*
+                       AngleAxisd(-scl*offsets.crpcOffsets.body_angle[1], Vector3d::UnitY());
     TRANSFORM dTrunk = TRANSFORM(qrot);
     dTrunk = startTrunk * dTrunk * startTrunk.inverse();
 
     TRANSFORM dFoot = TRANSFORM::Identity();
-    dFoot.pretranslate(Vector3d(0,0,offsets.crpcOffsets.leg_length[side]));
+    dFoot.pretranslate(Vector3d(0,0,scl*offsets.crpcOffsets.leg_length[side]));
 
 
     target = dCom * dTrunk * target * dFoot;
@@ -335,8 +351,8 @@ void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffset
 
     // TODO: Why is the foot angle offset applied at the joints instead of to the foot frame?
     
-    q(AP) += offsets.crpcOffsets.foot_angle_y[side];
-    q(AR) += offsets.crpcOffsets.foot_angle_x[side];
+    q(AP) += scl*offsets.crpcOffsets.foot_angle_y[side];
+    q(AR) += scl*offsets.crpcOffsets.foot_angle_x[side];
 
 }
 
