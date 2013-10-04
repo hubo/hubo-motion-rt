@@ -73,6 +73,8 @@ public:
 
     Eigen::VectorXd armRestValues;
 
+    double getLegLength();
+
 
     DrcConstraints armConstraints;
 //    RobotKin::Constraints armConstraints;
