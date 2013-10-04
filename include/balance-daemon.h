@@ -93,7 +93,7 @@ typedef struct crpc_params {
 
     int negate_moments;
     
-    bool from_current_ref;
+    int from_current_ref;
 
     double hip_crouch;
 
