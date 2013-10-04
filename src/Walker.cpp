@@ -843,6 +843,13 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
     hubo.update(true);
 
+    if(false)
+    {
+        std::cout << "before: ";
+        for(int i=LHY; i<LHY+6; i++)
+            std::cout << currentTrajectory->traj[0].angles[i] << "\t";
+        std::cout << std::endl;
+    }
     // Set all the joints to the initial posiiton in the trajectory
     // using the control daemon to interpolate in joint space.
     kin.applyBalanceOffsets(currentTrajectory->traj[0],offsets);
@@ -859,11 +866,19 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             hubo.setJointNominalAcceleration( i, 0.4 );
         }
     }
-    
+
     hubo.setJointNominalSpeed( RKN, 0.8 );
     hubo.setJointNominalAcceleration( RKN, 0.8 );
     hubo.setJointNominalSpeed( LKN, 0.8 );
     hubo.setJointNominalAcceleration( LKN, 0.8 );
+
+    if(false)
+    {
+        std::cout << "after: ";
+        for(int i=LHY; i<LHY+6; i++)
+            std::cout << currentTrajectory->traj[0].angles[i] << "\t";
+        std::cout << std::endl;
+    }
 
     hubo.sendControls();
 
@@ -1107,7 +1122,13 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 //    std::cout << "after: ";
 //    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
 //    std::cout << "\n";
-
+    if(false)
+    {
+        std::cout << "before: ";
+        for(int i=LHY; i<LHY+6; i++)
+            std::cout << tempNextElem.angles[i] << "\t";
+        std::cout << std::endl;
+    }
     // For each joint set it's position to that in the trajectory for the
     // current timestep, which has been adjusted based on feedback.
     kin.applyBalanceOffsets(tempNextElem, offsets);
@@ -1119,7 +1140,14 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     hubo.setJointAngleMin( LHR, currentElem.angles[RHR]-M_PI/2.0 );
     hubo.setJointAngleMax( RHR, currentElem.angles[LHR]+M_PI/2.0 );
 
-  hubo.sendControls();
+    if(false)
+    {
+        std::cout << "after: ";
+        for(int i=LHY; i<LHY+6; i++)
+            std::cout << tempNextElem.angles[i] << "\t";
+        std::cout << std::endl;
+    }
+    hubo.sendControls();
 }
 
 

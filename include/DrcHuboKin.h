@@ -63,6 +63,9 @@ public:
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench=Vector6d::Zero());
     RobotKin::rk_result_t armTorques(int side, ArmVector &jointTorque, const Vector6d &eeWrench, const ArmVector &jointAngles);
 
+    LegVector lastQ[2];
+    bool haveLastQ[2];
+
     void applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets);
     void applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffsets &offsets);
 

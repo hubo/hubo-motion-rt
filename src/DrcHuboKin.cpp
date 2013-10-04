@@ -15,6 +15,10 @@ DrcHuboKin::DrcHuboKin()
     linkages_.resize(0);
 
 
+    for (int i=0; i<2; ++i) {
+      haveLastQ[i] = false;
+    }
+
     if( !RobotKinURDF::loadURDF(*this, "/etc/hubo-ach/drchubo_v2.urdf") )
          RobotKinURDF::loadURDF(*this, "/etc/hubo-ach/drchubo-v2.urdf");
 
@@ -34,6 +38,9 @@ DrcHuboKin::DrcHuboKin()
 
     joint("LEB").max(0);
     joint("REB").max(0);
+
+    joint("LKN").min(0);
+    joint("RKN").min(0);
 
     // Note: These are all basically meaningless
 //    joint("RF11").name("RF1");
@@ -353,6 +360,14 @@ void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffset
     
     q(AP) += scl*offsets.crpcOffsets.foot_angle_y[side];
     q(AR) += scl*offsets.crpcOffsets.foot_angle_x[side];
+
+    if (haveLastQ[side] && (q - lastQ[side]).lpNorm<Eigen::Infinity>() > 0.03) {
+      std::cerr << "***** big difference *****\n";
+    }
+
+    haveLastQ[side] = true;
+    lastQ[side] = q;
+    
 
 }
 
