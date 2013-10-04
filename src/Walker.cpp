@@ -1101,7 +1101,7 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
     //flattenFoot( hubo, nextElem, state, gains, dt );
     //straightenBack( hubo, nextElem, state, gains, dt );
     //complyKnee( hubo, tempNextElem, state, gains, dt );
-    landingController( hubo, tempNextElem, state, gains, dt );
+    //landingController( hubo, tempNextElem, state, gains, dt );
     //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
 
 //    std::cout << "after: ";

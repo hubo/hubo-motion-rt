@@ -53,6 +53,8 @@ HUBO_ZMP_TRAJ_CHAN='hubo-zmp-traj'
 HUBO_BAL_CMD_CHAN='balance-cmd'
 HUBO_BAL_STATE_CHAN='balance-state'
 HUBO_BAL_PARAM_CHAN='balance-param'
+HUBO_CRPC_PARAM_CHAN='crpc-param'
+HUBO_CRPC_STATE_CHAN='crpc-state'
 LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
@@ -99,6 +101,8 @@ Ach()
         sudo ach -U $HUBO_BAL_CMD_CHAN
         sudo ach -U $HUBO_BAL_STATE_CHAN
         sudo ach -U $HUBO_BAL_PARAM_CHAN
+        sudo ach -U $HUBO_CRPC_PARAM_CHAN
+        sudo ach -U $HUBO_CRPC_STATE_CHAN
 
 	;;	
 
@@ -128,6 +132,8 @@ Ach()
         sudo ach -1 -C $HUBO_BAL_CMD_CHAN       -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_BAL_STATE_CHAN     -m 10 -n 3000 -o 666
         sudo ach -1 -C $HUBO_BAL_PARAM_CHAN     -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_CRPC_PARAM_CHAN    -m 10 -n 3000 -o 666
+        sudo ach -1 -C $HUBO_CRPC_STATE_CHAN    -m 10 -n 3000 -o 666
         
 	;;
 	esac
