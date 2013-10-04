@@ -77,13 +77,14 @@ public:
     }
   }
 
-  void parse(const std::string& filename) { 
+  bool parse(const std::string& filename) {
 
     std::ifstream istr(filename.c_str());
 
     if (!istr.is_open()) { 
       std::cerr << "error opening config " << filename << "\n";
-      exit(1);
+//      exit(1);
+      return false;
     }
 
     std::string line;
@@ -101,28 +102,30 @@ public:
       } else if (!split(line, '=', s1, s2)) {
         if (!trimws(line).empty()) {
           std::cerr << "error parsing line " << line << "\n";
-          exit(1);
+//          exit(1);
+          return false;
         }
       } else {
         //std::cout << "set '" << s1 << "' to '" << s2 << "'\n";
         lookup[s1] = std::make_pair(s2, false);
       }
     }
+    return true;
 
   }
 
-  const std::string& get(const std::string& key) {
+  std::string get(const std::string& key) {
     StringMap::iterator i = lookup.find(key);
     if (i == lookup.end()) { 
       std::cerr << "config key not found: " << key << "\n";
-      exit(1);
+      return "";
     }
     i->second.second = true;
     return i->second.first;
   }
 
   template <class Tval>
-  void get(const std::string& key, Tval& val) {
+  bool get(const std::string& key, Tval& val) {
 
     const std::string& sval = get(key);
 
@@ -130,8 +133,10 @@ public:
 
     if ( !(istr >> val) || (istr.peek() != EOF)) {
       std::cerr << "error parsing value for " << key << "\n";
-      exit(1);
+      return false;
     }
+
+    return true;
 
   }
 
@@ -143,7 +148,7 @@ public:
       return false;
     } else {
       std::cerr << "error parsing boolean value for " << key << "\n";
-      exit(1);
+      return false;
     }
   }
 
@@ -155,14 +160,14 @@ public:
     typename std::map<std::string, Tenum>::const_iterator i = values.find(val);
     if (i == values.end()) { 
       std::cerr << "invalid value for " << key << ": " << val << "\n";
-      exit(1);
+      return Tenum(0);
     }
 
     return i->second;
 
   }
 
-  void checkUsed(bool abortIfUnused) const {
+  bool checkUsed() const {
     bool unused = false;
     for (StringMap::const_iterator i = lookup.begin(); i!=lookup.end(); ++i) {
       if (!i->second.second) { 
@@ -170,9 +175,7 @@ public:
         unused = true;
       }
     }
-    if (unused && abortIfUnused) {
-      exit(1);
-    }
+    return !unused;
   }
 
 };

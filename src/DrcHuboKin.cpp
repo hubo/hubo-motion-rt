@@ -667,18 +667,26 @@ BalanceOffsets::BalanceOffsets()
 
 void BalanceOffsets::loadCRPCFromText(const char *filename)
 {
-    SimpleConfig config(filename);
-    config.get("body_com_x", crpcOffsets.body_com[0]);
-    config.get("body_com_y", crpcOffsets.body_com[1]);
-    config.get("body_angle_x", crpcOffsets.body_angle[0]);
-    config.get("body_angle_y", crpcOffsets.body_angle[1]);
-    config.get("left_leg_length", crpcOffsets.leg_length[LEFT]);
-    config.get("right_leg_length", crpcOffsets.leg_length[RIGHT]);
-    config.get("left_foot_angle_x", crpcOffsets.foot_angle_x[LEFT]);
-    config.get("left_foot_angle_y", crpcOffsets.foot_angle_y[LEFT]);
-    config.get("right_foot_angle_x", crpcOffsets.foot_angle_x[RIGHT]);
-    config.get("right_foot_angle_y", crpcOffsets.foot_angle_y[RIGHT]);
-    config.checkUsed(true);
+    SimpleConfig config;
+
+    if(!config.parse(filename))
+        return;
+
+    if (!(config.get("body_com_x", crpcOffsets.body_com[0]) &&
+          config.get("body_com_y", crpcOffsets.body_com[1]) &&
+          config.get("body_angle_x", crpcOffsets.body_angle[0]) &&
+          config.get("body_angle_y", crpcOffsets.body_angle[1]) &&
+          config.get("left_leg_length", crpcOffsets.leg_length[LEFT]) &&
+          config.get("right_leg_length", crpcOffsets.leg_length[RIGHT]) &&
+          config.get("left_foot_angle_x", crpcOffsets.foot_angle_x[LEFT]) &&
+          config.get("left_foot_angle_y", crpcOffsets.foot_angle_y[LEFT]) &&
+          config.get("right_foot_angle_x", crpcOffsets.foot_angle_x[RIGHT]) &&
+          config.get("right_foot_angle_y", crpcOffsets.foot_angle_y[RIGHT]))) {
+        std::cerr << "warning: error loading params!!\n";
+    }
+
+    config.checkUsed();
+
 }
 
 void BalanceOffsets::saveCRPCToText(const char *filename)
