@@ -210,6 +210,14 @@ int main(int argc, char **argv)
             ach_get(&crpc_param_chan, &crpc, sizeof(crpc), &fs, NULL, ACH_O_LAST);
             crpcPostureController(hubo, kin, cmd, crpc, offsets);
         }
+        else if( LOAD_CRPC == cmd.cmd_request )
+        {
+            offsets.loadCRPCFromText(cmd.filename);
+        }
+        else if( SAVE_CRPC == cmd.cmd_request )
+        {
+            offsets.saveCRPCToText(cmd.filename);
+        }
 
         ach_put( &bal_state_chan, &state, sizeof(state) );
 
@@ -383,7 +391,6 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             }
             
             hubo.sendControls();
-            
         }
     }
     

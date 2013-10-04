@@ -1,5 +1,6 @@
 
 #include "DrcHuboKin.h"
+#include "SimpleConfig.h"
 #include <RobotKin/urdf_parsing.h>
 
 
@@ -661,6 +662,43 @@ BalanceOffsets::BalanceOffsets()
 {
     memset(&crpcOffsets, 0, sizeof(crpcOffsets));
     foot_translation.setZero();
+}
+
+
+void BalanceOffsets::loadCRPCFromText(const char *filename)
+{
+    SimpleConfig config(filename);
+    config.get("body_com_x", crpcOffsets.body_com[0]);
+    config.get("body_com_y", crpcOffsets.body_com[1]);
+    config.get("body_angle_x", crpcOffsets.body_angle[0]);
+    config.get("body_angle_y", crpcOffsets.body_angle[1]);
+    config.get("left_leg_length", crpcOffsets.leg_length[LEFT]);
+    config.get("right_leg_length", crpcOffsets.leg_length[RIGHT]);
+    config.get("left_foot_angle_x", crpcOffsets.foot_angle_x[LEFT]);
+    config.get("left_foot_angle_y", crpcOffsets.foot_angle_y[LEFT]);
+    config.get("right_foot_angle_x", crpcOffsets.foot_angle_x[RIGHT]);
+    config.get("right_foot_angle_y", crpcOffsets.foot_angle_y[RIGHT]);
+    config.checkUsed(true);
+}
+
+void BalanceOffsets::saveCRPCToText(const char *filename)
+{
+    std::ofstream ostr(filename);
+    flushCRPCToStream(ostr);
+}
+
+void BalanceOffsets::flushCRPCToStream(ostream &ostr)
+{
+    ostr << "body_com_x = " << crpcOffsets.body_com[0] << "\n";
+    ostr << "body_com_y = " << crpcOffsets.body_com[1] << "\n";
+    ostr << "body_angle_x = " << crpcOffsets.body_angle[0] << "\n";
+    ostr << "body_angle_y = " << crpcOffsets.body_angle[1] << "\n";
+    ostr << "left_leg_length = " << crpcOffsets.leg_length[LEFT] << "\n";
+    ostr << "left_foot_angle_x = " << crpcOffsets.foot_angle_x[LEFT] << "\n";
+    ostr << "left_foot_angle_y = " << crpcOffsets.foot_angle_y[LEFT] << "\n";
+    ostr << "right_leg_length = " << crpcOffsets.leg_length[RIGHT] << "\n";
+    ostr << "right_foot_angle_x = " << crpcOffsets.foot_angle_x[RIGHT] << "\n";
+    ostr << "right_foot_angle_y = " << crpcOffsets.foot_angle_y[RIGHT] << "\n";
 }
 
 

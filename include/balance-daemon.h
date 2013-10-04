@@ -51,7 +51,9 @@ typedef enum {
     BAL_READY=0,
     BAL_LEGS_ONLY,
     BAL_ZMP_WALKING,
-    BAL_CRPC
+    BAL_CRPC,
+    LOAD_CRPC,
+    SAVE_CRPC
 
 } balance_mode_t;
 
@@ -159,6 +161,8 @@ typedef struct balance_params {
 typedef struct balance_cmd {
 
     balance_mode_t cmd_request;
+
+    char filename[50];
     
     double height;
     double com_x_offset;

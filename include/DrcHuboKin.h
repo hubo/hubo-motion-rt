@@ -28,6 +28,11 @@ public:
     
     Vector3d foot_translation;
 
+
+
+    void loadCRPCFromText(const char* filename);
+    void saveCRPCToText(const char* filename);
+    void flushCRPCToStream(std::ostream& ostr);
     static BalanceOffsets Empty();
 
 
