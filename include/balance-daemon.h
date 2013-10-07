@@ -149,6 +149,8 @@ typedef struct walking_gains {
     double damping_gain;
     double fz_response;
 
+    int useLandingController;
+
 }__attribute__((packed)) walking_gains_t;
 
 typedef struct balance_params {
@@ -175,7 +177,10 @@ typedef struct balance_state {
 
     walk_mode_t m_walk_mode;
     walk_error_t m_walk_error;
+
+    // for plotting only
     bipedStance_t biped_stance;
+    double force[2];
 
 }__attribute__((packed)) balance_state_t;
 

@@ -66,6 +66,7 @@ typedef struct nudge_state {
     Eigen::Vector3d imu_offset;
 
     int prevSwingFoot;
+    int doubleSupportCount;
     double V0[HUBO_JOINT_COUNT];
     
 } nudge_state_t;
@@ -113,6 +114,7 @@ public:
     bool keepWalking;   //!< Whether or not to keep walking.
     int counter;        //!< Print counter
     walktype_t m_walkDirection;
+    int m_doubleSupportTicks;
 
 protected:
 
@@ -219,7 +221,7 @@ protected:
      * \return void
     */
     void landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
-        nudge_state_t &state, walking_gains_t &gains, double dt );
+        nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt );
 
     /**
      * \brief During single support phase the support ankle will be adjusted

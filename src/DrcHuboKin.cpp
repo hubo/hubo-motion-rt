@@ -334,7 +334,7 @@ void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffset
         scl = 0;
     }
 
-    target.pretranslate(scl*offsets.foot_translation);
+    target.pretranslate(scl*offsets.foot_translation[side]);
     
     TRANSFORM startTrunk = TRANSFORM::Identity();
     startTrunk.translate((linkage("LeftLeg").joint(1).respectToRobot().translation()
@@ -692,7 +692,8 @@ void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
 BalanceOffsets::BalanceOffsets()
 {
     memset(&crpcOffsets, 0, sizeof(crpcOffsets));
-    foot_translation.setZero();
+    for(int side=0; side<2; side++)
+        foot_translation[side].setZero();
 }
 
 

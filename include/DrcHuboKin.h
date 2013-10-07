@@ -26,7 +26,7 @@ public:
     
     crpc_state_t crpcOffsets;
     
-    Vector3d foot_translation;
+    Vector3d foot_translation[2];
 
 
 
