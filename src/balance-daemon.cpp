@@ -49,6 +49,7 @@ ach_channel_t bal_param_chan;
 ach_channel_t manip_override_chan;
 ach_channel_t manip_state_chan;
 ach_channel_t crpc_param_chan;
+ach_channel_t crpc_state_chan;
 
 /**
  * \brief Balance while not moving the legs (in a static lower body pose)
@@ -79,7 +80,17 @@ void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen:
                 balance_cmd_t &cmd, const balance_gains_t &gains, const double dt);
 
 
-void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, BalanceOffsets &offsets);
+/**
+ * \brief Adjusts posture based on force/torque and IMU sensors.
+ * \param hubo Hubo_Control object to get sensor values from.
+ * \param kin DrcHuboKin kinematics objects
+ * \param cmd Balance command struct
+ * \param crpc Crpc parameters struct
+ * \param crpc_state Crpc state struct
+ * \param offset Balance offsets for posture, balancing and walking
+*/
+void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc,
+                           crpc_state_t &crpc_state, BalanceOffsets &offsets);
 
 
 int main(int argc, char **argv)
@@ -109,6 +120,9 @@ int main(int argc, char **argv)
     r = ach_open( &crpc_param_chan, CRPC_PARAM_CHAN, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
 
+    r = ach_open( &crpc_state_chan, CRPC_STATE_CHAN, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
+
     Walker walk;
 
     balance_cmd_t cmd;
@@ -118,6 +132,7 @@ int main(int argc, char **argv)
     manip_override_t ovr;
     hubo_manip_state_t manip_state;
     crpc_params_t crpc;
+    crpc_state_t crpc_state;
     
     BalanceOffsets offsets;
 
@@ -128,6 +143,7 @@ int main(int argc, char **argv)
     memset( &ovr, 0, sizeof(ovr) );
     memset( &manip_state, 0, sizeof(manip_state) );
     memset( &crpc, 0, sizeof(crpc) );
+    memset( &crpc_state, 0, sizeof(crpc_state) );
     
     crpc.kp_upper_body = 1e-2;
     crpc.kp_mass_distrib = 2e-7;
@@ -208,7 +224,7 @@ int main(int argc, char **argv)
 //                hubo.releaseUpperBody();
 //            }
             ach_get(&crpc_param_chan, &crpc, sizeof(crpc), &fs, NULL, ACH_O_LAST);
-            crpcPostureController(hubo, kin, cmd, crpc, offsets);
+            crpcPostureController(hubo, kin, cmd, crpc, crpc_state, offsets);
         }
         else if( LOAD_CRPC == cmd.cmd_request )
         {
@@ -227,7 +243,7 @@ int main(int argc, char **argv)
 }
 
 
-void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, BalanceOffsets &offsets)
+void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, crpc_state_t &crpc_state, BalanceOffsets &offsets)
 {
     if(!crpc.from_current_ref)
     {
@@ -297,6 +313,9 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
         bool do_zmp_diff;
         bool do_zmp_com;
         bool do_mass_distrib = (crpc.kp_mass_distrib != 0);
+
+        crpc_state.phase = (crpc_phase_t)phase;
+        ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
         
         switch(phase)
         {
@@ -393,7 +412,9 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             hubo.sendControls();
         }
     }
-    
+
+    crpc_state.phase = CRPC_DONE;
+    ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
     
 }
