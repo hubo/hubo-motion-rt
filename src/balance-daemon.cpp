@@ -293,6 +293,10 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             return;
         }
     }
+
+    LegVector qReal[2];
+    hubo.getLegAngles(LEFT, qReal[LEFT]);
+    hubo.getLegAngles(RIGHT, qReal[RIGHT]);
     
     Isometry3d Bfoot[2];
     kin.updateHubo(hubo);
@@ -378,7 +382,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 if( fabs(mass_distrib_err) > 2) {
                     done = false;
                 }
-                double sign = (active_leg == LEFT) ? 1 : -1;
+                double sign = (active_leg == LEFT) ? -1 : 1;
                 offsets.crpcOffsets.leg_length[active_leg] += sign * crpc.kp_mass_distrib * mass_distrib_err;
             }
             
@@ -403,8 +407,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             
             for(int side=0; side<2; side++)
             {
-                LegVector q;
-                hubo.getLegAngles(side, q);
+                LegVector q = qReal[side];
                 kin.applyBalanceOffsets(side, q, offsets);
                 hubo.setLegAngles(side, q);
             }
