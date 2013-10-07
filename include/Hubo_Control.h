@@ -956,9 +956,9 @@ public:
     double getRotVelY();
     
     bool computeZMPs(const Eigen::Isometry3d Bfoot[2], Eigen::Vector2d foot_zmp[2],
-                     Eigen::Vector2d &total_zmp, double fz_threshold=10, double tau_sign=1);
+                     Eigen::Vector2d &total_zmp, double tau_sign, double fz_threshold=10);
 
-    bool computeFootZMP(int side, Eigen::Vector2d &zmp, double fz_threshold=0, double tau_sign=1);
+    bool computeFootZMP(int side, Eigen::Vector2d &zmp, double tau_sign, double fz_threshold=0);
     
     bool computeTotalZMP(const Eigen::Isometry3d Bfoot[2], const Eigen::Vector2d foot_zmp[2], Eigen::Vector2d &total_zmp);
 

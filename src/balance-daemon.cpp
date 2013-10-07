@@ -245,6 +245,8 @@ int main(int argc, char **argv)
 
 void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, crpc_state_t &crpc_state, BalanceOffsets &offsets)
 {
+    std::cout << "Running CRPC" << std::endl;
+
     if(!crpc.from_current_ref)
     {
         LegVector legSpeed; legSpeed.setOnes();
@@ -308,7 +310,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     Bfoot[LEFT] = center.inverse() * Bfoot[LEFT];
     Bfoot[RIGHT] = center.inverse() * Bfoot[RIGHT];
     
-    
+    double tau_sign = (crpc.negate_moments == 1) ? -1 : 1;
     
     for(int phase=1; phase<4; phase++)
     {
@@ -320,6 +322,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
 
         crpc_state.phase = (crpc_phase_t)phase;
         ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
+        std::cout << "Phase " << phase << std::endl;
         
         switch(phase)
         {
@@ -352,7 +355,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             Vector2d foot_zmp[2];
             Vector2d total_zmp(0,0);
             
-            hubo.computeZMPs(Bfoot, foot_zmp, total_zmp); // TODO: Account for fz threshold and tau sign
+            hubo.computeZMPs(Bfoot, foot_zmp, total_zmp, tau_sign); // TODO: Account for fz threshold and tau sign
             
             Vector2d body_angle_meas(hubo.getAngleX(), hubo.getAngleY());
             Vector2d body_angle_ref(0,0);
@@ -404,6 +407,39 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 offsets.crpcOffsets.body_com[0] += crpc.kp_zmp_com * zmp_com_err.x();
                 offsets.crpcOffsets.body_com[1] += crpc.kp_zmp_com * zmp_com_err.y();
             }
+
+
+            printf("\033[1;1H");
+            printf("************************************************************************\n");
+            printf("****************************** IN PHASE %d ******************************\n", phase+1);
+            printf("Left FT:           mx = %10f   my = %10f   fz = %10f\n", hubo.getFootMx(LEFT), hubo.getFootMy(LEFT), hubo.getFootFz(LEFT));
+            printf("Right FT:          mx = %10f   my = %10f   fz = %10f\n", hubo.getFootMx(RIGHT), hubo.getFootMy(RIGHT), hubo.getFootFz(RIGHT));
+            printf("------------------------------------------------------------------------\n");
+            printf("Upper body ctrl: %s\n", do_upper_body ? "ACTIVE" : "inactive");
+            printf("Body angle meas:    r = %10f    p = %10f\n", body_angle_meas.x(), body_angle_meas.y());
+            printf("Body angle ref:     r = %10f    p = %10f\n", body_angle_ref.x(), body_angle_ref.y());
+            printf("Upper body err:     r = %10f    p = %10f   norm = %10f\n",  upper_body_err.x(), upper_body_err.y(), upper_body_err.norm());
+            printf("------------------------------------------------------------------------\n");
+            printf("Mass distrib ctrl: %s\n", do_mass_distrib ? "ACTIVE" : "inactive");
+            printf("Mass distrib:     err = %10f\n", mass_distrib_err);
+            printf("------------------------------------------------------------------------\n");
+            printf("ZMP diff ctrl: %s\n", do_zmp_diff ? "ACTIVE" : "inactive");
+            printf("Left foot ZMP:      x = %10f    y = %10f\n", foot_zmp[LEFT].x(), foot_zmp[LEFT].y());
+            printf("Right foot ZMP:     x = %10f    y = %10f\n", foot_zmp[RIGHT].x(), foot_zmp[RIGHT].y());
+            printf("ZMP diff error:     x = %10f    y = %10f   norm = %10f\n", zmp_diff_err.x(), zmp_diff_err.y(), zmp_diff_err.norm());
+            printf("------------------------------------------------------------------------\n");
+            printf("ZMP COM ctrl: %s\n", do_zmp_com ? "ACTIVE" : "inactive");
+            printf("ZMP total:          x = %10f    y = %10f\n", total_zmp.x(), total_zmp.y());
+            printf("ZMP ref:            x = %10f    y = %10f\n", zmp_ref.x(), zmp_ref.y());
+            printf("ZMP COM err:        x = %10f    y = %10f   norm = %10f\n", zmp_com_err.x(), zmp_com_err.y(), zmp_com_err.norm());
+            printf("------------------------------------------------------------------------\n");
+            printf("Body angle offset:  r = %10f    p = %10f\n", offsets.crpcOffsets.body_angle[0], offsets.crpcOffsets.body_angle[1]);
+            printf("Body COM offset:    x = %10f    y = %10f\n", offsets.crpcOffsets.body_com[0], offsets.crpcOffsets.body_com[1]);
+            printf("Left offsets:      ar = %10f   ap = %10f    len = %10f\n", offsets.crpcOffsets.foot_angle_x[LEFT], offsets.crpcOffsets.foot_angle_y[LEFT], offsets.crpcOffsets.leg_length[LEFT]);
+            printf("Right offsets:     ar = %10f   ap = %10f    len = %10f\n", offsets.crpcOffsets.foot_angle_x[RIGHT], offsets.crpcOffsets.foot_angle_x[RIGHT], offsets.crpcOffsets.leg_length[RIGHT]);
+            printf("************************************************************************\n");
+
+
             
             for(int side=0; side<2; side++)
             {
