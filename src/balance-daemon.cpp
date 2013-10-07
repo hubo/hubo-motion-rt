@@ -229,10 +229,12 @@ int main(int argc, char **argv)
         else if( LOAD_CRPC == cmd.cmd_request )
         {
             offsets.loadCRPCFromText(cmd.filename);
+            cmd.cmd_request = BAL_READY;
         }
         else if( SAVE_CRPC == cmd.cmd_request )
         {
             offsets.saveCRPCToText(cmd.filename);
+            cmd.cmd_request = BAL_READY;
         }
 
         ach_put( &bal_state_chan, &state, sizeof(state) );
@@ -246,6 +248,10 @@ int main(int argc, char **argv)
 void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, crpc_state_t &crpc_state, BalanceOffsets &offsets)
 {
     std::cout << "Running CRPC" << std::endl;
+
+    LegVector qReal[2];
+    hubo.getLegAngles(LEFT, qReal[LEFT]);
+    hubo.getLegAngles(RIGHT, qReal[RIGHT]);
 
     if(!crpc.from_current_ref)
     {
@@ -267,6 +273,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             RobotKin::TRANSFORM B = kin.legFK(side);
             B.pretranslate(Vector3d(0,0,crpc.hip_crouch));
             kin.legIK(side, q[side], B);
+
+            kin.applyBalanceOffsets(side, q[side], offsets);
             hubo.setLegAngles(side, q[side]);
         }
         
@@ -296,9 +304,6 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
         }
     }
 
-    LegVector qReal[2];
-    hubo.getLegAngles(LEFT, qReal[LEFT]);
-    hubo.getLegAngles(RIGHT, qReal[RIGHT]);
     
     Isometry3d Bfoot[2];
     kin.updateHubo(hubo);
@@ -453,6 +458,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     }
 
     crpc_state.phase = CRPC_DONE;
+
     ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
 

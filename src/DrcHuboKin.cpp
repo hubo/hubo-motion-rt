@@ -313,7 +313,6 @@ void DrcHuboKin::applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffs
         traj.angles[i] = q[i-RHY];
 }
 
-
 void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets)
 {
     updateLegJoints(side, q);
