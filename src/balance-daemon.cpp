@@ -408,10 +408,10 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 offsets.crpcOffsets.body_com[1] += crpc.kp_zmp_com * zmp_com_err.y();
             }
 
-
-            printf("\033[1;1H");
+/*
+            printf("\033[2J\033[1;1H");
             printf("************************************************************************\n");
-            printf("****************************** IN PHASE %d ******************************\n", phase+1);
+            printf("****************************** IN PHASE %d ******************************\n", phase);
             printf("Left FT:           mx = %10f   my = %10f   fz = %10f\n", hubo.getFootMx(LEFT), hubo.getFootMy(LEFT), hubo.getFootFz(LEFT));
             printf("Right FT:          mx = %10f   my = %10f   fz = %10f\n", hubo.getFootMx(RIGHT), hubo.getFootMy(RIGHT), hubo.getFootFz(RIGHT));
             printf("------------------------------------------------------------------------\n");
@@ -438,7 +438,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             printf("Left offsets:      ar = %10f   ap = %10f    len = %10f\n", offsets.crpcOffsets.foot_angle_x[LEFT], offsets.crpcOffsets.foot_angle_y[LEFT], offsets.crpcOffsets.leg_length[LEFT]);
             printf("Right offsets:     ar = %10f   ap = %10f    len = %10f\n", offsets.crpcOffsets.foot_angle_x[RIGHT], offsets.crpcOffsets.foot_angle_x[RIGHT], offsets.crpcOffsets.leg_length[RIGHT]);
             printf("************************************************************************\n");
-
+*/
 
             
             for(int side=0; side<2; side++)
@@ -455,7 +455,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     crpc_state.phase = CRPC_DONE;
     ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
-    
+
+    cmd.cmd_request = BAL_READY;
 }
 
 
