@@ -3,7 +3,7 @@
 #include "manip.h"
 
 using namespace RobotKin;
-
+using namespace std;
 
 
 
@@ -62,5 +62,10 @@ int main(int argc, char **argv)
 
     DrcHuboKin kin;
     
-    kin.linkage("RightArm").printInfo();
+    kin.linkage("RightLeg").printInfo();
+
+
+    cout << "Trunk Left:" << endl << kin.linkage("LeftLeg").joint(1).respectToRobot().matrix() << endl << endl;
+
+    cout << "Trunk Right:" << endl << kin.linkage("RightLeg").joint(1).respectToRobot().matrix() << endl;
 }

@@ -28,8 +28,6 @@ public:
     
     Vector3d foot_translation[2];
 
-
-
     void loadCRPCFromText(const char* filename);
     void saveCRPCToText(const char* filename);
     void flushCRPCToStream(std::ostream& ostr);
