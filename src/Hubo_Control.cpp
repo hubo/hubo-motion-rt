@@ -285,17 +285,17 @@ void Hubo_Control::controlInit(bool live)
 
 }
 
-bool Hubo_Control::computeZMPs(const Isometry3d Bfoot[], Vector2d foot_zmp[], Vector2d &total_zmp, double fz_threshold, double tau_sign)
+bool Hubo_Control::computeZMPs(const Isometry3d Bfoot[], Vector2d foot_zmp[], Vector2d &total_zmp, double tau_sign, double fz_threshold)
 {
     for(int side=0; side<2; side++)
     {
-        computeFootZMP(side, foot_zmp[side], fz_threshold, tau_sign);
+        computeFootZMP(side, foot_zmp[side], tau_sign, fz_threshold);
     }
     
     return computeTotalZMP(Bfoot, foot_zmp, total_zmp);
 }
 
-bool Hubo_Control::computeFootZMP(int side, Vector2d &zmp, double fz_threshold, double tau_sign)
+bool Hubo_Control::computeFootZMP(int side, Vector2d &zmp, double tau_sign, double fz_threshold)
 {
     double fz = getFootFz(side);
     if( fz < fz_threshold )

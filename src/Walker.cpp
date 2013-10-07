@@ -489,7 +489,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     //----------------------
     if(counter >= counterMax)
     {
-        if(false)
+        if(true)
         {
             std::cout << std::setprecision(4)
                       << "side " << curSide

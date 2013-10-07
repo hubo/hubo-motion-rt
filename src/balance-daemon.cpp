@@ -245,6 +245,8 @@ int main(int argc, char **argv)
 
 void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, crpc_state_t &crpc_state, BalanceOffsets &offsets)
 {
+    std::cout << "Running CRPC" << std::endl;
+
     if(!crpc.from_current_ref)
     {
         LegVector legSpeed; legSpeed.setOnes();
@@ -304,7 +306,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     Bfoot[LEFT] = center.inverse() * Bfoot[LEFT];
     Bfoot[RIGHT] = center.inverse() * Bfoot[RIGHT];
     
-    
+    double tau_sign = (crpc.negate_moments == 1) ? -1 : 1;
     
     for(int phase=1; phase<4; phase++)
     {
@@ -316,6 +318,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
 
         crpc_state.phase = (crpc_phase_t)phase;
         ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
+        std::cout << "Phase " << phase << std::endl;
         
         switch(phase)
         {
@@ -348,7 +351,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             Vector2d foot_zmp[2];
             Vector2d total_zmp(0,0);
             
-            hubo.computeZMPs(Bfoot, foot_zmp, total_zmp); // TODO: Account for fz threshold and tau sign
+            hubo.computeZMPs(Bfoot, foot_zmp, total_zmp, tau_sign); // TODO: Account for fz threshold and tau sign
             
             Vector2d body_angle_meas(hubo.getAngleX(), hubo.getAngleY());
             Vector2d body_angle_ref(0,0);
@@ -378,7 +381,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 if( fabs(mass_distrib_err) > 2) {
                     done = false;
                 }
-                double sign = (active_leg == LEFT) ? 1 : -1;
+                double sign = (active_leg == LEFT) ? -1 : 1;
                 offsets.crpcOffsets.leg_length[active_leg] += sign * crpc.kp_mass_distrib * mass_distrib_err;
             }
             
