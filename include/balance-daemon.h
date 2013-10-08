@@ -178,6 +178,8 @@ typedef struct balance_state {
     walk_mode_t m_walk_mode;
     walk_error_t m_walk_error;
 
+    Eigen::Isometry3d prevFootTF;
+
     // for plotting only
     bipedStance_t biped_stance;
     double force[2];

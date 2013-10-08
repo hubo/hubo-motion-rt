@@ -486,15 +486,26 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     hubo.setJointAngleMax( RHP, 0 );
 
 
-    double L1 = 0.33008 + 0.32995; //2*0.3002;
-    double L2 = 0.28947 + 0.0795;
+//    double L1 = 0.33008 + 0.32995; //2*0.3002;
+//    double L2 = 0.28947 + 0.0795;
     
-    if( cmd.height-L2 > L1 )
-        cmd.height = L1+L2;
-    else if( cmd.height-L2 < 0.25 ) //TODO: Don't hard code this
-        cmd.height = L1+0.2;
+//    if( cmd.height-L2 > L1 )
+//        cmd.height = L1+L2;
+//    else if( cmd.height-L2 < 0.249 ) //TODO: Don't hard code this
+//        cmd.height = L1+0.2;
 
-    double knee = acos( (cmd.height-L2)/L1 )*2;
+//    double knee = acos( (cmd.height-L2)/L1 )*2;
+
+    // Get knee angle given commanded height, using legIK.
+    // If IK fails, use previous foot TF in legIK to get knee angle.
+    RobotKin::TRANSFORM footTF = RobotKin::TRANSFORM::Identity();
+    footTF.translation().z() = -cmd.height;
+    RobotKin::rk_result_t ik_result = kin.legIK(RIGHT, q, footTF);
+    if(RobotKin::RK_SOLVED == ik_result)
+        prevFootTF = footTF;
+    else if(RobotKin::RK_SOLVED != ik_result && prevFootTF.translation().z() < 0)
+        kin.legIK(RIGHT, q, footTF);
+    double knee = q(KN);
 
     // Initialize LegVectors for leg joint velocities,
     // which get passed into the hipVelocityIK() function
