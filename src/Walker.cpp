@@ -335,7 +335,7 @@ void Walker::complyKnee( Hubo_Control &hubo, zmp_traj_element_t &elem,
  * Possibly good gains:
  * M = 25, K = 25000, Q = 8000
  */
-void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
+void Walker::landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt )
 {
     counter++;
@@ -409,6 +409,111 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         }
     }
 
+    if(counter > counterMax)
+        counter = 0;
+}
+// END of landingController()
+
+
+/**
+ * \brief Dampens last landing step with impedance controller,
+ * where it dampens the leg with positive force velocity that
+ * has a higher force than the other leg. The other leg just has
+ * the offset from the landing controller decayed.
+*/
+/**
+ * Possibly good gains:
+ * M = 25, K = 25000, Q = 8000
+ */
+void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &elem,
+        nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt )
+{
+    counter++;
+    int counterMax = 40;
+    Eigen::Vector3d spring_gain, damping_gain;
+    Eigen::Vector3d forceTorqueErr[2];
+    int cur_side;
+
+    //------------------------------
+    //  MASS, SPRING, DAMPING GAINS
+    //------------------------------
+    spring_gain.setZero(); damping_gain.setZero();
+    spring_gain.z() = gains.spring_gain;
+    damping_gain.z() = gains.damping_gain;
+    impCtrl.setGains(spring_gain, damping_gain);
+    if(gains.fz_response > 0)
+        impCtrl.setMass(gains.fz_response);
+
+    // Get relative landing foot
+    Eigen::Vector2d fz;
+    for(int i=0; i<2; i++)
+        fz(i) = hubo.getFootFz(i);
+    Eigen::Vector2d fzVel = fz - state.prevFz;
+    if(fz(LEFT) > fz(RIGHT) && fzVel(LEFT) > 0)
+        cur_side = LEFT;
+    else
+        cur_side = RIGHT;
+    state.prevFz = fz;
+
+    for(int side=0; side<2; side++)
+    {
+        //-------------------------
+        //   FORCE/TORQUE ERROR
+        //-------------------------
+        forceTorqueErr[side].setZero();
+        forceTorqueErr[side](2) = hubo.getFootFz(side); //FIXME should be positive
+
+        // Prevent negative forces on the feet (ie. pulling the feet down)
+        if(forceTorqueErr[side](2) < 0)
+            forceTorqueErr[side](2) = 0.0;
+        else
+            forceTorqueErr[side](2) += gains.straightening_roll_gain;
+
+        //------------------------
+        //  IMPEDANCE CONTROLLER
+        //------------------------
+        // Run impedance controller on swing leg
+        offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
+        if(side == cur_side && fz(side) < gains.force_max_threshold && fz(side) > gains.force_min_threshold) // side is relatively landing, using landing controller
+            impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
+        else // otherwise just decay offset for that leg
+            state.dFeetOffset[side] -= gains.decay_gain * state.dFeetOffset[side];
+
+        //------------------------
+        //    CAP BODY OFFSET
+        //------------------------
+        const double dFeetOffsetTol = 0.05; // max offset in z (m)
+        const double dFeetOffsetVelTol = dFeetOffsetTol / dt;
+        double n = fabs(state.dFeetOffset[side](2)); // grab abs of z offset
+        double v = fabs(state.dFeetOffset[side](5)); // grab abs of z velocity
+        if(n > dFeetOffsetTol)
+        {
+            state.dFeetOffset[side](2) *= dFeetOffsetTol/n;
+            if(v > dFeetOffsetVelTol)
+                state.dFeetOffset[side](5) *= dFeetOffsetVelTol/v;
+        }
+
+        // Update offsets
+        offsets.foot_translation[side].z() += state.dFeetOffset[side](2);
+
+        // for plotting
+        bal_state.foot_translation[side] = offsets.foot_translation[side].z();
+
+        //----------------------
+        //   DEBUG PRINT OUT
+        //----------------------
+        if(counter >= counterMax)
+        {
+            if(true)
+            {
+                std::cout << std::setprecision(4)
+                          << "side " << side
+                          << "\tFz " << forceTorqueErr[side](2)
+                          << "\toff " << state.dFeetOffset[side](2) << " " << state.dFeetOffset[side](5)
+                          << std::endl;
+            }
+        }
+    }
     if(counter > counterMax)
         counter = 0;
 }
@@ -844,7 +949,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, prevTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, offsets, dt );
+                                   state, gains.walking_gains, offsets, dt, nextTimeIndex );
             
         }
         else if( timeIndex == currentTrajectory->periodEndTick && haveNewTrajectory )
@@ -856,7 +961,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        nextTrajectory->traj[nextTimeIndex],
-                                       state, gains.walking_gains, offsets, dt );
+                                       state, gains.walking_gains, offsets, dt, nextTimeIndex );
                 
                 memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                 memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
@@ -871,7 +976,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                        currentTrajectory->traj[timeIndex],
                                        currentTrajectory->traj[nextTimeIndex],
-                                       state, gains.walking_gains, offsets, dt );
+                                       state, gains.walking_gains, offsets, dt, nextTimeIndex );
             }
             haveNewTrajectory = false;
         }
@@ -889,7 +994,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, offsets, dt );
+                                   state, gains.walking_gains, offsets, dt, nextTimeIndex );
         }
         else if( timeIndex < currentTrajectory->count-1 )
         {
@@ -897,7 +1002,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
                                    currentTrajectory->traj[nextTimeIndex],
-                                   state, gains.walking_gains, offsets, dt );
+                                   state, gains.walking_gains, offsets, dt, nextTimeIndex );
         }
         else if( timeIndex == currentTrajectory->count-1 && haveNewTrajectory )
         {
@@ -915,7 +1020,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                     executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                            currentTrajectory->traj[timeIndex],
                                            nextTrajectory->traj[nextTimeIndex],
-                                           state, gains.walking_gains, offsets, dt );
+                                           state, gains.walking_gains, offsets, dt, nextTimeIndex );
                     
                     memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                     memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
@@ -959,6 +1064,7 @@ bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAl
         fprintf(stdout, "Noticed new trajectory: ID #%d\n", (int)newTrajectory.trajNumber);
         m_walkDirection = newTrajectory.walkDirection;
         m_doubleSupportTicks = newTrajectory.doubleSupportTicks;
+        m_lastLandingTick = newTrajectory.lastLandingTick;
 
         return true;
     }
@@ -991,7 +1097,7 @@ bipedStance_t Walker::getBipedStance( zmp_traj_element_t &elem )
 
 void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt )
+            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt, int timestep )
 {
     // Make copy of zmp_traj_element so we don't effect the trajectory that's
     // being recycled or it will be like recycling a changing trajectory. Not Good!
@@ -1012,8 +1118,8 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
         flattenFoot( hubo, nextElem, state, gains, dt );
         //straightenBack( hubo, nextElem, state, gains, dt );
         //complyKnee( hubo, tempNextElem, state, gains, dt );
-        if(gains.useLandingController)
-            landingController( hubo, tempNextElem, state, gains, offsets, dt );
+        if(gains.useLandingController && timestep >= m_lastLandingTick - .1*ZMP_TRAJ_FREQ_HZ)
+            landingControllerAlwaysOn( hubo, tempNextElem, state, gains, offsets, dt );
         //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
     }
 

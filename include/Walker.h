@@ -114,6 +114,7 @@ public:
     int counter;        //!< Print counter
     walktype_t m_walkDirection;
     int m_doubleSupportTicks;
+    int m_lastLandingTick;
 
 protected:
 
@@ -141,7 +142,7 @@ protected:
     */
     void executeTimeStep( Hubo_Control &hubo, zmp_traj_element &prevElem,
             zmp_traj_element_t &currentElem, zmp_traj_element &nextElem,
-            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt );
+            nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt, int timestep );
 
     /**
      * \brief Checks for a new trajectory from the ach channel.
@@ -219,7 +220,10 @@ protected:
      * \param dt Time change between last update and current update
      * \return void
     */
-    void landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
+    void landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &elem,
+        nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt );
+
+    void landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt );
 
     /**

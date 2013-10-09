@@ -139,9 +139,10 @@ typedef struct zmp_traj {
   size_t trajNumber;        //!< trajectory number
   size_t periodStartTick;   //!< start timestep of periodic portion of trajectory
   size_t periodEndTick;     //!< end timestep of periodic portion of trajectory
-  walktype_t walkDirection;//!< walk direction for trajectory
-  int doubleSupportTicks;
-  int reuse;               //!< whether or not to reuse the current trajectory's periodic portion
+  walktype_t walkDirection; //!< walk direction for trajectory
+  int lastLandingTick;      //!< tick of the start of the last landing step
+  int doubleSupportTicks;   //!< number of double support ticks in each step
+  int reuse;                //!< whether or not to reuse the current trajectory's periodic portion
 }__attribute__((packed)) zmp_traj_t;
 
 
