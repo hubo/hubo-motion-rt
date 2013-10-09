@@ -307,6 +307,8 @@ if(verbose)
     if(dual)
         hubo.setArmAngles(alt, armAngles[alt]);
 
+//    std::cout << (armAngles[side]-lastAngles[side]).transpose()/dt << std::endl;
+
 }
 #endif //HAVE_REFLEX
 

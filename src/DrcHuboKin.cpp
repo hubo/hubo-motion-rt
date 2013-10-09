@@ -303,7 +303,7 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     {
         double maxAngle = 0;
         int maxIdx = -1;
-        for(int i=0; i<q.size(); i++)
+        for(int i=0; i<7; i++)
         {
             if(fabs(qNull[i]-q[i]) > fabs(maxAngle))
             {
@@ -312,7 +312,7 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
             }
         }
 
-        if(maxIdx == -1)
+        if(maxIdx == -1 || maxIdx >= 7)
         {
             std::cout << "This should not be happening." << std::endl;
             return result;
@@ -327,7 +327,7 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         svdJ.compute(J, ComputeFullV);
 
 
-        double nullStepSize = 5/180*M_PI/200;
+        double nullStepSize = 10.0/180.0*M_PI/200.0;
         double thresh = 1e-6;
         double max = 0;
         int col = -1;
@@ -357,12 +357,24 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         if( col >= 0 && fabs(max) > 1e-6 )
         {
             VectorXd nullStep = max*svdJ.matrixV().col(col).transpose()/fabs(max);
-            clampMaxAbs(nullStep, nullStepSize);
+//            std::cout << "first Null: " << nullStep.transpose() << std::endl;
+            int clamp = 0;
+            for(int c=0; c<7; c++)
+                if(fabs(nullStep[c]) > fabs(nullStep[clamp]))
+                    clamp = c;
+
+            if(fabs(nullStep[clamp]) > nullStepSize)
+                nullStep *= nullStepSize/fabs(nullStep[clamp]);
+
 
             for(int j=0; j<nullStep.size(); j++)
                 q[j] += nullStep[j];
+            std::cout << nullStep.transpose() << " dN:" << (qNull-q).transpose() << std::endl;
+//            std::cout << "clamp " << clamp <<  " Max: (" << col << ", " << max << ") Null: << " << qNull.transpose() << "\tStep: " << nullStep.transpose() << std::endl;
         }
     }
+    else
+        std::cout << (qNull-q).transpose() << std::endl;
 
     return result;
 }
