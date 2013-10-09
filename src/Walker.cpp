@@ -876,7 +876,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             fprintf(stderr, "Something unnatural has happened in the Walker... %f\n", dt);
             continue;
         }
-
+        // Execute second timestep
         if( timeIndex==0 )
         {
             bal_state.m_walk_error = NO_WALK_ERROR;
@@ -887,6 +887,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                                    state, gains.walking_gains, offsets, dt );
             
         }
+        // Swap in next trajectory while walking
         else if( timeIndex == currentTrajectory->periodEndTick && haveNewTrajectory )
         {
             if( validateNextTrajectory( currentTrajectory->traj[timeIndex],
@@ -915,6 +916,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             }
             haveNewTrajectory = false;
         }
+        // Resuse periodic portion of current trajectory
         else if( timeIndex == currentTrajectory->periodEndTick && currentTrajectory->reuse )
         {
             checkCommands();
@@ -931,6 +933,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                                    currentTrajectory->traj[nextTimeIndex],
                                    state, gains.walking_gains, offsets, dt );
         }
+        // Execute normal timestep
         else if( timeIndex < currentTrajectory->count-1 )
         {
             nextTimeIndex = timeIndex+1;
@@ -939,6 +942,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                                    currentTrajectory->traj[nextTimeIndex],
                                    state, gains.walking_gains, offsets, dt );
         }
+        // If have new trajectory and have completed current trajectory, start next trajectory
         else if( timeIndex == currentTrajectory->count-1 && haveNewTrajectory )
         {
             checkCommands();
@@ -969,6 +973,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 haveNewTrajectory = false;
             }
         }
+        // Otherwise check if we aren't walking anymore
         else
         {
             checkCommands();
