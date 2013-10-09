@@ -404,14 +404,12 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     // Prevent negative forces on the feet (ie. pulling the feet down)
     if(forceTorqueErr(2) < 0)
         forceTorqueErr(2) = 0.0;
-
     //------------------------
     //  IMPEDANCE CONTROLLER
     //------------------------
     // Run impedance controller on swing leg
-    state.dFeetOffset[side](2) = offsets.foot_translation[side].z();
+    offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
     impCtrl.run(state.dFeetOffset[side], forceTorqueErr, dt);
-    //impCtrl.run(offsets->foot_translation[side], forceTorqueErr, dt);
 
     //------------------------
     //    CAP BODY OFFSET
@@ -427,7 +425,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
             state.dFeetOffset[side](5) *= dFeetOffsetVelTol/v;
     }
 
-    offsets.foot_translation[side].z() = state.dFeetOffset[side](2);
+    // Update offsets
+    offsets.foot_translation[side].z() += state.dFeetOffset[side](2);
 
     // for plotting
     bal_state.foot_translation[side] = offsets.foot_translation[side].z();
