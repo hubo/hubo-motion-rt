@@ -94,6 +94,7 @@ DrcHuboKin::DrcHuboKin()
     armConstraints.wrapToJointLimits = false;
     armConstraints.wrapSolutionToJointLimits = false;
     armConstraints.restingValues(armRestValues);
+    armConstraints.performNullSpaceTask = false;
     
     
     jointVals.resize(7); 
@@ -271,25 +272,97 @@ ArmJacobian DrcHuboKin::armJacobian(int side, ArmVector &q)
 }
 
 
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target){ return armIK(side, q, target, q); }
-
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM B, const ArmVector &qPrev)
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target)
 {
     for(int i=0; i<7; i++)
-        jointVals[i] = qPrev[i];
+        jointVals[i] = q[i];
 
     RobotKin::rk_result_t result;
     if(side==LEFT)
-        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, B, armConstraints);
+        result = dampedLeastSquaresIK_linkage("LeftArm", jointVals, target, armConstraints);
     else
-        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, B, armConstraints);
-
+        result = dampedLeastSquaresIK_linkage("RightArm", jointVals, target, armConstraints);
 
     for(int i=0; i<7; i++)
         q[i] = jointVals[i];
 
     for(int i=7; i<ARM_JOINT_COUNT; i++)
         q[i] = 0;
+
+
+    return result;
+}
+
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target, const ArmVector &qNull)
+{
+    RobotKin::rk_result_t result;
+
+    result = armIK(side, q, target);
+
+    if((qNull-q).norm() > 1e-10)
+    {
+        double maxAngle = 0;
+        int maxIdx = -1;
+        for(int i=0; i<q.size(); i++)
+        {
+            if(fabs(qNull[i]-q[i]) > fabs(maxAngle))
+            {
+                maxAngle = qNull[i]-q[i];
+                maxIdx = i;
+            }
+        }
+
+        if(maxIdx == -1)
+        {
+            std::cout << "This should not be happening." << std::endl;
+            return result;
+        }
+
+        Eigen::VectorXd dNull(7); dNull.setZero();
+        dNull(maxIdx) = maxAngle;
+
+        ArmJacobian J = armJacobian(side, q);
+        JacobiSVD<ArmJacobian> svdJ;
+
+        svdJ.compute(J, ComputeFullV);
+
+
+        double nullStepSize = 5/180*M_PI/200;
+        double thresh = 1e-6;
+        double max = 0;
+        int col = -1;
+        for(int i=0; i<svdJ.singularValues().size(); i++)
+        {
+            if( svdJ.singularValues()(i) < thresh)
+            {
+                double check = svdJ.matrixV().col(i).transpose().dot(dNull);
+                if( fabs(check) >= fabs(max) )
+                {
+                    max = check;
+                    col = i;
+                }
+            }
+        }
+
+        for(int i=svdJ.singularValues().size(); i<svdJ.matrixV().cols(); i++)
+        {
+            double check = svdJ.matrixV().col(i).transpose().dot(dNull);
+            if( fabs(check) >= fabs(max) )
+            {
+                max = check;
+                col = i;
+            }
+        }
+
+        if( col >= 0 && fabs(max) > 1e-6 )
+        {
+            VectorXd nullStep = max*svdJ.matrixV().col(col).transpose()/fabs(max);
+            clampMaxAbs(nullStep, nullStepSize);
+
+            for(int j=0; j<nullStep.size(); j++)
+                q[j] += nullStep[j];
+        }
+    }
 
     return result;
 }

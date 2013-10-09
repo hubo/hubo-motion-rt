@@ -268,14 +268,30 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     if(dual)
         lastAngles[alt] = armAngles[alt];
     
-    rk_result_t result = kin.armIK(side, armAngles[side], next[side]);
+    ArmVector qNull;
+    for(int n=0; n<7; n++)
+        qNull[n] = cmd.arm_angles[side][n];
+
+    rk_result_t result = kin.armIK(side, armAngles[side], next[side], qNull);
     if( result != RK_SOLVED )
+    {
         cout << rk_result_to_string(result) << " "; fflush(stdout);
+        cmd.m_mode[side] = MC_HALT;
+        if(dual)
+            cmd.m_mode[alt] = MC_HALT;
+    }
     if(dual)
     {
+        for(int n=0; n<7; n++)
+            qNull[n] = cmd.arm_angles[alt][n];
+
         result = kin.armIK(alt, armAngles[alt], next[side]);
         if( result != RK_SOLVED )
+        {
             cout << "Alt arm " << rk_result_to_string(result) << " "; fflush(stdout);
+            cmd.m_mode[RIGHT] = MC_HALT;
+            cmd.m_mode[LEFT] = MC_HALT;
+        }
     }
 
 
