@@ -339,118 +339,78 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         nudge_state_t &state, walking_gains_t &gains, BalanceOffsets &offsets, double dt )
 {
     counter++;
-    //-------------------------
-    //      STANCE TYPE
-    //-------------------------
-    // Figure out if we're in single or double support stance and which leg
-    int side, curSide;    //!< variable for swing leg
     int counterMax = 40;
-//    unsigned char swing_right[4] = {1,0,0,0};
-//    unsigned char swing_left[4] = {0,1,0,0};
-//    if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
-//        side = LEFT;
-//    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
-//        side = RIGHT;
-//    else
-//        side = 100;
-    //side = RIGHT;
-    Eigen::Vector2d fz;
-    for(int i=0; i<2; i++)
-        fz(i) = hubo.getFootFz(i);
-    Eigen::Vector2d fzVel = fz - state.prevFz;
-    // get landing foot
-    if(fz(LEFT) > gains.force_min_threshold && fz(LEFT) < gains.force_max_threshold && fzVel(LEFT) > 0)
-        side = LEFT;
-    else if(fz(RIGHT) > gains.force_min_threshold && fz(RIGHT) < gains.force_max_threshold && fzVel(RIGHT) > 0)
-        side = RIGHT;
-    else
-        side = 100;
-
-    state.prevFz = fz;
-
-    curSide = side;
-    // Set side to previous swing foot if in double support
-    if(LEFT != side && RIGHT != side)
-        side = state.prevSwingFoot;
+    Eigen::Vector3d spring_gain, damping_gain;
+    Eigen::Vector3d forceTorqueErr[2];
 
     //------------------------------
     //  MASS, SPRING, DAMPING GAINS
     //------------------------------
-    Eigen::Vector3d spring_gain, damping_gain;
-
     spring_gain.setZero(); damping_gain.setZero();
     spring_gain.z() = gains.spring_gain;
     damping_gain.z() = gains.damping_gain;
-
-    // Set Impedance Controller gains
     impCtrl.setGains(spring_gain, damping_gain);
     if(gains.fz_response > 0)
         impCtrl.setMass(gains.fz_response);
 
-    //-------------------------
-    //   FORCE/TORQUE ERROR
-    //-------------------------
-    // Averaged torque error in ankles (roll and pitch) (yaw is always zero)
-    //FIXME The version below is has elem.torques negative b/c hubomz computes reaction torque at ankle
-    // instead of torque at F/T sensor
-    Eigen::Vector3d forceTorqueErr;
-    forceTorqueErr.setZero();
-    forceTorqueErr(2) = hubo.getFootFz(side); //FIXME should be positive
-
-    // Slowly turn off controller during double support phase for the previous swing foot
-    if(curSide != LEFT && curSide != RIGHT)
-        forceTorqueErr(2) = 0;
-
-    // Prevent negative forces on the feet (ie. pulling the feet down)
-    if(forceTorqueErr(2) < 0)
-        forceTorqueErr(2) = 0.0;
-
-    //------------------------
-    //  IMPEDANCE CONTROLLER
-    //------------------------
-    // Run impedance controller on swing leg
-    state.dFeetOffset[side](2) = offsets.foot_translation[side].z();
-    impCtrl.run(state.dFeetOffset[side], forceTorqueErr, dt);
-    //impCtrl.run(offsets->foot_translation[side], forceTorqueErr, dt);
-
-    //------------------------
-    //    CAP BODY OFFSET
-    //------------------------
-    const double dFeetOffsetTol = 0.05; // max offset in z (m)
-    const double dFeetOffsetVelTol = dFeetOffsetTol / dt;
-    double n = fabs(state.dFeetOffset[side](2)); // grab abs of z offset
-    double v = fabs(state.dFeetOffset[side](5)); // grab abs of z velocity
-    if(n > dFeetOffsetTol)
+    // Run landing controller on both legs
+    for(int side=0; side<2; side++)
     {
-        state.dFeetOffset[side](2) *= dFeetOffsetTol/n;
-        if(v > dFeetOffsetVelTol)
-            state.dFeetOffset[side](5) *= dFeetOffsetVelTol/v;
-    }
+        //-------------------------
+        //   FORCE/TORQUE ERROR
+        //-------------------------
+        forceTorqueErr[side].setZero();
+        forceTorqueErr[side](2) = hubo.getFootFz(side); //FIXME should be positive
 
-    offsets.foot_translation[side].z() = state.dFeetOffset[side](2);
+        // Prevent negative forces on the feet (ie. pulling the feet down)
+        if(forceTorqueErr[side](2) < 0)
+            forceTorqueErr[side](2) = 0.0;
 
-    // for plotting
-    bal_state.foot_translation[side] = offsets.foot_translation[side].z();
+        //------------------------
+        //  IMPEDANCE CONTROLLER
+        //------------------------
+        // Run impedance controller on swing leg
+        state.dFeetOffset[side](2) = offsets.foot_translation[side].z();
+        impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
 
-    //----------------------
-    //   DEBUG PRINT OUT
-    //----------------------
-    if(counter >= counterMax)
-    {
-        if(true)
+        //------------------------
+        //    CAP BODY OFFSET
+        //------------------------
+        const double dFeetOffsetTol = 0.05; // max offset in z (m)
+        const double dFeetOffsetVelTol = dFeetOffsetTol / dt;
+        double n = fabs(state.dFeetOffset[side](2)); // grab abs of z offset
+        double v = fabs(state.dFeetOffset[side](5)); // grab abs of z velocity
+        if(n > dFeetOffsetTol)
         {
-            std::cout << std::setprecision(4)
-                      << "side " << curSide
-                      << "\tFz " << forceTorqueErr(2)
-                      << "\toff " << state.dFeetOffset[side](2) << " " << state.dFeetOffset[side](5)
-                      << std::endl;
+            state.dFeetOffset[side](2) *= dFeetOffsetTol/n;
+            if(v > dFeetOffsetVelTol)
+                state.dFeetOffset[side](5) *= dFeetOffsetVelTol/v;
+        }
+
+        // Update offsets
+        offsets.foot_translation[side].z() = state.dFeetOffset[side](2);
+
+        // for plotting
+        bal_state.foot_translation[side] = offsets.foot_translation[side].z();
+
+        //----------------------
+        //   DEBUG PRINT OUT
+        //----------------------
+        if(counter >= counterMax)
+        {
+            if(true)
+            {
+                std::cout << std::setprecision(4)
+                          << "side " << side
+                          << "\tFz " << forceTorqueErr[side](2)
+                          << "\toff " << state.dFeetOffset[side](2) << " " << state.dFeetOffset[side](5)
+                          << std::endl;
+            }
         }
     }
 
     if(counter > counterMax)
         counter = 0;
-
-    state.prevSwingFoot = side;
 }
 // END of landingController()
 
