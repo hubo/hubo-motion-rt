@@ -345,15 +345,29 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     // Figure out if we're in single or double support stance and which leg
     int side, curSide;    //!< variable for swing leg
     int counterMax = 40;
-    unsigned char swing_right[4] = {1,0,0,0};
-    unsigned char swing_left[4] = {0,1,0,0};
-    if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
+//    unsigned char swing_right[4] = {1,0,0,0};
+//    unsigned char swing_left[4] = {0,1,0,0};
+//    if(swing_left[0] == elem.supporting[0] && swing_left[1] == elem.supporting[1])
+//        side = LEFT;
+//    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
+//        side = RIGHT;
+//    else
+//        side = 100;
+    //side = RIGHT;
+    Eigen::Vector2d fz;
+    for(int i=0; i<2; i++)
+        fz(i) = hubo.getFootFz(i);
+    Eigen::Vector2d fzVel = fz - state.prevFz;
+    // get landing foot
+    if(fz(LEFT) > gains.force_min_threshold && fz(LEFT) < gains.force_max_threshold && fzVel(LEFT) > 0)
         side = LEFT;
-    else if(swing_right[0] == elem.supporting[0] && swing_right[1] == elem.supporting[1])
+    else if(fz(RIGHT) > gains.force_min_threshold && fz(RIGHT) < gains.force_max_threshold && fzVel(RIGHT) > 0)
         side = RIGHT;
     else
         side = 100;
-    //side = RIGHT;
+
+    state.prevFz = fz;
+
     curSide = side;
     // Set side to previous swing foot if in double support
     if(LEFT != side && RIGHT != side)
@@ -374,31 +388,6 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
         impCtrl.setMass(gains.fz_response);
 
     //-------------------------
-    //    COPY JOINT ANGLES
-    //-------------------------
-    // Store leg joint angels for current trajectory timestep
-//    Vector6d qPrev;
-
-//    if(LEFT == side)
-//    {
-//        qPrev(HY) = elem.angles[LHY];
-//        qPrev(HR) = elem.angles[LHR];
-//        qPrev(HP) = elem.angles[LHP];
-//        qPrev(KN) = elem.angles[LKN];
-//        qPrev(AP) = elem.angles[LAP];
-//        qPrev(AR) = elem.angles[LAR];
-//    }
-//    else
-//    {
-//        qPrev(HY) = elem.angles[RHY];
-//        qPrev(HR) = elem.angles[RHR];
-//        qPrev(HP) = elem.angles[RHP];
-//        qPrev(KN) = elem.angles[RKN];
-//        qPrev(AP) = elem.angles[RAP];
-//        qPrev(AR) = elem.angles[RAR];
-//    }
-
-    //-------------------------
     //   FORCE/TORQUE ERROR
     //-------------------------
     // Averaged torque error in ankles (roll and pitch) (yaw is always zero)
@@ -410,11 +399,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
     // Slowly turn off controller during double support phase for the previous swing foot
     if(curSide != LEFT && curSide != RIGHT)
-        state.doubleSupportCount++;
-    else
-        state.doubleSupportCount = 0;
-    if(forceTorqueErr(2) > 200 && state.doubleSupportCount <= m_doubleSupportTicks/2)
-        forceTorqueErr(2) *= (1 - (state.doubleSupportCount / m_doubleSupportTicks/2));
+        forceTorqueErr(2) = 0;
 
     // Prevent negative forces on the feet (ie. pulling the feet down)
     if(forceTorqueErr(2) < 0)
@@ -427,9 +412,6 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
     state.dFeetOffset[side](2) = offsets.foot_translation[side].z();
     impCtrl.run(state.dFeetOffset[side], forceTorqueErr, dt);
     //impCtrl.run(offsets->foot_translation[side], forceTorqueErr, dt);
-
-    // Decay the dFeetOffset
-    // state.dFeetOffset -= gains.decay_gain[LEFT]*state.dFeetOffset;
 
     //------------------------
     //    CAP BODY OFFSET
@@ -447,42 +429,8 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
 
     offsets.foot_translation[side].z() = state.dFeetOffset[side](2);
 
-    //------------------------
-    //    ADJUST FEET TFs
-    //------------------------
-    // Pretranslate feet TF by integrated feet error translation vector
-//    Eigen::Isometry3d footTF, tempFootTF;
-//    hubo.huboLegFK( footTF, qPrev, side );
-//    tempFootTF = footTF.pretranslate(state.dFeetOffset[side].block<3,1>(0,0));
-
-    //------------------------
-    //   GET NEW LEG ANGLES
-    //------------------------
-    // Run IK on the adjusted feet TF to get new joint angles
-//    bool ok = false;
-//    // Check IK for each new foot TF. If either fails, use previous feet TF
-//    // New joint angles for both legs
-//    Vector6d qNew;
-//    ok = hubo.huboLegIK(qNew, tempFootTF, qPrev, side);
-//    if(ok)
-//    {
-//        state.prevdFeetOffset[side] = state.dFeetOffset[side];
-//    }
-//    else // use previous integrated foot offset to get joint angles
-//    {
-//        std::cout << "IK Failed in impedance controller. Using previous feet TF.\n";
-//        // Pretranslate foot TF by integrated foot error translation vector
-//        footTF.pretranslate(state.prevdFeetOffset[side].block<3,1>(0,0));
-//        hubo.huboLegIK(qNew, footTF, qPrev, side);
-//    }
-
-//    double jointMax = 0;
-//    for(int i=0; i<6; i++)
-//    {
-//        double diff = qNew(i) - qPrev(i);
-//        if(diff > jointMax)
-//            jointMax = diff;
-//    }
+    // for plotting
+    bal_state.foot_translation[side] = offsets.foot_translation[side].z();
 
     //----------------------
     //   DEBUG PRINT OUT
@@ -498,31 +446,7 @@ void Walker::landingController( Hubo_Control &hubo, zmp_traj_element_t &elem,
                       << std::endl;
         }
     }
-    //-----------------------
-    //   SET JOINT ANGLES
-    //-----------------------
-    // Set leg joint angles for current timestep of trajectory
-//    if(true)
-//    {
-//        if(LEFT == side)
-//        {
-//            elem.angles[LHY] = qNew(HY);
-//            elem.angles[LHR] = qNew(HR);
-//            elem.angles[LHP] = qNew(HP);
-//            elem.angles[LKN] = qNew(KN);
-//            elem.angles[LAP] = qNew(AP);
-//            elem.angles[LAR] = qNew(AR);
-//        }
-//        else
-//        {
-//            elem.angles[RHY] = qNew(HY);
-//            elem.angles[RHR] = qNew(HR);
-//            elem.angles[RHP] = qNew(HP);
-//            elem.angles[RKN] = qNew(KN);
-//            elem.angles[RAP] = qNew(AP);
-//            elem.angles[RAR] = qNew(AR);
-//        }
-//    }
+
     if(counter > counterMax)
         counter = 0;
 
@@ -1123,13 +1047,15 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 //    std::cout << "before: ";
 //    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
 //    std::cout << "\n";
-
-    //flattenFoot( hubo, nextElem, state, gains, dt );
-    //straightenBack( hubo, nextElem, state, gains, dt );
-    //complyKnee( hubo, tempNextElem, state, gains, dt );
-    if(gains.useLandingController && GOTO_BIPED != m_walkDirection)
-        landingController( hubo, tempNextElem, state, gains, offsets, dt );
-    //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
+    if(GOTO_BIPED != m_walkDirection && GOTO_QUADRUPED != m_walkDirection)
+    {
+        flattenFoot( hubo, nextElem, state, gains, dt );
+        //straightenBack( hubo, nextElem, state, gains, dt );
+        //complyKnee( hubo, tempNextElem, state, gains, dt );
+        if(gains.useLandingController)
+            landingController( hubo, tempNextElem, state, gains, offsets, dt );
+        //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
+    }
 
 //    std::cout << "after: ";
 //    for (int i=0; i<6; ++i) { std::cout << tempNextElem.angles[legidx[i]] << " "; }
