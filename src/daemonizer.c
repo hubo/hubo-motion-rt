@@ -275,16 +275,6 @@ void daemonize(const char *daemon_name, int priority)
     if( priority >= 0 )
         daemon_prioritize(priority);
 
-    // Lock memory
-
-    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
-    {
-        fprintf(stderr, "mlockall Failed!\n");
-        exit( EXIT_FAILURE );
-    }
-
-    // Pre-fault our stack
-    stack_prefault();
 
     syslog( LOG_NOTICE, "Daemonization finished - Process Beginning" );
 }
@@ -302,6 +292,18 @@ void daemon_prioritize(int priority)
         fprintf(stderr, "sched_setscheduler Failed!\n");
         exit( EXIT_FAILURE );
     }
+
+
+    // Lock memory
+
+    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+    {
+        fprintf(stderr, "mlockall Failed!\n");
+        exit( EXIT_FAILURE );
+    }
+
+    // Pre-fault our stack
+    stack_prefault();
 }
 
 

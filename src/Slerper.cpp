@@ -35,13 +35,35 @@ Slerper::Slerper() :
         W[i] = 0;
         dW[i] = 0;
     }
+
+    worstOffender = -2;
+    worstOffense = 0;
     
     
     limb[RIGHT] = "RightArm";
     limb[LEFT]  = "LeftArm";
 
+    dump = fopen("output-waypoints", "a+");
+
+}
+
+void Slerper::resetSlerper(int side, Hubo_Control &hubo)
+{
+    kin.updateHubo(hubo, false);
     
 
+    next[side] = kin.linkage(limb[side]).tool().respectToRobot();
+    
+    for(int i=0; i<2; i++)
+    {
+        dr[side] = TRANSLATION::Zero();
+        V[side] = TRANSLATION::Zero();
+        dV[side] = TRANSLATION::Zero();
+        
+        angle[side] = 0;
+        W[side] = 0;
+        dW[side] = 0;
+    }
 }
 
 #ifdef HAVE_REFLEX
@@ -73,8 +95,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
-//    bool verbose = true;
     bool verbose = false;
+//    bool verbose = true;
 
     kin.updateHubo(hubo, false);
     
@@ -84,6 +106,11 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     else
         dual = false;
     
+    if(cmd.eeSpeedOverride==1)
+        nomSpeed = cmd.eeNomSpeed;
+
+    if(cmd.eeRotationalSpeedOverride==1)
+        nomSpeed = cmd.eeNomRotationalSpeed;
     
     int alt;
     if(side==LEFT)
@@ -91,8 +118,38 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     else
         alt = LEFT;
 
-    kin.resetTool(side);
-  
+    ArmVector nomJointSpeed, nomJointAcc; nomJointSpeed.setOnes(); nomJointAcc.setOnes();
+    nomJointSpeed = 2.0*nomJointSpeed;
+    nomJointAcc   = 10.0*nomJointAcc;
+
+    hubo.setArmNomSpeeds(side, nomJointSpeed);
+    hubo.setArmNomAcc(side, nomJointAcc);
+
+    if(dual)
+    {
+        hubo.setArmNomSpeeds(alt, nomJointSpeed);
+        hubo.setArmNomAcc(alt, nomJointAcc);
+    }
+
+    start = next[side];
+
+    next[side] = TRANSFORM::Identity();
+    
+
+    RobotKin::TRANSFORM toolTf = RobotKin::TRANSFORM::Identity();
+    toolTf.translate( Vector3d(cmd.m_tool[side].t_pose.x,
+                               cmd.m_tool[side].t_pose.y,
+                               cmd.m_tool[side].t_pose.z) );
+    toolTf.rotate( Eigen::Quaterniond(cmd.m_tool[side].t_pose.w,
+                                      cmd.m_tool[side].t_pose.i,
+                                      cmd.m_tool[side].t_pose.j,
+                                      cmd.m_tool[side].t_pose.k) );
+    
+    start = start * kin.getTool(side).inverse() * toolTf;
+
+
+    kin.setTool(side, toolTf);
+
     if(dual)
     {
         RobotKin::TRANSFORM altTf = RobotKin::TRANSFORM::Identity();
@@ -106,20 +163,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         kin.setTool(alt, altTf);
     }
     
-    
-//    start = kin.linkage(limb[side]).tool().withRespectTo(kin.joint("RAP"));
-    start = kin.linkage(limb[side]).tool().withRespectTo(kin.linkage("RightLeg").tool());
 
-    next = TRANSFORM::Identity();
-   
-/* 
-    if(dual)
-    {
-        altStart = kin.linkage(limb[alt]).tool().withRespectTo(kin.joint("RAP"));
-        altNext = TRANSFORM::Identity();
-    }
-*/
-    
     goal = TRANSFORM::Identity();
     goal.translate(TRANSLATION(cmd.pose[side].x, 
                                cmd.pose[side].y,
@@ -128,49 +172,65 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
                             cmd.pose[side].i,
                             cmd.pose[side].j,
                             cmd.pose[side].k));
+
+    if(cmd.m_frame[side] == MC_GLOBAL)
+        goal = kin.linkage("RightLeg").tool().respectToRobot() * goal;
+
+/*
+    com = RobotKin::TRANSLATION(cmd.m_tool[side].com_x,
+                                cmd.m_tool[side].com_y,
+                                cmd.m_tool[side].com_z);
+
+    com = kin.getTool(side).rotation().transpose() * (com - kin.getTool(side).translation());
+
+    kin.linkage(limb[side]).tool().massProperties.setMass(cmd.m_tool[side].mass, com);
+*/    
     
     dr[side] = goal.translation() - start.translation();
 
-//cout << "dr " << dr[side].transpose() << "  :  ";
+    dV[side] = dr[side]/dt;
+    stopSpeed = sqrt(2*nomAcc*dr[side].norm());
+    maxVel = std::min(nomSpeed, stopSpeed);
     
-    dV[side] = dr[side].normalized()*fabs(nomSpeed) - V[side];
+    if( dV[side].norm() > maxVel )
+        dV[side] *= maxVel/dV[side].norm();
+    
+    accel = (dV[side]-V[side])/dt;
+    if( accel.norm() > nomAcc )
+        accel *= nomAcc / accel.norm();
 
-    
-    adr = sqrt(fabs(2.0*nomAcc*dr[side].norm()));
-    if( V[side].norm() >= adr )
-        dV[side] = dr[side].normalized()*adr - V[side];
-    else
-        clampMag(dV[side], fabs(nomAcc*dt));
-    
-    V[side] += dV[side];
-    
-    
+    V[side] += accel*dt;
+
     if( dr[side].norm() > V[side].norm()*dt || dr[side].dot(V[side]) < 0 )
         dr[side] = V[side]*dt;
-
-//cout << "dr " << dr[side].transpose() << "  :  ";
     
     V[side] = dr[side]/dt;
     
-    next.translate(dr[side]);
-    next.translate(start.translation());
-/*
-    if(dual)
-    {
-        altNext.translate(dr[side]);
-        altNext.translate(altStart.translation());
-    }
-*/  
-//    angax = goal.rotation()*start.rotation().transpose();
+    next[side].translate(dr[side]);
+    next[side].translate(start.translation());
+
+
     angax = goal.rotation()*start.rotation().transpose();
     
     angle[side] = angax.angle();
 
-//cout << "angle: " << angle[side] << "\t";
     
     if( angle[side] > M_PI )
         angle[side] = angle[side]-2*M_PI;
     
+    dW[side] = sign(angle[side])/dt;
+    stopRotSpeed = sqrt(2*nomRotAcc*fabs(angle[side]));
+    maxRotVel = std::min( nomRotSpeed, stopRotSpeed );
+
+    if( fabs(dW[side]) > maxRotVel )
+        dW[side] *= maxRotVel/fabs(dW[side]);
+
+    rotAccel = (dW[side] - W[side])/dt;
+    if( fabs(rotAccel) > nomRotAcc )
+        rotAccel *= nomRotAcc/fabs(rotAccel);
+
+    W[side] += rotAccel*dt;
+/*
     dW[side] = sign(angle[side])*nomRotSpeed - W[side];
     
     ada = sqrt(fabs(2.0*nomRotAcc*angle[side]));
@@ -182,42 +242,22 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         dW[side] = -fabs(nomRotAcc*dt);
     
     W[side] += dW[side];
+*/
     
     if( fabs(angle[side]) > fabs(W[side]*dt) || angle[side]*W[side] < 0 )
         angle[side] = W[side]*dt;
-//cout << "angle: " << angle[side] << "\t";
     
     W[side] = angle[side]/dt;
     
-    next.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
-    next.rotate(start.rotation());
-
-/*
-    if(dual)
-    {
-        altNext.rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
-        altNext.rotate(altStart.rotation());
-    }
-*/
-    
-//    cout << "Start : " << endl << start.matrix() << endl << endl;
-//    cout << "Next  : " << dr[side].transpose() << " (" << angle[side] << ")" << endl << next.matrix() << endl << endl;
-    //std::cout << next.translation().z() << "\t:\t";
+    next[side].rotate(Eigen::AngleAxisd(angle[side], angax.axis()));
+    next[side].rotate(start.rotation());
 
 
-//    next = goal;
-if(verbose)
-{
-    cout << endl << "Start:" << endl << start.matrix() << endl << endl
-         << "Next:" << endl << next.matrix() << endl << endl 
-         << "Goal:" << endl << goal.matrix() << endl << endl;
-}
 
-//    next = kin.joint("RAP").respectToRobot()*next;
-    next = kin.linkage("RightLeg").tool().respectToRobot()*next;
-//    if(dual)
-//        altNext = kin.joint("RAP").respectToRobot()*altNext;
-//        altNext = kin.linkage("RightLeg").tool().respectToRobot()*altNext;
+
+//    if(cmd.m_frame[side] == MC_GLOBAL)
+//        next[side] = kin.linkage("RightLeg").tool().respectToRobot()*next[side];
+
 
     
     hubo.getArmAngles(side, armAngles[side]);
@@ -228,53 +268,29 @@ if(verbose)
     if(dual)
         lastAngles[alt] = armAngles[alt];
     
-    rk_result_t result = kin.armIK(side, armAngles[side], next);
-    if(dual)
-        kin.armIK(alt, armAngles[alt], next);
-
-
-
+    rk_result_t result = kin.armIK(side, armAngles[side], next[side]);
     if( result != RK_SOLVED )
         cout << rk_result_to_string(result) << " "; fflush(stdout);
+    if(dual)
+    {
+        result = kin.armIK(alt, armAngles[alt], next[side]);
+        if( result != RK_SOLVED )
+            cout << "Alt arm " << rk_result_to_string(result) << " "; fflush(stdout);
+    }
+
+
 
 if(verbose)
 {
-    cout     << "EE:  " << endl << next.matrix() << endl << endl
-             << "wrt Robot: " << endl << kin.linkage("RightArm").tool().respectToRobot().matrix() << endl << endl
-//             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix() << endl << endl;
-             << "wrt Foot : " << endl << kin.linkage("RightArm").tool().withRespectTo(kin.linkage("RightLeg").tool()).matrix() << endl << endl;
-
-    cout  << "Angles: "  << armAngles[side].transpose() << endl
-          << "Last:   "  << lastAngles[side].transpose() << endl
-          << "Vels: " << (armAngles[side]-lastAngles[side]).transpose()/dt << endl;
+    if(dual)
+        cout << next[side].matrix() << endl << endl << armAngles[alt].transpose() << endl << endl;
 }
-//    cout << endl << endl << goal.matrix() << endl << endl
-//         << kin.linkage("RightArm").tool().withRespectTo(kin.joint("RAP")).matrix();
-    
-//    hubo.setArmTraj(side, armAngles[side], (armAngles[side]-lastAngles[side])/dt);
+
     hubo.setArmAngles(side, armAngles[side]);
-/*
-    hubo.passJointAngle(RSP, armAngles[side](SP));
-    hubo.passJointAngle(RSR, armAngles[side](SR));
-    hubo.passJointAngle(RSY, armAngles[side](SY));
-    hubo.passJointAngle(REB, armAngles[side](EB));
-    hubo.passJointAngle(RWY, armAngles[side](WY));
-    hubo.passJointAngle(RWP, armAngles[side](WP));
-    hubo.passJointAngle(RWR, armAngles[side](WR));
-*/
+
     if(dual)
         hubo.setArmAngles(alt, armAngles[alt]);
-//        hubo.setArmTraj(alt, armAngles[alt], (armAngles[alt]-lastAngles[alt])/dt);
 
-    //std::cout << goal.translation().z() << "\t:\t"
-//              << next.translation().z() << "\t:\t"
-//              << (next.translation()-start.translation()).transpose() << "\t:\t"
-      //        << V[side].z() << "\t:\t"
-
-        //      << armAngles[side].transpose()
-          //    << std::endl;
-    
-//    cout << endl;
 }
 #endif //HAVE_REFLEX
 

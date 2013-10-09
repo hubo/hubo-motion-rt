@@ -86,6 +86,7 @@ public:
 
     void resetTool(int side);
     void setTool(int side, const RobotKin::TRANSFORM offset);
+    RobotKin::TRANSFORM getTool(int side);
 
     
 protected:

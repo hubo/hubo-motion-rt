@@ -42,9 +42,16 @@ using namespace RobotKin;
 
 int main(int argc, char **argv)
 {
+    bool constrained = false;
 
-    double kp = atof(argv[1]);
-    double kd = atof(argv[2]);
+    double kp = 0;
+    double kd = 0;
+
+    if(constrained)
+    {
+        kp = atof(argv[1]);
+        kd = atof(argv[2]);
+    }
 
     if( !(0 <= kp && kp < 1000) )
         return -1;
@@ -116,7 +123,7 @@ int main(int argc, char **argv)
 
         hubo.update(true);
         kin.updateHubo(hubo);
-
+/*
         currentL = kin.linkage("LeftArm").tool().respectToRobot();
 
         err = startL.translation() - currentL.translation();
@@ -140,21 +147,21 @@ int main(int argc, char **argv)
 
         wrench << err, rot;
         wrench += vel;
+*/
 
+//        kin.armTorques(LEFT, torques, wrench);
 
-        kin.armTorques(LEFT, torques, wrench);
-
-        hubo.setJointTorque(LSP, torques(SP));
-        hubo.setJointTorque(LSR, torques(SR));
-        hubo.setJointTorque(LSY, torques(SY));
-        hubo.setJointTorque(LEB, torques(EB));
-        hubo.setJointTorque(LWY, torques(WY));
-        hubo.setJointTorque(LWP, torques(WP));
+//        hubo.setJointTorque(LSP, torques(SP));
+//        hubo.setJointTorque(LSR, torques(SR));
+//        hubo.setJointTorque(LSY, torques(SY));
+//        hubo.setJointTorque(LEB, torques(EB));
+//        hubo.setJointTorque(LWY, torques(WY));
+//        hubo.setJointTorque(LWP, torques(WP));
 ////        hubo.setArmTorques(LEFT, torques);
 
 //        if(iter==maxi)
 //            std::cout << torques(EB) << "\t";
-
+/*
         currentR = kin.linkage("RightArm").tool().respectToRobot();
 
         err = startR.translation() - currentR.translation();
@@ -178,7 +185,7 @@ int main(int argc, char **argv)
 
         wrench << err, rot;
         wrench += vel;
-
+*/
 
 //        kin.armTorques(RIGHT, torques, wrench);
 //        kin.armTorques(RIGHT, gravity);
@@ -193,10 +200,12 @@ int main(int argc, char **argv)
 
         if(iter==maxi)
         {
+/*
             std::cout << "Total: " << torques.transpose() << std::endl;
             std::cout << "Grav:  " << gravity.transpose() << std::endl;
             std::cout << "Diff:  " << (torques-gravity).transpose() << std::endl;
-////            std::cout << torques.transpose() << std::endl;
+*/
+            std::cout << "Torque: " << torques(WY) << "\tVel:" << qdot(WY) << std::endl;
         }
 
         hubo.sendControls();

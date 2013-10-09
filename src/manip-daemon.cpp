@@ -70,14 +70,20 @@ void trigger_close( Hubo_Control &hubo );
 void trigger_open( Hubo_Control &hubo );
 void trigger_limp( Hubo_Control &hubo );
 
+void initializeHubo(Hubo_Control &hubo);
+
+
 int main( int argc, char **argv )
 {
-    Hubo_Control hubo("manip-daemon");
-//    Hubo_Control hubo;
+//    Hubo_Control hubo("manip-daemon");
+    Hubo_Control hubo;
+    initializeHubo(hubo);
 
     DrcHuboKin kin;
     kin.updateHubo(hubo);
     Slerper slerp;
+    slerp.resetSlerper(LEFT, hubo);
+    slerp.resetSlerper(RIGHT, hubo);
     
     ach_channel_t chan_manip_cmd;
     ach_channel_t chan_manip_traj;
@@ -119,11 +125,31 @@ int main( int argc, char **argv )
     ArmVector torques[2];
     Vector6d eeWrench[2];
     
+    ArmVector highGainsP, highGainsD; highGainsP.setOnes(); highGainsD.setZero(); 
+    highGainsP *= 80;
+    highGainsP(SR) = 100;
+    highGainsP(SY) = 150;
+    highGainsP(WY) = 100;
+    highGainsP(WP) = 120;
     
     double time=hubo.getTime(), dt=0;
     hubo.update(true);
     dt = hubo.getTime() - time;
     time = hubo.getTime();
+
+    ArmVector defaultNomSpeed, defaultNomAcc; defaultNomSpeed.setOnes(); defaultNomAcc.setOnes();
+    defaultNomSpeed *= 1.0;
+    defaultNomAcc *= 0.8;
+
+    hubo.setLeftArmNomSpeeds(defaultNomSpeed);
+    hubo.setRightArmNomSpeeds(defaultNomSpeed);
+    hubo.setLeftArmNomAcc(defaultNomAcc);
+    hubo.setRightArmNomAcc(defaultNomAcc);
+    hubo.setArmAntiFriction(LEFT, true);
+    hubo.setArmAntiFriction(RIGHT, true);
+
+    hubo.storeArmDefaults(LEFT);
+    hubo.storeArmDefaults(RIGHT);
     
     size_t fs;
     while( !daemon_sig_quit )
@@ -170,15 +196,27 @@ int main( int argc, char **argv )
                 case MC_DUAL_TELEOP:
                     slerp.commenceSlerping(side, manip_cmd[side], hubo, dt); break;
                 case MC_TRANS_EULER:
+                    hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_trans_euler(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRANS_QUAT:
+                    hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_trans_quat(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_TRAJ:
+                    hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_traj(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_HALT:
+                    hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_halt(hubo, manip_state, manip_cmd[side], arms[side], side); break;
                 case MC_ANGLES:
+                    hubo.resetArmDefaults(side);
+                    slerp.resetSlerper(side, hubo);
                     handle_angles(hubo, manip_state, manip_cmd[side], arms[side], side); break;
+                case MC_READY:
+                    slerp.resetSlerper(side, hubo);
             }
             
             // Handle grasping
@@ -230,7 +268,7 @@ int main( int argc, char **argv )
             }
             else if( manip_cmd[side].m_ctrl[side] == MC_COMPLIANT )
             {
-                hubo.setArmCompliance(side, true);
+                hubo.setArmCompliance(side, true, highGainsP, highGainsD);
                 kin.armTorques(side, torques[side]);
                 hubo.setArmTorques(side, torques[side]);
             }
@@ -248,7 +286,7 @@ int main( int argc, char **argv )
                 for(int i=0; i<6; i++)
                     eeWrench[side][i] = manip_cmd[side].m_wrench[side].data[i];
 
-                hubo.setArmCompliance(side, true);
+                hubo.setArmCompliance(side, true, highGainsP, highGainsD);
                 kin.armTorques(side, torques[side], eeWrench[side]);
                 hubo.setArmTorques(side, torques[side]);
             }
@@ -260,6 +298,8 @@ int main( int argc, char **argv )
         // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
         if( OVR_SOVEREIGN == manip_state.override )
             hubo.sendControls();
+        hubo.releaseArm(LEFT);
+        hubo.releaseArm(RIGHT);
 
         ach_put( &chan_manip_state, &manip_state, sizeof(manip_state) );
     }
@@ -271,6 +311,18 @@ int main( int argc, char **argv )
 
     return 0;
 }
+
+void initializeHubo( Hubo_Control &hubo )
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        hubo.setJointMaxPWM(i, 8);
+
+    hubo.setJointMaxPWM(LSR, 15);
+    hubo.setJointMaxPWM(LSY, 15);
+    hubo.setJointMaxPWM(LWY, 15);
+    hubo.setJointMaxPWM(LWP, 15);
+}
+
 
 void grasp_close( Hubo_Control &hubo, int side )
 {

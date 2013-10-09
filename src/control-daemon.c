@@ -629,6 +629,13 @@ void controlLoop()
                                 gains.joint[jnt].pwmCommand = sign(ctrl.joint[jnt].torque)*
                                     ((dutyUpper-dutyLower)/(torqueUpper-torqueLower)*(torque-torqueLower)+dutyLower
                                         + fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale) );
+
+                            if(simMode==1 && iter==maxi)
+                                fprintf(stdout, "%s | %06.3f : [%06.3f %06.3f] [%04.1f %04.1f] (%05.2f) : %04.1f ",
+                                        jointNames[jnt], ctrl.joint[jnt].torque,
+                                        torqueLower, torqueUpper, dutyLower, dutyUpper,
+                                        fabs(conversion.joint[jnt].Fmax*conversion.joint[jnt].deadbandScale),
+                                        gains.joint[jnt].pwmCommand);
                             
                         }
                         else
@@ -648,9 +655,9 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += antifriction;
 
-                        if(jnt == RSR)
-                        if(iter==maxi)
-                        fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
+
+                        if(simMode==1 && iter==maxi)
+                            fprintf(stdout, "\t---> (%f) ---> %f : %f\t", H_state.joint[jnt].vel, antifriction, gains.joint[jnt].pwmCommand);
                     }
 
                     if( ctrl.joint[jnt].comp_mode != CTRL_COMP_ON )
@@ -660,10 +667,6 @@ void controlLoop()
                     }
                     else
                     {
-/*
-                        gains.joint[jnt].Kp = ctrl.joint[jnt].Kp;
-                        gains.joint[jnt].Kd = ctrl.joint[jnt].Kd;
-*/
                         gains.joint[jnt].Kp = 0;
                         gains.joint[jnt].Kd = 0;
 
@@ -681,7 +684,40 @@ void controlLoop()
 
                         gains.joint[jnt].pwmCommand += jointspaceDuty;
 
+                        if( ctrl.joint[jnt].friction_mode == CTRL_ANTIFRICTION_ON )
+                        {
+
+                            if( sign(H_state.joint[jnt].vel) != sign(H_ref.ref[jnt] - H_state.joint[jnt].pos) )
+                            {
+                                antifriction = -conversion.joint[jnt].kF*H_state.joint[jnt].vel;
+                                if(fabs(antifriction) > fabs(conversion.joint[jnt].Fmax))
+                                    antifriction = sign(antifriction)*fabs(conversion.joint[jnt].Fmax);
+
+                                gains.joint[jnt].pwmCommand += antifriction;
+                            }
+
+                        }
+
+                        if( ctrl.joint[jnt].torque_mode == CTRL_TORQUE_ON )
+                        {
+
+                            if( sign(ctrl.joint[jnt].torque) != sign(H_ref.ref[jnt] - H_state.joint[jnt].pos) )
+                            {
+                                gains.joint[jnt].pwmCommand += -0.0*sign(ctrl.joint[jnt].torque)
+                                                               *fabs(conversion.joint[jnt].Fmax
+                                                               *conversion.joint[jnt].deadbandScale);
+                            }
+
+                        }
+/*
+                        gains.joint[jnt].pwmCommand += fabs(conversion.joint[jnt].Fmax
+                                                      *conversion.joint[jnt].deadbandScale)
+                                                      *sign(H_ref.ref[jnt]-H_state.joint[jnt].pos);
+*/
                     }
+
+                    if(simMode==1 && iter==maxi)
+                        fprintf(stdout, "\n");
 
                 }
                 else if( ctrl.joint[jnt].ctrl_mode != CTRL_PWM )
