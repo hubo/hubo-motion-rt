@@ -95,8 +95,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd)
 #else //HAVE_REFLEX
 void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hubo, double dt)
 {
-    bool verbose = false;
-//    bool verbose = true;
+//    bool verbose = false;
+    bool verbose = true;
 
     kin.updateHubo(hubo, false);
     
@@ -276,7 +276,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
     if( result != RK_SOLVED )
     {
         cout << rk_result_to_string(result) << " "; fflush(stdout);
-        cmd.m_mode[side] = MC_HALT;
+//        cmd.m_mode[side] = MC_HALT;
         if(dual)
             cmd.m_mode[alt] = MC_HALT;
     }
@@ -298,6 +298,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 
 if(verbose)
 {
+    std::cout << "\tAngles: " << armAngles[side].transpose() << std::endl;
+    std::cout << "qNull: " << qNull.transpose() << std::endl;
     if(dual)
         cout << next[side].matrix() << endl << endl << armAngles[alt].transpose() << endl << endl;
 }

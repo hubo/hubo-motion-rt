@@ -75,8 +75,10 @@ void initializeHubo(Hubo_Control &hubo);
 
 int main( int argc, char **argv )
 {
+//    bool live = true;
+    bool live = false;
 //    Hubo_Control hubo("manip-daemon");
-    Hubo_Control hubo;
+    Hubo_Control hubo(live);
     initializeHubo(hubo);
 
     DrcHuboKin kin;
@@ -133,7 +135,7 @@ int main( int argc, char **argv )
     highGainsP(WP) = 120;
     
     double time=hubo.getTime(), dt=0;
-    hubo.update(true);
+    hubo.update(live);
     dt = hubo.getTime() - time;
     time = hubo.getTime();
 
@@ -150,17 +152,28 @@ int main( int argc, char **argv )
 
     hubo.storeArmDefaults(LEFT);
     hubo.storeArmDefaults(RIGHT);
+
+    bool newRequest[2] = {false, false};
     
     size_t fs;
     while( !daemon_sig_quit )
     {
         // Update hubo, and get latest manipulation and override commands from ach
-        hubo.update(true);
+        hubo.update(live);
         dt = hubo.getTime() - time;
         time = hubo.getTime();
+        if(!live)
+            dt = 1.0/200.0;
+
         kin.updateHubo(hubo);
         
-        ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
+        ach_status_t r = ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
+        if( ACH_OK == r || ACH_MISSED_FRAME == r )
+        {
+            for(int nr=0; nr<2; nr++)
+                newRequest[nr] = true;
+        }
+
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
 
         if(manip_req.trigger == MC_GRASP_NOW ||
@@ -182,12 +195,17 @@ int main( int argc, char **argv )
         {
             // If manip should interrupt current arm motion or it's ready,
             // then copy manip_req into manip_cmd
-            if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
+            if( newRequest[side] && (manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY) )
+            {
                 memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
+                newRequest[side] = false;
+            }
 
             // Update manip state mode and goal ID            
             manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
             manip_state.goalID[side] = manip_cmd[side].goalID[side];
+
+//            std::cout << "Before" << std::endl <<  manip_cmd[side] << std::endl;
 
             // Handle arm motions
             switch( manip_cmd[side].m_mode[side] )
@@ -218,6 +236,8 @@ int main( int argc, char **argv )
                 case MC_READY:
                     slerp.resetSlerper(side, hubo);
             }
+
+//            std::cout << "After" << std::endl << manip_cmd[side] << std::endl;
             
             // Handle grasping
             if( manip_cmd[side].m_grasp[side]==MC_GRASP_NOW ||
@@ -489,6 +509,7 @@ manip_error_t handle_traj(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_ma
 
 manip_error_t handle_angles(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_manip_cmd_t &cmd, ArmVector &arm, int side)
 {
+
     // Set arm joint angles and get arm joint states
     ArmVector armAngles, armStates;
 
@@ -513,4 +534,6 @@ manip_error_t handle_angles(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_
         state.mode_state[side] = MC_HALT;
 
     hubo.getArmAngleStates( side, arm );
+
+    std::cout << armAngles.transpose() << std::endl;
 }

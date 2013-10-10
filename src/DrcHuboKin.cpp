@@ -88,7 +88,7 @@ DrcHuboKin::DrcHuboKin()
 
     
     armConstraints.performNullSpaceTask = false;
-    armConstraints.maxAttempts = 1;
+    armConstraints.maxAttempts = 2;
     armConstraints.maxIterations = 20;
     armConstraints.convergenceTolerance = 0.001;
     armConstraints.wrapToJointLimits = false;
@@ -215,6 +215,21 @@ void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
     updateFrames();
 }
 
+bool DrcHuboKin::checkIfArmIsInsideLimits(int side, ArmVector q, double thresh)
+{
+    std::string limb;
+    if( side==LEFT )
+        limb = "LeftArm";
+    else
+        limb = "RightArm";
+
+    for(int i=0; i<7; i++)
+        if( q[i] < linkage(limb).joint(i).min()+thresh || linkage(limb).joint(i).max()-thresh < q[i] )
+            return false;
+
+    return true;
+}
+
 void DrcHuboKin::updateArmJoints(int side, const ArmVector &jointValues)
 {
     if(side==RIGHT)
@@ -293,33 +308,27 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     return result;
 }
 
-RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target, const ArmVector &qNull)
+RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target, ArmVector &qNull)
 {
     RobotKin::rk_result_t result;
 
+    double minElbow = 12.0/180.0*M_PI;
+    if( q(EB) > -minElbow )
+        q(EB) = -minElbow;
+
     result = armIK(side, q, target);
+
+    for(int i=7; i<q.size(); i++)
+    {
+        q[i] = 0;
+        qNull[i] = 0;
+    }
 
     if((qNull-q).norm() > 1e-10)
     {
-        double maxAngle = 0;
-        int maxIdx = -1;
-        for(int i=0; i<q.size(); i++)
-        {
-            if(fabs(qNull[i]-q[i]) > fabs(maxAngle))
-            {
-                maxAngle = qNull[i]-q[i];
-                maxIdx = i;
-            }
-        }
-
-        if(maxIdx == -1)
-        {
-            std::cout << "This should not be happening." << std::endl;
-            return result;
-        }
-
         Eigen::VectorXd dNull(7); dNull.setZero();
-        dNull(maxIdx) = maxAngle;
+        for(int i=0; i<7; i++)
+            dNull[i] = qNull[i]-q[i];
 
         ArmJacobian J = armJacobian(side, q);
         JacobiSVD<ArmJacobian> svdJ;
@@ -327,45 +336,96 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         svdJ.compute(J, ComputeFullV);
 
 
-        double nullStepSize = 5/180*M_PI/200;
+        double nullStepSize = 10.0/180.0*M_PI/200.0;
         double thresh = 1e-6;
-        double max = 0;
-        int col = -1;
+
+        Eigen::MatrixXd Xcheck(7,7);
+        Xcheck.block(0, 0, 7, 1) = svdJ.matrixV().col(6);
+        int nextCol = 1;
         for(int i=0; i<svdJ.singularValues().size(); i++)
         {
-            if( svdJ.singularValues()(i) < thresh)
+            if(svdJ.singularValues()(i) < thresh)
             {
-                double check = svdJ.matrixV().col(i).transpose().dot(dNull);
-                if( fabs(check) >= fabs(max) )
-                {
-                    max = check;
-                    col = i;
-                }
+                Xcheck.block(0, nextCol, 7, 1) = svdJ.matrixV().col(i);
+                nextCol++;
             }
         }
 
-        for(int i=svdJ.singularValues().size(); i<svdJ.matrixV().cols(); i++)
-        {
-            double check = svdJ.matrixV().col(i).transpose().dot(dNull);
-            if( fabs(check) >= fabs(max) )
-            {
-                max = check;
-                col = i;
-            }
-        }
+        Eigen::MatrixXd X = Xcheck.block(0, 0, 7, nextCol);
 
-        if( col >= 0 && fabs(max) > 1e-6 )
-        {
-            VectorXd nullStep = max*svdJ.matrixV().col(col).transpose()/fabs(max);
-            clampMaxAbs(nullStep, nullStepSize);
+        VectorXd nullStep = X*X.transpose() * dNull;
+        std::cout << nullStep.transpose() << std::endl;
+        clampMaxAbs(nullStep, nullStepSize);
+        ArmVector testq = q;
+        for(int j=0; j<nullStep.size(); j++)
+            testq[j] += nullStep[j];
 
-            for(int j=0; j<nullStep.size(); j++)
-                q[j] += nullStep[j];
-        }
+        if(checkIfArmIsInsideLimits(side, testq))
+            q = testq;
     }
+    else
+        std::cout << (qNull-q).norm() << std::endl;
 
     return result;
 }
+
+
+
+double sign(double x)
+{
+    return (x < 0) ? -1 : (x > 0);
+}
+
+void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
+                                           const std::vector<size_t> &indices, Eigen::VectorXd &values)
+{
+    if(attemptNumber == 0)
+    {
+        return;
+    }
+    else
+    {
+        double nudge = 20.0*M_PI/180.0;
+        if(values(EB) > -nudge)
+        {
+            std::cout << "Nudging elbow" << std::endl;
+            values(EB) = -nudge;
+        }
+
+        if( robot.joint(indices[SR]).name()=="RSR" && fabs(values(SR)+90*M_PI/180) < nudge)
+        {
+            std::cout << "Nudging RSR" << std::endl;
+            values(SR) = (-90*M_PI/180+nudge*sign(values(SR)+90*M_PI/180));
+        }
+
+        if( robot.joint(indices[SR]).name()=="LSR" && fabs(values(SR)-90*M_PI/180) < nudge)
+        {
+            std::cout << "Nudging LSR" << std::endl;
+            values(SR) = (90*M_PI/180+nudge*sign(values(SR)+90*M_PI/180));
+        }
+
+        if( fabs(values(WP)) < nudge )
+        {
+            std::cout << "Nudging WP" << std::endl;
+            values(WP) = sign(values(WP))*nudge;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Isometry3d target)
 { return legIK(side, q, target, q); }
@@ -644,38 +704,6 @@ RobotKin::rk_result_t DrcHuboKin::legIK(int side, LegVector &q, const Eigen::Iso
     else
         return RobotKin::RK_NO_SOLUTION;
 }
-
-
-
-double sign(double x)
-{
-    return (x < 0) ? -1 : (x > 0);
-}
-
-void DrcConstraints::iterativeJacobianSeed(Robot &robot, size_t attemptNumber,
-                                           const std::vector<size_t> &indices, Eigen::VectorXd &values)
-{
-    if(attemptNumber == 0)
-    {
-        return;
-    }
-    else
-    {
-        if(values(EB) > -5*M_PI/180)
-            values(EB) = -30*M_PI/180;
-
-        if( robot.joint(indices[SR]).name()=="RSR" && fabs(values(SR)+90*M_PI/180) < 3*M_PI/180)
-            values(SR) = (-90+10*sign(values(SR)+90*M_PI/180))*M_PI/180;
-
-        if( robot.joint(indices[SR]).name()=="LSR" && fabs(values(SR)-90*M_PI/180) < 3*M_PI/180)
-            values(SR) = (90+10*sign(values(SR)+90*M_PI/180))*M_PI/180;
-
-        if( fabs(values(WP)) < 3*M_PI/180 )
-            values(WP) = sign(values(WP))*10*M_PI/180;
-
-    }
-}
-
 
 
 
