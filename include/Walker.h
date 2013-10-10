@@ -50,8 +50,6 @@ typedef struct nudge_state {
 
     Eigen::Vector3d nudge;
     Eigen::Vector3d spin;
-    Eigen::Vector3d integratedFeetOffset;
-    Eigen::Vector3d prevIntegratedFeetOffset;
     Eigen::Matrix<double,6,1> dFeetOffset[2];
     Eigen::Matrix<double,6,1> prevdFeetOffset[2];
 
@@ -65,6 +63,7 @@ typedef struct nudge_state {
     Eigen::Vector3d prevTorqueErr[2];
     Eigen::Vector3d imu_offset;
 
+    Eigen::Vector2d prevFz;
     int prevSwingFoot;
     int doubleSupportCount;
     double V0[HUBO_JOINT_COUNT];
