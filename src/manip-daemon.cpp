@@ -75,8 +75,8 @@ void initializeHubo(Hubo_Control &hubo);
 
 int main( int argc, char **argv )
 {
-    Hubo_Control hubo("manip-daemon");
-//    Hubo_Control hubo;
+//    Hubo_Control hubo("manip-daemon");
+    Hubo_Control hubo;
     initializeHubo(hubo);
 
     DrcHuboKin kin;
@@ -145,8 +145,8 @@ int main( int argc, char **argv )
     hubo.setRightArmNomSpeeds(defaultNomSpeed);
     hubo.setLeftArmNomAcc(defaultNomAcc);
     hubo.setRightArmNomAcc(defaultNomAcc);
-    hubo.setArmAntiFriction(LEFT, true);
-    hubo.setArmAntiFriction(RIGHT, true);
+    hubo.setArmAntiFriction(LEFT, false);
+    hubo.setArmAntiFriction(RIGHT, false);
 
     hubo.storeArmDefaults(LEFT);
     hubo.storeArmDefaults(RIGHT);

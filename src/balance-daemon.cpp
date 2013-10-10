@@ -95,8 +95,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
 
 int main(int argc, char **argv)
 {
-    Hubo_Control hubo("balance-daemon", 35);
-    //Hubo_Control hubo;
+//    Hubo_Control hubo("balance-daemon", 35);
+    Hubo_Control hubo;
 
     DrcHuboKin kin;
 
@@ -173,7 +173,9 @@ int main(int argc, char **argv)
         }
 
         ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
-        ach_get( &bal_param_chan, &params, sizeof(balance_gains), &fs, NULL, ACH_O_LAST );
+        ach_status_t r = ach_get( &bal_param_chan, &params, sizeof(params), &fs, NULL, ACH_O_LAST );
+
+//        std::cout << cmd.cmd_request << std::endl;
 
         state.m_balance_mode = cmd.cmd_request;
 
@@ -531,6 +533,8 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     hubo.setJointVelocity( RKN, kneeVelR );
     hubo.setJointVelocity( RHP, -kneeVelR/2.0 + legJointVels[RIGHT](HP));
     hubo.setJointVelocity( RHR, legJointVels[RIGHT](HR));
+
+//    std::cout << legJointVels[RIGHT].transpose() << std::endl;
 
     hubo.sendControls();
 }

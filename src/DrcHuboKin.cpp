@@ -95,13 +95,14 @@ DrcHuboKin::DrcHuboKin()
     armRestValues <<  0, 0, 0, -30*M_PI/180, 0, 0, 0;
 
     
-    armConstraints.performNullSpaceTask = false;
     armConstraints.maxAttempts = 1;
     armConstraints.maxIterations = 20;
     armConstraints.convergenceTolerance = 0.001;
     armConstraints.wrapToJointLimits = false;
     armConstraints.wrapSolutionToJointLimits = false;
     armConstraints.restingValues(armRestValues);
+    armConstraints.performNullSpaceTask = false;
+    
     
     
     jointVals.resize(7); 
