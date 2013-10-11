@@ -370,7 +370,7 @@ void Walker::landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &
         //  IMPEDANCE CONTROLLER
         //------------------------
         // Run impedance controller on swing leg
-        state.dFeetOffset[side](2) = offsets.foot_translation[side].z();
+        offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
         impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
 
         //------------------------
@@ -388,7 +388,7 @@ void Walker::landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &
         }
 
         // Update offsets
-        offsets.foot_translation[side].z() = state.dFeetOffset[side](2);
+        offsets.foot_translation[side].z() += state.dFeetOffset[side](2);
 
         // for plotting
         bal_state.foot_translation[side] = offsets.foot_translation[side].z();
@@ -432,7 +432,6 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
     int counterMax = 40;
     Eigen::Vector3d spring_gain, damping_gain;
     Eigen::Vector3d forceTorqueErr[2];
-    int cur_side;
 
     //------------------------------
     //  MASS, SPRING, DAMPING GAINS
@@ -444,24 +443,30 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
     if(gains.fz_response > 0)
         impCtrl.setMass(gains.fz_response);
 
-    // Get relative landing foot
+    // Get forces on each foot
     Eigen::Vector2d fz;
     for(int i=0; i<2; i++)
         fz(i) = hubo.getFootFz(i);
-    Eigen::Vector2d fzVel = fz - state.prevFz;
-    if(fz(LEFT) > fz(RIGHT) && fzVel(LEFT) > 0)
-        cur_side = LEFT;
-    else
-        cur_side = RIGHT;
-    state.prevFz = fz;
 
-    for(int side=0; side<2; side++)
+    // Get last landing foot
+    if(!state.haveLandingFoot)
+    {
+        if(fz(LEFT) > fz(RIGHT) && fz(RIGHT) > -5 && fz(RIGHT) < 12)
+            state.landingFoot = RIGHT;
+        else if(fz(LEFT) > -10 && fz(LEFT) < 10)
+            state.landingFoot = LEFT;
+        else
+            return;
+        state.haveLandingFoot = true;
+    }
+
+    for(int side=state.landingFoot; side<state.landingFoot+1; side++)
     {
         //-------------------------
         //   FORCE/TORQUE ERROR
         //-------------------------
         forceTorqueErr[side].setZero();
-        forceTorqueErr[side](2) = hubo.getFootFz(side); //FIXME should be positive
+        forceTorqueErr[side](2) = fz(side); //FIXME should be positive
 
         // Prevent negative forces on the feet (ie. pulling the feet down)
         if(forceTorqueErr[side](2) < 0)
@@ -473,8 +478,10 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
         //  IMPEDANCE CONTROLLER
         //------------------------
         // Run impedance controller on swing leg
+        double fzVel = fz(side) - state.prevFz(side);
+        state.prevFz = fz; // save current forces for next iteration
         offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
-        if(side == cur_side && fz(side) < gains.force_max_threshold && fz(side) > gains.force_min_threshold) // side is relatively landing, using landing controller
+        if(fz(side) < gains.force_max_threshold && fz(side) > gains.force_min_threshold) // side is relatively landing, using landing controller
             impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
         else // otherwise just decay offset for that leg
             state.dFeetOffset[side] -= gains.decay_gain * state.dFeetOffset[side];
@@ -1113,11 +1120,13 @@ void Walker::executeTimeStep( Hubo_Control &hubo, zmp_traj_element_t &prevElem,
 //    std::cout << "\n";
     if(GOTO_BIPED != m_walkDirection && GOTO_QUADRUPED != m_walkDirection)
     {
-        flattenFoot( hubo, nextElem, state, gains, dt );
+        //flattenFoot( hubo, nextElem, state, gains, dt );
         //straightenBack( hubo, nextElem, state, gains, dt );
         //complyKnee( hubo, tempNextElem, state, gains, dt );
-        if(gains.useLandingController && timestep >= m_lastLandingTick - .1*ZMP_TRAJ_FREQ_HZ)
-            landingControllerAlwaysOn( hubo, tempNextElem, state, gains, offsets, dt );
+        //if(gains.useLandingController)
+        //    landingControllerAlwaysOn( hubo, tempNextElem, state, gains, offsets, dt );
+        if(gains.useLandingController && timestep >= m_lastLandingTick - 0.4*ZMP_TRAJ_FREQ_HZ)
+            landingControllerLastStep( hubo, tempNextElem, state, gains, offsets, dt );
         //nudgeRefs( hubo, nextElem, state, dt, hkin ); //vprev, verr, dt );
     }
 

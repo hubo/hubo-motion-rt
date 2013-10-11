@@ -64,7 +64,8 @@ typedef struct nudge_state {
     Eigen::Vector3d imu_offset;
 
     Eigen::Vector2d prevFz;
-    int prevSwingFoot;
+    bool haveLandingFoot;
+    int landingFoot;
     int doubleSupportCount;
     double V0[HUBO_JOINT_COUNT];
     
