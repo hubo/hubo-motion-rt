@@ -308,6 +308,49 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     return result;
 }
 
+Eigen::VectorXd DrcHuboKin::getNullStepVector(int side, const ArmVector& q, const ArmVector& qNull)
+{
+    ArmJacobian J = armJacobian(side, q);
+    JacobiSVD<ArmJacobian> svdJ;
+
+    svdJ.compute(J, ComputeFullV);
+
+    double nullStepSize = 10.0/180.0*M_PI/200.0;
+    double thresh = 1e-8;
+    
+    int singularColumns = 1;
+    for(int i=0; i<svdJ.singularValues().size(); i++)
+    {
+        if(svdJ.singularValues()(i) < thresh)
+        {
+            singularColumns++;
+        }
+    }
+
+    Eigen::MatrixXd X(7, singularColumns);
+    X.block(0, 0, 7, 1) = svdJ.matrixV().col(6);
+
+    for(int i=0; i<svdJ.singularValues().size(); i++)
+    {
+        if(svdJ.singularValues()(i) < thresh)
+        {
+            X.block(0, i+1, 7, 1) = svdJ.matrixV().col(i);
+        }
+    }
+
+    Eigen::VectorXd nullStep(7); nullStep.setZero();
+
+    for(int i=0; i<7; i++)
+        nullStep[i] = qNull[i] - q[i];
+
+    nullStep = X*X.transpose() * nullStep;
+
+    clampMaxAbs( nullStep, nullStepSize );
+    
+    return nullStep;
+}
+
+
 RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM target, ArmVector &qNull)
 {
     RobotKin::rk_result_t result;
@@ -354,6 +397,36 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         Eigen::MatrixXd X = Xcheck.block(0, 0, 7, nextCol);
 
         VectorXd nullStep = X*X.transpose() * dNull;
+
+        double mag = nullStep.norm();
+        if (mag < 1e-12) {
+
+            std::cout << "STUCK????\n";
+            
+            Eigen::VectorXd step_pos = X.col(0);
+            clampMaxAbs(step_pos, nullStepSize);
+            
+            ArmVector q_pos = q;
+            for (int i=0; i<7; ++i) { q_pos[i] += alpha * X(i,0); }
+            
+            Eigen::VectorXd dNull_pos = dNull - step_pos; 
+
+            ArmJacobian J_pos = armJacobian(side, q_pos);
+
+            svdJ.compute(J_pos, ComputeFullV);
+            Xcheck = svdJ.matrixV();
+            nextCol = 1;
+            while (svdJ.singularValues()(nextCol) < thresh) { ++nextCol; }
+            X = Xcheck.block(0,0,7,nextCol);
+
+            Eigen::VectorXd nullStep_pos = X*X.transpose() * dNull_pos;
+
+            if (nullStep_pos.norm() > 1e-12) {
+                nullStep = nullStep_pos;
+            }
+
+        }
+
 //        std::cout << nullStep.transpose() << std::endl;
         clampMaxAbs(nullStep, nullStepSize);
         ArmVector testq = q;
@@ -362,6 +435,8 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
 
         if(checkIfArmIsInsideLimits(side, testq))
             q = testq;
+
+        std::cout << "dq  " << dNull.transpose() << " | dN  " << nullStep.transpose() << "  | X  " << X.transpose() << std::endl;
     }
 
     return result;

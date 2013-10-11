@@ -535,5 +535,5 @@ manip_error_t handle_angles(Hubo_Control &hubo, hubo_manip_state_t &state, hubo_
 
     hubo.getArmAngleStates( side, arm );
 
-    std::cout << armAngles.transpose() << std::endl;
+//    std::cout << armAngles.transpose() << std::endl;
 }
