@@ -173,7 +173,7 @@ int main(int argc, char **argv)
         }
 
         ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
-        ach_get( &bal_param_chan, &params, sizeof(balance_gains), &fs, NULL, ACH_O_LAST );
+        ach_get( &bal_param_chan, &params, sizeof(params), &fs, NULL, ACH_O_LAST );
 
         state.m_balance_mode = cmd.cmd_request;
 
@@ -487,8 +487,8 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     
     if( cmd.height-L2 > L1 )
         cmd.height = L1+L2;
-    else if( cmd.height-L2 < 0.25 ) //TODO: Don't hard code this
-        cmd.height = L1+0.2;
+    else if( cmd.height-L2 < 0.249 ) //TODO: Don't hard code this
+        cmd.height = L2+0.249;
 
     double knee = acos( (cmd.height-L2)/L1 )*2;
 
