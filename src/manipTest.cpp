@@ -3,61 +3,65 @@
 #include "manip.h"
 
 using namespace RobotKin;
-
-
+using namespace Eigen;
+using namespace std;
 
 
 
 int main(int argc, char **argv)
 {
-    int side = RIGHT;
-    std::string limb;
-    double dy = 0.1;
-    if(side == LEFT)
-        dy = fabs(dy);
-    else if(side == RIGHT)
-        dy = -fabs(dy);
-        
-
-    if(side==RIGHT)
-        limb = "RightArm";
-    else
-        limb = "LeftArm";
-
-    ach_channel_t chan_manip_cmd;
-    ach_open(&chan_manip_cmd, CHAN_HUBO_MANIP_CMD, NULL);
-
-    Hubo_Control hubo;
-    hubo.update();
     DrcHuboKin kin;
-    kin.updateHubo(hubo);
+    ArmVector qNull;
+//    qNull <<  0.833292, 0.140585, -0.235877, -2.14833, 0.762452, -0.809249, -0.382926, 0, 0, 0;
+//    qNull << -0.849666, -1.19113, 2.24967, -2.14833, -1.87977, 0.857494, -1.61893, 0, 0, 0;
+    qNull << 0.423813, -1.1549, 1.99956, -1.87906, -0.921175, -1.20887, 1.16767, 0, 0, 0;
 
-    hubo_manip_cmd_t manip_cmd;
+    kin.updateArmJoints(RIGHT, qNull);
+    cout << "Null Goal: " << endl << kin.armFK(RIGHT).matrix() << endl << endl;
 
-    TRANSFORM pose = kin.linkage(limb).tool().withRespectTo(kin.joint("RAP"));
-    TRANSFORM goal = TRANSFORM::Identity();
+    TRANSFORM goal = kin.armFK(RIGHT);
+//    TRANSFORM goal = TRANSFORM::Identity();
+//    goal.translate(Vector3d(0.201,-0.2295,-0.3257));
+//    goal.rotate(AngleAxisd(90.0/180.0*M_PI, Vector3d::UnitX()));
+//    goal.rotate(AngleAxisd(-90.0/180.0*M_PI, Vector3d::UnitY()));
 
-    std::cout << pose.matrix() << std::endl;
-    
-    goal.translate( TRANSLATION(0.1,dy,0.25) );
-    goal.translate( pose.translation() );
-    goal.rotate(Eigen::AngleAxisd(-M_PI/2, AXIS(0, 1, 0)));
-    goal.rotate( pose.rotation() );
+    cout << "Goal: " << endl << goal.matrix() << endl << endl;
 
-    
+//    kin.joint("REB").value(-30.0/180.0*M_PI);
 
-    manip_cmd.pose[side].x = goal.translation().x();
-    manip_cmd.pose[side].y = goal.translation().y();
-    manip_cmd.pose[side].z = goal.translation().z();
-    Eigen::Quaterniond quat(goal.rotation());
-    manip_cmd.pose[side].w = quat.w();
-    manip_cmd.pose[side].i = quat.x();
-    manip_cmd.pose[side].j = quat.y();
-    manip_cmd.pose[side].k = quat.z();
+    ArmVector q; q.setZero();
+//    q(EB) = -12.0/180*M_PI;
+    kin.updateArmJoints(RIGHT, q);
 
-    manip_cmd.m_mode[side] = MC_TELEOP;
-    manip_cmd.interrupt[side] = true;
 
-    ach_put(&chan_manip_cmd, &manip_cmd, sizeof(manip_cmd));
+    rk_result_t r = RK_SOLVED;
+
+
+
+    r = kin.armIK(RIGHT, q, goal, qNull);
+    ArmVector firstDiff = qNull-q;
+
+    int iterations = 2000;
+    if(argc > 1)
+        iterations = atoi(argv[1]);
+    for(int i=0; i<iterations; i++)
+    {
+        r = kin.armIK(RIGHT, q, goal, qNull);
+        if( r != RK_SOLVED )
+        {
+            std::cout << rk_result_to_string(r) << std::endl;
+        }
+    }
+    cout << rk_result_to_string(r) << endl;
+
+    cout << "dq: " << (qNull-q).transpose() << endl;
+    cout << "Goal:   " << qNull.transpose() << endl;
+    cout << "Actual: " << q.transpose() << endl << endl;
+
+    cout << "First: " << firstDiff.transpose() << endl;
+    cout << "Last:  " << (qNull-q).transpose() << endl;
+    cout << "Improvement: " << firstDiff.norm() - (qNull-q).norm() << endl;
+    cout << "Final Dist:  " << (qNull-q).norm() << endl;
+    cout << "Iterations: (" << iterations << ")" << endl;
 
 }

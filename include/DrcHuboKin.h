@@ -30,7 +30,7 @@ public:
     RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target, const LegVector &qPrev);
     RobotKin::rk_result_t legIK(int side, LegVector &q, const Eigen::Isometry3d target);
 
-    RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, const ArmVector &qNull);
+    RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, ArmVector &qNull);
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target);
 
     ArmJacobian armJacobian(int side);
@@ -41,6 +41,8 @@ public:
 
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
+
+    bool checkIfArmIsInsideLimits(int side, ArmVector q, double thresh=0);
 
     void updateHubo(Hubo_Control& hubo, bool state=true);
 

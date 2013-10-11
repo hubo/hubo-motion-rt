@@ -298,6 +298,8 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
 
 if(verbose)
 {
+    std::cout << "\tAngles: " << armAngles[side].transpose() << std::endl;
+    std::cout << "qNull: " << qNull.transpose() << std::endl;
     if(dual)
         cout << next[side].matrix() << endl << endl << armAngles[alt].transpose() << endl << endl;
 }
