@@ -14,8 +14,7 @@ int main(int argc, char **argv)
     ArmVector qNull;
 //    qNull <<  0.833292, 0.140585, -0.235877, -2.14833, 0.762452, -0.809249, -0.382926, 0, 0, 0;
 //    qNull << -0.849666, -1.19113, 2.24967, -2.14833, -1.87977, 0.857494, -1.61893, 0, 0, 0;
-    qNull << 1.02719, -0.49557, 0.463562, -1.7126, -0.70092, -2.62406, -1.17622, 0, 0, 0;
-    kin.armConstraints.maxAttempts = 2;
+    qNull << 0.423813, -1.1549, 1.99956, -1.87906, -0.921175, -1.20887, 1.16767, 0, 0, 0;
 
     kin.updateArmJoints(RIGHT, qNull);
     cout << "Null Goal: " << endl << kin.armFK(RIGHT).matrix() << endl << endl;
@@ -48,6 +47,10 @@ int main(int argc, char **argv)
     for(int i=0; i<iterations; i++)
     {
         r = kin.armIK(RIGHT, q, goal, qNull);
+        if( r != RK_SOLVED )
+        {
+            std::cout << rk_result_to_string(r) << std::endl;
+        }
     }
     cout << rk_result_to_string(r) << endl;
 

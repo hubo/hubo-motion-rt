@@ -354,7 +354,7 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         Eigen::MatrixXd X = Xcheck.block(0, 0, 7, nextCol);
 
         VectorXd nullStep = X*X.transpose() * dNull;
-        std::cout << nullStep.transpose() << std::endl;
+//        std::cout << nullStep.transpose() << std::endl;
         clampMaxAbs(nullStep, nullStepSize);
         ArmVector testq = q;
         for(int j=0; j<nullStep.size(); j++)
@@ -363,8 +363,6 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
         if(checkIfArmIsInsideLimits(side, testq))
             q = testq;
     }
-    else
-        std::cout << (qNull-q).norm() << std::endl;
 
     return result;
 }
