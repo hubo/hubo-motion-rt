@@ -1096,7 +1096,9 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             }
         }
         // Equilibriate legs at end of trajectory to get rid of offsets due to controllers
-        else if( nextTimeIndex == currentTrajectory->count-1 && (offsets.foot_translation[LEFT].norm() > m_footOffsetTolerance || offsets.foot_translation[RIGHT].norm() > m_footOffsetTolerance) )
+        else if( nextTimeIndex == currentTrajectory->count-1
+                 && (offsets.foot_translation[LEFT].norm() > m_footOffsetTolerance
+                 ||  offsets.foot_translation[RIGHT].norm() > m_footOffsetTolerance) )
         {
             executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
                                    currentTrajectory->traj[timeIndex],
