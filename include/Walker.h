@@ -83,7 +83,7 @@ public:
      * \param jointSpaceTolerance Tolerance in radians for when a desired body position is reached
      * \param jointVelContTol Tolerance in radians/s for when a desired joint velocity is reached
     */
-    Walker(double maxInitTime=15, double jointSpaceTolerance=0.0075, double jointVelContTol=6.0);
+    Walker(double maxInitTime=15, double jointSpaceTolerance=0.0075, double jointVelContTol=6.0, double footOffsetTolerance=0.0001);
 
     /**
      * \brief Destructor for Walker class
@@ -106,6 +106,7 @@ public:
 
     double m_jointSpaceTolerance;   //!< Joint space tolerance in radians.
     double m_jointVelContTol;       //!< Joint velocity tolerance in radians/s.
+    double m_footOffsetTolerance; //!< Foot z-translation offset tolerance in meters.
     double m_maxInitTime;           //!< Max wait time for initializing to walk position.
 
     balance_cmd_t cmd;              //!< Balance command struct
@@ -116,6 +117,7 @@ public:
     walktype_t m_walkDirection;
     int m_doubleSupportTicks;
     int m_lastLandingTick;
+    bool m_equilibriate;
 
 protected:
 

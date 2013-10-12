@@ -371,6 +371,7 @@ void Walker::landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &
         //------------------------
         // Run impedance controller on swing leg
         offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
+        state.dFeetOffset[side] -= gains.decay_gain * state.dFeetOffset[side];
         impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
 
         //------------------------
@@ -740,10 +741,11 @@ void Walker::straighteningController( Hubo_Control &hubo, zmp_traj_element_t &el
 // END of straighteningController()
 
 
-Walker::Walker(double maxInitTime, double jointSpaceTolerance, double jointVelContinuityTolerance) :
+Walker::Walker(double maxInitTime, double jointSpaceTolerance, double jointVelContinuityTolerance, double footOffsetTolerance) :
         m_maxInitTime(maxInitTime),
         m_jointSpaceTolerance( jointSpaceTolerance ),
         m_jointVelContTol( jointVelContinuityTolerance ),
+        m_footOffsetTolerance( footOffsetTolerance ),
         keepWalking(true),
         hubo(),
         kin(),
@@ -1038,6 +1040,14 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 }
                 haveNewTrajectory = false;
             }
+        }
+        // Equilibriate legs at end of trajectory to get rid of offsets due to controllers
+        else if( nextTimeIndex == currentTrajectory->count-1 && (offsets.foot_translation[LEFT].norm() > m_footOffsetTolerance || offsets.foot_translation[RIGHT].norm() > m_footOffsetTolerance) )
+        {
+            executeTimeStep( hubo, currentTrajectory->traj[prevTimeIndex],
+                                   currentTrajectory->traj[timeIndex],
+                                   nextTrajectory->traj[nextTimeIndex],
+                                   state, gains.walking_gains, offsets, dt, nextTimeIndex );
         }
         else
         {
