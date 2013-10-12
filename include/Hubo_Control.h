@@ -511,6 +511,7 @@ public:
     */
     void sendControls();
 
+    int getComplianceMode( int joint );
 
     // ~~** Getting Reference Values
     // ~* General gets

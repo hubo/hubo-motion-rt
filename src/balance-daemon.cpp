@@ -488,7 +488,7 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     if( cmd.height-L2 > L1 )
         cmd.height = L1+L2;
     else if( cmd.height-L2 < 0.249 ) //TODO: Don't hard code this
-        cmd.height = L2+0.249;
+        cmd.height = L2 + 0.249;
 
     double knee = acos( (cmd.height-L2)/L1 )*2;
 
@@ -531,6 +531,8 @@ void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, bala
     hubo.setJointVelocity( RKN, kneeVelR );
     hubo.setJointVelocity( RHP, -kneeVelR/2.0 + legJointVels[RIGHT](HP));
     hubo.setJointVelocity( RHR, legJointVels[RIGHT](HR));
+
+//    std::cout << legJointVels[RIGHT].transpose() << std::endl;
 
     hubo.sendControls();
 }

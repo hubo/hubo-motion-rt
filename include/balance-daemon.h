@@ -155,7 +155,7 @@ typedef struct walking_gains {
 
 typedef struct balance_params {
 
-    balance_gains_t balance_gains;
+    balance_gains_t balance_gains; // FIXME: Name these better
     walking_gains_t walking_gains;
 
 }__attribute__((packed)) balance_params_t;
