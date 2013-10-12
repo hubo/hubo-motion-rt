@@ -150,6 +150,8 @@ int main( int argc, char **argv )
 
     hubo.storeArmDefaults(LEFT);
     hubo.storeArmDefaults(RIGHT);
+
+    bool newRequest[2] = {false, false};
     
     size_t fs;
     while( !daemon_sig_quit )
@@ -160,7 +162,12 @@ int main( int argc, char **argv )
         time = hubo.getTime();
         kin.updateHubo(hubo);
         
-        ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
+        ach_status_t r = ach_get( &chan_manip_cmd, &manip_req, sizeof(manip_req), &fs, NULL, ACH_O_LAST );
+        if( ACH_OK == r || ACH_MISSED_FRAME == r )
+        {
+            for(int nr=0; nr<2; nr++)
+                newRequest[nr] = true;
+        }
         ach_get( &chan_manip_override, &override_cmd, sizeof(override_cmd), &fs, NULL, ACH_O_LAST );
 
         if(manip_req.trigger == MC_GRASP_NOW ||
@@ -182,8 +189,11 @@ int main( int argc, char **argv )
         {
             // If manip should interrupt current arm motion or it's ready,
             // then copy manip_req into manip_cmd
-            if( manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY )
+            if( newRequest[side] && (manip_req.interrupt[side] || manip_state.mode_state[side] == MC_READY) )
+            {
                 memcpy( &(manip_cmd[side]), &manip_req, sizeof(manip_req) );
+                newRequest[side] = false;
+            }
 
             // Update manip state mode and goal ID            
             manip_state.mode_state[side] = manip_cmd[side].m_mode[side];
