@@ -298,6 +298,13 @@ int main( int argc, char **argv )
         // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
         if( OVR_SOVEREIGN == manip_state.override )
             hubo.sendControls();
+        else
+        {
+            for(int i=0; i<2; i++)
+                for(int j=0; j<2; j++)
+                    manip_cmd[j].m_mode[i] = MC_HALT;
+        }
+
         hubo.releaseArm(LEFT);
         hubo.releaseArm(RIGHT);
 
