@@ -562,6 +562,13 @@ void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
     setMotionScheme(hubo, kin, currentElem, params, offsets);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
+        if(!params.hands)
+        {
+            if( i==LF1 || i==LF2 || i==LF3 || i==LF4 || i==LF5
+             || i==RF1 || i==RF2 || i==RF3 || i==RF4 || i==RF5 )
+                continue;
+        }
+
         hubo.setJointTraj(i, currentElem.angles[i],
                           (currentElem.angles[i]-prevElem.angles[i])/dt);
     }
@@ -611,7 +618,18 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         return;
     }
 
+    if(motion_cmd.type != TRAJ_GOTO_INIT && motion_cmd.type != TRAJ_RUN)
+    {
+        fprintf(stdout, "Unexpected trajectory command type: %d\n", motion_cmd.type);
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
+
+
     motion_trajectory_t motion_trajectory;
+    motion_trajectory.resize(0);
 
     bool validFile = true;
     if(motion_cmd.params.useFile)
@@ -735,7 +753,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     bool keepRunning = true;
     int index = 0;
-    if(motion_cmd.type==TRAJ_GOTO_INIT)
+    if(motion_cmd.type==TRAJ_GOTO_INIT || motion_trajectory.size()==1)
         index = 0;
     else if(motion_cmd.type==TRAJ_RUN || motion_cmd.type==TRAJ_PAUSE)
         index = 1;
@@ -746,6 +764,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     double dt = 0;
     time = hubo.getTime();
     motion_traj_cmd_t newCommand = motion_cmd;
+    manip_override_t ovr; memset(&ovr, 0, sizeof(ovr));
     while(!daemon_sig_quit && keepRunning )
 //          && index < motion_trajectory.size()) // TODO: Decide if this condition is desirable
     {
@@ -820,6 +839,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
             if(!pauseAck)
             {
                 fprintf(stdout, "Pause command received!\n");
+                state.mode = TRAJ_PAUSED;
                 pauseAck = true;
             }
         }
@@ -827,6 +847,10 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         {
             pauseAck = false;
         }
+
+        ovr.m_override = OVR_ACQUIESCENT;
+        ovr.hands = !motion_cmd.params.hands;
+        ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
 
         state.iteration = index;
         ach_put(&motion_state_chan, &state, sizeof(state));

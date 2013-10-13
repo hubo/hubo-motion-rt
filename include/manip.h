@@ -122,6 +122,7 @@ typedef enum {
 typedef struct manip_override {
 
     override_t m_override;
+    bool hands;
 
 }__attribute__((packed)) manip_override_t;
 

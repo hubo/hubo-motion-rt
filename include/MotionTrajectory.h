@@ -31,6 +31,7 @@ typedef enum {
     TRAJ_INITIALIZING,
     TRAJ_INITIALIZED,
     TRAJ_RUNNING,
+    TRAJ_PAUSED,
     TRAJ_FINISHED
 
 } motion_state_type_t;
@@ -59,6 +60,8 @@ typedef struct motion_traj_params {
     double zmp_com_max;
 
     bool negate_moments;
+
+    bool hands;
 
 }__attribute__((packed)) motion_traj_params_t;
 

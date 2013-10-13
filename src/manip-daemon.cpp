@@ -307,7 +307,9 @@ int main( int argc, char **argv )
         
         // NOTE WELL: THIS MUST BE THE ONLY PLACE THAT hubo.sendControls() IS USED!!!
         if( OVR_SOVEREIGN == manip_state.override )
+        {
             hubo.sendControls();
+        }
         else
         {
             for(int i=0; i<2; i++)
@@ -315,6 +317,20 @@ int main( int argc, char **argv )
                 slerp.resetSlerper(i, hubo);
                 for(int j=0; j<2; j++)
                     manip_cmd[j].m_mode[i] = MC_HALT;
+            }
+
+            hubo.releaseBody();
+            hubo.releaseNeck();
+            hubo.releaseLeftArm();
+            hubo.releaseRightArm();
+            hubo.releaseLeftLeg();
+            hubo.releaseRightLeg();
+            if(override_cmd.hands)
+                hubo.sendControls();
+            else
+            {
+                hubo.releaseFingers(LEFT);
+                hubo.releaseFingers(RIGHT);
             }
         }
 
