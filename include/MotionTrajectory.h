@@ -3,6 +3,7 @@
 
 extern "C" {
 #include <hubo.h>
+#include <stdio.h>
 }
 
 #define MOTION_TRAJ_CMD_CHAN "motion-cmd"
@@ -29,7 +30,8 @@ typedef enum {
     TRAJ_PARSING,
     TRAJ_INITIALIZING,
     TRAJ_INITIALIZED,
-    TRAJ_RUNNING
+    TRAJ_RUNNING,
+    TRAJ_FINISHED
 
 } motion_state_type_t;
 

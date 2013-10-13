@@ -699,7 +699,7 @@ Walker::Walker(double maxInitTime, double jointSpaceTolerance, double jointVelCo
 
     memset( &cmd, 0, sizeof(cmd) );
     memset( &bal_state, 0, sizeof(bal_state) );
-} 
+}
 
 Walker::~Walker()
 {

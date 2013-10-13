@@ -1,6 +1,12 @@
 
 #include "MotionTrajectory.h"
-#include <stdio.h>
+#include <ctype.h>
+
+int peek(FILE* fp) {
+  int c = fgetc(fp);
+  ungetc(c, fp);
+  return c;
+}
 
 void skip_whitespace(FILE* fp)
 {
@@ -27,7 +33,7 @@ bool parseNextElement(const char *filename, int line, FILE *fp, motion_element_t
 
     int j;
 
-    memset(&elem, 0, size(elem));
+    memset(&elem, 0, sizeof(elem));
 
     for(j=0; joint_order[j] >= 0; j++)
     {

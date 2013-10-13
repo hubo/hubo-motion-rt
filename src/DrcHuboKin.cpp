@@ -186,7 +186,7 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     return armTorques(side, jointTorque, eeWrench, jointAngles);
 }
 
-void DrcHuboKin::updateWithElement(motion_element_t &elem)
+void DrcHuboKin::updateWithElement(Hubo_Control &hubo, motion_element_t &elem)
 {
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
         if( !(strcmp(jointNames[i], "RF1")==0
@@ -200,7 +200,7 @@ void DrcHuboKin::updateWithElement(motion_element_t &elem)
                 || strcmp(jointNames[i], "LF4")==0
                 || strcmp(jointNames[i], "LF5")==0
                 || hubo.H_State.joint[i].active==0) )
-            setJointValue(jointNames[i], hubo.getJointAngleState(i), true);
+            setJointValue(jointNames[i], elem.angles[i], true);
     updateFrames();
 }
 
@@ -340,15 +340,16 @@ void DrcHuboKin::applyBalanceOffsets(zmp_traj_element_t &elem, const BalanceOffs
         elem.angles[i] = q[i-RHY];
 }
 
-void DrcHuboKin::applyBalanceAndEndEffectorOffsets(motion_element_t &elem, const BalanceOffsets &offsets)
+void DrcHuboKin::applyBalanceAndEndEffectorOffsets(Hubo_Control &hubo, motion_element_t &elem, const BalanceOffsets &offsets)
 {
-    updateWithElement(elem);
+    updateWithElement(hubo, elem);
     TRANSFORM ee[2];
     for(int side=0; side<2; side++)
         ee[side] = armFK(side);
 
     applyBalanceOffsets(elem, offsets);
 
+    updateWithElement(hubo, elem);
     for(int side=0; side<2; side++)
         elementArmIK(side, elem, ee[side]);
 }
@@ -356,7 +357,6 @@ void DrcHuboKin::applyBalanceAndEndEffectorOffsets(motion_element_t &elem, const
 rk_result_t DrcHuboKin::elementArmIK(int side, motion_element_t &elem, const TRANSFORM target)
 {
     ArmVector q; q.setZero();
-    updateWithElement(elem);
 
     if(side==LEFT)
         for(int i=0; i<7; i++)

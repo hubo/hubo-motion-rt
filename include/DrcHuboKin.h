@@ -71,14 +71,14 @@ public:
     void applyBalanceOffsets(zmp_traj_element_t &elem, const BalanceOffsets &offsets);
     void applyBalanceOffsets(motion_element_t &elem, const BalanceOffsets &offsets);
 
-    void applyBalanceAndEndEffectorOffsets(motion_element_t &elem, const BalanceOffsets &offsets);
+    void applyBalanceAndEndEffectorOffsets(Hubo_Control &hubo, motion_element_t &elem, const BalanceOffsets &offsets);
 
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
 
     void updateHubo(Hubo_Control& hubo, bool state=true);
 
-    void updateWithElement(motion_element_t &elem);
+    void updateWithElement(Hubo_Control &hubo, motion_element_t &elem);
 
     Eigen::VectorXd armRestValues;
 

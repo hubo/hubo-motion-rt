@@ -126,7 +126,7 @@ void initializeHubo( Hubo_Control &hubo, bool compliance )
     hubo.setArmCompliance(RIGHT, compliance, highGainsP);
 }
 
-void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &elem, motion_traj_params_t &params)
+void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &elem, motion_traj_params_t &params, BalanceOffsets &offsets)
 {
     for(int side=0; side<2; side++)
         hubo.setArmCompliance(side, params.upper_body_compliance);
@@ -143,10 +143,11 @@ void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &ele
     }
 
     if(params.pose_correction && params.com_balancing)
-        kin.applyBalanceAndEndEffectorOffsets(elem, offsets);
+        kin.applyBalanceAndEndEffectorOffsets(hubo, elem, offsets);
     else if(params.com_balancing)
         kin.applyBalanceOffsets(elem, offsets);
 }
+
 
 
 int main(int argc, char **argv)
@@ -549,28 +550,29 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
 }
 
-LegVector getElementLegVector(int side, motion_element_t& elem)
+void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
+                               const motion_element_t &prevElem, motion_element_t &currentElem,
+                               BalanceOffsets &offsets, motion_traj_params_t &params, double dt)
 {
-    LegVector q; q.setZero();
 
-    if(side == LEFT)
+
+    // TODO: Put a controller in here
+
+
+    setMotionScheme(hubo, kin, currentElem, params, offsets);
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
-        for(int i=LHY; i<LHY+6; i++)
-            q[i-LHY] = elem.angles[i];
+        hubo.setJointTraj(i, currentElem.angles[i],
+                          (currentElem.angles[i]-prevElem.angles[i])/dt);
     }
-    else
-    {
-        for(int i=RHY; i<RHY+6; i++)
-            q[i-RHY] = elem.angles[i];
-    }
+    hubo.sendControls();
 }
-
 
 void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cmd, BalanceOffsets &offsets)
 {
     size_t fs;
     motion_state_t state;
-    memset(state, 0, sizeof(state));
+    memset(&state, 0, sizeof(state));
     state.mode = TRAJ_PARSING;
     ach_put(&motion_state_chan, &state, sizeof(state));
 
@@ -614,6 +616,9 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     if(motion_cmd.params.useFile)
         fillMotionTrajectoryFromText(motion_cmd.params.filename, motion_trajectory);
 
+    motion_element_t rawFirst = motion_trajectory[0];
+    motion_element_t rawLast = motion_trajectory[motion_trajectory.size()-1];
+
     state.mode = TRAJ_INITIALIZING;
     ach_put(&motion_state_chan, &state, sizeof(state));
 
@@ -621,7 +626,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     initializeHubo(hubo, motion_cmd.params.upper_body_compliance);
 
-    setMotionScheme(hubo, kin, motion_trajectory[0], motion_cmd.params);
+    setMotionScheme(hubo, kin, motion_trajectory[0], motion_cmd.params, offsets);
 
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
@@ -643,9 +648,166 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     hubo.sendControls();
 
+    double time, stime; stime=hubo.getTime(); time=hubo.getTime();
+    double maxInitTime = 15;
+    double refErr = 1;
+    int worstOffender = -1;
+    while( !daemon_sig_quit && fabs(refErr) > 0 && time-stime < maxInitTime
+           && bal_cmd.cmd_request == BAL_TRAJ &&
+           ( motion_cmd.type == TRAJ_RUN || motion_cmd.type == TRAJ_GOTO_INIT ) )
+    {
+        hubo.update();
+        refErr = 0;
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        {
+            if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+             && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+             && NK1!=i && NK2!=i && NKY!=i)
+            {
+                if( fabs(hubo.getJointAngle(i)-motion_trajectory[0].angles[i]) > fabs(refErr) )
+                {
+                    refErr = fabs(hubo.getJointAngle(i)-motion_trajectory[0].angles[i]);
+                    worstOffender = i;
+                }
+            }
+        }
+
+        time = hubo.getTime();
+    }
+
+    if( time-stime >= maxInitTime )
+    {
+        fprintf(stdout, "Warning: could not reach the starting Trajectory within %f seconds\n"
+                        " -- Biggest ref error was %f radians in joint %s\n"
+                        " -- We will give up on this trajectory!\n",
+                        maxInitTime, refErr, jointNames[worstOffender] );
+
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
+
+    if( bal_cmd.cmd_request != BAL_TRAJ ||
+        (motion_cmd.type != TRAJ_GOTO_INIT && motion_cmd.type != TRAJ_RUN ) )
+    {
+        hubo.update();
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        {
+            if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+             && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+             && NK1!=i && NK2!=i && NKY!=i)
+            {
+                hubo.setJointAngle( i, hubo.getJointAngle(i) );
+            }
+        }
+        hubo.sendControls();
+        fprintf(stdout, "Received an interrupting command while going to initial configuration\n"
+                        " -- Halting robot and leaving trajectory mode!\n");
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
+
+    bool keepRunning = true;
+    int index = 0;
+    if(motion_cmd.type==TRAJ_GOTO_INIT)
+        index = 0;
+    else if(motion_cmd.type==TRAJ_RUN || motion_cmd.type==TRAJ_PAUSE)
+        index = 1;
+    else
+        keepRunning = false;
+
+    bool pauseAck = false;
+    double dt = 0;
+    time = hubo.getTime();
+    motion_traj_cmd_t newCommand = motion_cmd;
+    while(!daemon_sig_quit && keepRunning )
+//          && index < motion_trajectory.size()) // TODO: Decide if this condition is desirable
+    {
+        hubo.update();
+        dt = hubo.getTime() - time;
+        time = hubo.getTime();
+
+        ach_get(&motion_cmd_chan, &newCommand, sizeof(newCommand), &fs, NULL, ACH_O_LAST);
+        // TODO: Maybe handle whether or not new commands are coming in
+
+        if(newCommand.type==TRAJ_READY)
+        {
+            // TODO: Send errors?
+            newCommand = motion_cmd;
+        }
+        else if(newCommand.type==TRAJ_STOP)
+        {
+            fprintf(stdout, "Received a stop command while running through the trajectory\n"
+                            " -- Halting robot and leaving trajectory mode!\n");
+            state.mode = TRAJ_OFF;
+            ach_put(&motion_state_chan, &state, sizeof(state));
+            bal_cmd.cmd_request = BAL_READY;
+            return;
+        }
+        else if(newCommand.type==TRAJ_GOTO_INIT && index>0)
+        {
+            fprintf(stdout, "Either stop the trajectory or wait until it's finished before\n"
+                            "   going to the initial configuration!\n");
+            if(pauseAck)
+                newCommand = motion_cmd;
+            else
+                newCommand = motion_cmd;
+        }
+        else
+        {
+            motion_cmd = newCommand;
+        }
 
 
+        if(dt > 0)
+        {
+            if(motion_cmd.type==TRAJ_GOTO_INIT && index==0)
+            {
+                motion_element_t dummyFirst = rawFirst;
+                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[0], dummyFirst, offsets,
+                        motion_cmd.params, dt);
+                motion_trajectory[0] = dummyFirst;
+                state.mode = TRAJ_INITIALIZED;
+            }
+            else if(motion_cmd.type==TRAJ_RUN && index < motion_trajectory.size())
+            {
+                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[index-1], motion_trajectory[index],
+                        offsets, motion_cmd.params, dt);
+                index++;
+                state.mode = TRAJ_RUNNING;
+            }
+            else if(motion_cmd.type==TRAJ_RUN && index==motion_trajectory.size())
+            {
+                motion_element_t dummyLast = rawLast;
+                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[motion_trajectory.size()],
+                        dummyLast, offsets, motion_cmd.params, dt);
+                motion_trajectory[motion_trajectory.size()] = dummyLast;
+                state.mode = TRAJ_FINISHED;
+            }
+        }
+        else
+            fprintf(stdout, "Something unnatural has happened while running trajectories: %f!\n", dt);
 
+
+        if(motion_cmd.type==TRAJ_PAUSE)
+        {
+            if(!pauseAck)
+            {
+                fprintf(stdout, "Pause command received!\n");
+                pauseAck = true;
+            }
+        }
+        else
+        {
+            pauseAck = false;
+        }
+
+        state.iteration = index;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+    }
 }
 
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
