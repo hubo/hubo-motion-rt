@@ -263,7 +263,26 @@ TeleopHubo()
 		echo 'ach channels, boot up the'
 		echo 'hubo-daemon and hubo-motion-rt'
         echo 'daemons.'
+        echo
+        echo 'Options:'
+        echo '  raw'
+        echo '      This is the same as having no'
+        echo '      argument except it will not try to'
+        echo '      launch the hubo-daemon.'
 		echo
+	;;
+
+    'raw')
+
+        Ach
+
+	    sudo control-daemon
+        StartMotionDaemons
+
+        echo
+        echo 'Now please run hubo_init from your remote computer!'
+        echo
+        echo
 	;;
 
 	*)
