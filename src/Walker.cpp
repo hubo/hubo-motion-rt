@@ -830,14 +830,14 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
          && NK1!=i && NK2!=i && NKY!=i) //FIXME
         {
             hubo.setJointAngle( i, currentTrajectory->traj[0].angles[i] );
-            hubo.setJointNominalSpeed( i, 0.4 );
+            hubo.setJointNominalSpeed( i, 0.1 );
             hubo.setJointNominalAcceleration( i, 0.4 );
         }
     }
 
-    hubo.setJointNominalSpeed( RKN, 0.8 );
+    hubo.setJointNominalSpeed( RKN, 0.2 );
     hubo.setJointNominalAcceleration( RKN, 0.8 );
-    hubo.setJointNominalSpeed( LKN, 0.8 );
+    hubo.setJointNominalSpeed( LKN, 0.2 );
     hubo.setJointNominalAcceleration( LKN, 0.8 );
 
     if(false)
@@ -862,9 +862,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     int worstStateJoint = 0;
     int worstRefJoint = 0;
     while( !daemon_sig_quit
+            && time-stime < m_maxInitTime
             && (   fabs(stateErr) > m_jointSpaceTolerance
-                && fabs(refErr) > 0
-                && time-stime < m_maxInitTime)) {
+                || fabs(refErr) > 0 ) )
+    {
 //    while(false) { // FIXME TODO: SWITCH THIS BACK!!!
         hubo.update(true);
         stateErr = 0;

@@ -255,13 +255,16 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     if(!crpc.from_current_ref)
     {
         LegVector legSpeed; legSpeed.setOnes();
-        legSpeed *= 0.4;
+        LegVector legAccel; legAccel.setOnes();
+        legSpeed *= 0.1;
         legSpeed(KN) *= 2;
+        legAccel *= 0.2;
+        legAccel(KN) *= 2;
         
         hubo.setLegNomSpeeds(LEFT, legSpeed);
-        hubo.setLegNomAcc(LEFT, legSpeed);
+        hubo.setLegNomAcc(LEFT, legAccel);
         hubo.setLegNomSpeeds(RIGHT, legSpeed);
-        hubo.setLegNomAcc(RIGHT, legSpeed);
+        hubo.setLegNomAcc(RIGHT, legAccel);
         
         
         LegVector q[2]; q[LEFT].setZero(); q[RIGHT].setZero();
@@ -298,6 +301,26 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             fprintf(stderr, "Warning: could not reach the initial stance in within %f seconds\n", max_time);
             cmd.cmd_request = BAL_READY;
             return;
+        }
+
+        // Reset speeds and accelerations
+        legSpeed.setOnes(); legAccel.setOnes();
+        legSpeed *= 0.4;
+        legSpeed(KN) *= 2;
+        legAccel *= 0.4;
+        legAccel(KN) *= 2;
+
+        hubo.setLegNomSpeeds(LEFT, legSpeed);
+        hubo.setLegNomAcc(LEFT, legAccel);
+        hubo.setLegNomSpeeds(RIGHT, legSpeed);
+        hubo.setLegNomAcc(RIGHT, legAccel);
+
+        // Wait a bit for oscillations to die down
+        hubo.update();
+        double stopWaitingTime = hubo.getTime() + 4;
+        while(hubo.getTime() < stopWaitingTime)
+        {
+            hubo.update();
         }
     }
 
@@ -461,6 +484,11 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
 
     ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
+
+    // Print out the offsets
+    std::ostringstream offsetsPrintout;
+    offsets.flushCRPCToStream(offsetsPrintout);
+    std::cout << "Offsets:\n" << offsetsPrintout.str() << std::endl;
 }
 
 
