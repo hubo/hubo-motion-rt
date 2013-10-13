@@ -281,7 +281,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
         hubo.sendControls();
         
         LegVector qreal[2]; qreal[LEFT].setZero(); qreal[RIGHT].setZero();
-        double max_time = 10, stime, time, tolerance = 0.0075;
+        double max_time = 10, stime, time;
         stime = hubo.getTime();
         
         do {
@@ -292,8 +292,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 hubo.getLegAngles(side, qreal[side]);
             
         } while(!daemon_sig_quit && time-stime < max_time
-                    && ( (q[LEFT]-qreal[LEFT]).norm() > tolerance
-                         || (q[RIGHT]-qreal[RIGHT]).norm() > tolerance )
+                    && ( (q[LEFT]-qreal[LEFT]).norm() > 0
+                         || (q[RIGHT]-qreal[RIGHT]).norm() > 0 )
                 );
         
         if( time-stime >= max_time )
