@@ -58,7 +58,7 @@ typedef struct motion_traj_params {
     double kp_zmp_com;
     double zmp_com_max;
 
-    int negate_moments;
+    bool negate_moments;
 
 }__attribute__((packed)) motion_traj_params_t;
 

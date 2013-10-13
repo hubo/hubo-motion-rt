@@ -311,8 +311,11 @@ int main( int argc, char **argv )
         else
         {
             for(int i=0; i<2; i++)
+            {
+                slerp.resetSlerper(i, hubo);
                 for(int j=0; j<2; j++)
                     manip_cmd[j].m_mode[i] = MC_HALT;
+            }
         }
 
         hubo.releaseArm(LEFT);

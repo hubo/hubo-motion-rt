@@ -141,7 +141,7 @@ INSTALL(FILES include/Hubo_Control.h
               include/manip.h
               include/hubo-zmp.h
               include/DrcHuboKin.h
-              include/motion-trajectory.h
+              include/MotionTrajectory.h
         DESTINATION /usr/local/include/)
 
 # Install Tables

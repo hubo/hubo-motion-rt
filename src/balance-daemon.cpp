@@ -613,8 +613,30 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     motion_trajectory_t motion_trajectory;
 
+    bool validFile = true;
     if(motion_cmd.params.useFile)
-        fillMotionTrajectoryFromText(motion_cmd.params.filename, motion_trajectory);
+        validFile = fillMotionTrajectoryFromText(motion_cmd.params.filename, motion_trajectory);
+
+    if(!validFile)
+    {
+        fprintf(stdout, "Trajectory file %s could not be successfully parsed!\n"
+                        " -- We are exiting trajectory mode!\n", motion_cmd.params.filename);
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
+
+
+    if(motion_trajectory.size()==0)
+    {
+        fprintf(stdout, "The requested trajectory does not have any waypoints!\n"
+                        " -- We are exiting trajectory mode!\n");
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
 
     motion_element_t rawFirst = motion_trajectory[0];
     motion_element_t rawLast = motion_trajectory[motion_trajectory.size()-1];
@@ -623,6 +645,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     ach_put(&motion_state_chan, &state, sizeof(state));
 
     hubo.update();
+
 
     initializeHubo(hubo, motion_cmd.params.upper_body_compliance);
 
