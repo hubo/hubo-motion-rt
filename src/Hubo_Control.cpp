@@ -1935,6 +1935,11 @@ double Hubo_Control::getJointAngleMax(int joint)
         return 0;
 }
 
+int Hubo_Control::getComplianceMode(int joint)
+{
+    return H_State.joint[joint].comply;
+}
+
 double Hubo_Control::getJointErrorMax(int joint)
 {
     if( joint < HUBO_JOINT_COUNT )

@@ -151,8 +151,8 @@ void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &ele
 
 int main(int argc, char **argv)
 {
-//    Hubo_Control hubo("balance-daemon", 35);
-    Hubo_Control hubo;
+    Hubo_Control hubo("balance-daemon", 35);
+//    Hubo_Control hubo;
 
     DrcHuboKin kin;
 

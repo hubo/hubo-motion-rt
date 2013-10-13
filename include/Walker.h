@@ -82,7 +82,7 @@ public:
      * \param jointSpaceTolerance Tolerance in radians for when a desired body position is reached
      * \param jointVelContTol Tolerance in radians/s for when a desired joint velocity is reached
     */
-    Walker(double maxInitTime=15, double jointSpaceTolerance=0.0075, double jointVelContTol=6.0);
+    Walker(double maxInitTime=15, double jointSpaceTolerance=0.015, double jointVelContTol=6.0);
 
     /**
      * \brief Destructor for Walker class

@@ -749,7 +749,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
         checkCommands();
         if( cmd.cmd_request != BAL_ZMP_WALKING )
+        {
+            fprintf(stdout, "Receied new command -- We will NOT walk!\n"); fflush(stdout);
             keepWalking = false;
+        }
     } while(!daemon_sig_quit && keepWalking && r==ACH_TIMEOUT);
 
     if(!keepWalking) // TODO: Take out the reuse condition here
@@ -772,6 +775,42 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     ach_get( &param_chan, &gains, sizeof(gains), &fs, NULL, ACH_O_LAST );
 
     hubo.update(true);
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+    {
+        // Don't worry about where these joint are
+        if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+         && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+         && NK1!=i && NK2!=i && NKY!=i) //FIXME
+        {
+            hubo.setJointCompliance( i, false );
+            hubo.setJointAngle( i, hubo.getJointAngle(i) );
+            hubo.setJointNominalSpeed( i, 0.4 );
+            hubo.setJointNominalAcceleration( i, 0.4 );
+        }
+    }
+
+    hubo.setJointNominalSpeed( RKN, 0.8 );
+    hubo.setJointNominalAcceleration( RKN, 0.8 );
+    hubo.setJointNominalSpeed( LKN, 0.8 );
+    hubo.setJointNominalAcceleration( LKN, 0.8 );
+
+    hubo.sendControls();
+
+    hubo.update();
+    bool complyCheck = true;
+    while(complyCheck)
+    {
+        complyCheck = false;
+        for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        {
+            if( hubo.getComplianceMode(i) != 0 )
+            {
+                complyCheck = true;
+            }
+        }
+        hubo.update();
+    }
 
     if(false)
     {
@@ -818,36 +857,41 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     int worstJoint=-1;
     
     double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
-    double norm = m_jointSpaceTolerance+1; // make sure this fails initially
-    while( !daemon_sig_quit && (norm > m_jointSpaceTolerance && time-stime < m_maxInitTime)) {
+    double refErr = m_jointSpaceTolerance+1; // make sure this fails initially
+    double stateErr = m_jointSpaceTolerance+1; 
+    int worstStateJoint = 0;
+    int worstRefJoint = 0;
+    while( !daemon_sig_quit
+            && (   fabs(stateErr) > m_jointSpaceTolerance
+                && fabs(refErr) > 0
+                && time-stime < m_maxInitTime)) {
 //    while(false) { // FIXME TODO: SWITCH THIS BACK!!!
         hubo.update(true);
-        norm = 0;
+        stateErr = 0;
+        refErr = 0;
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
         {
-            double err=0;
             // Don't worry about waiting for these joints to get into position.
             if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
              && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
              && NK1!=i && NK2!=i && NKY!=i) //FIXME
-                err = (hubo.getJointAngleState( i )-currentTrajectory->traj[0].angles[i]);
-
-            norm += err*err;
-            if( fabs(err) > fabs(biggestErr) )
             {
-                biggestErr = err;
-                worstJoint = i;
+                double cur_stateErr = hubo.getJointAngleState( i )-currentTrajectory->traj[0].angles[i] ;
+                double cur_refErr = hubo.getJointAngle( i )-currentTrajectory->traj[0].angles[i];
+                if (fabs(cur_stateErr) > fabs(stateErr)) { worstStateJoint = i; stateErr = cur_stateErr; }
+                if (fabs(cur_refErr) > fabs(refErr)) { worstRefJoint = i; refErr = cur_refErr; }
             }
+
         }
-        norm = sqrt(norm);
         time = hubo.getTime();
     }
     // Print timeout error if joints don't get to initial positions in time
     if( time-stime >= m_maxInitTime )
     {
-        fprintf(stderr, "Warning: could not reach the starting Trajectory within %f seconds\n"
-                        " -- Biggest error was %f radians in joint %s\n",
-                        m_maxInitTime, biggestErr, jointNames[worstJoint] );
+        fprintf(stdout, "Warning: could not reach the starting Trajectory within %f seconds\n"
+                        " -- Biggest state error was %f radians in joint %s\n"
+                        " -- Biggest ref error was %f radians in joint %s\n",
+                        m_maxInitTime, stateErr, jointNames[worstStateJoint], refErr, jointNames[worstRefJoint] );
 
         keepWalking = false;
         
@@ -857,7 +901,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
     timeIndex = 1;
     bool haveNewTrajectory = false;
     if( keepWalking )
-        fprintf(stdout, "Beginning main walking loop\n"); fflush(stdout);
+        fprintf(stdout, "Beginning main walking loop, period end tick=%d, reuse=%d\n", (int)currentTrajectory->periodEndTick, (int)currentTrajectory->reuse);
+    else
+        fprintf(stdout, "We will NOT enter the walking loop!");
+    fflush(stdout);
     while(keepWalking && !daemon_sig_quit)
     {
         haveNewTrajectory = checkForNewTrajectory(*nextTrajectory, haveNewTrajectory);
@@ -870,7 +917,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         time = hubo.getTime();
         if( dt <= 0 )
         {
-            fprintf(stderr, "Something unnatural has happened in the Walker... %f\n", dt);
+            fprintf(stdout, "Something unnatural has happened in the Walker... %f\n", dt);
             continue;
         }
         // Execute second timestep
@@ -898,11 +945,11 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 
                 memcpy( prevTrajectory, currentTrajectory, sizeof(*prevTrajectory) );
                 memcpy( currentTrajectory, nextTrajectory, sizeof(*nextTrajectory) );
-                fprintf(stderr, "Notice: Swapping in new trajectory\n");
+                fprintf(stdout, "Notice: Swapping in new trajectory\n");
             }
             else
             {
-                fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Walking to a stop.\n");
+                fprintf(stdout, "WARNING: Discontinuous trajectory passed in. Walking to a stop.\n");
                 bal_state.m_walk_error = WALK_FAILED_SWAP;
 
                 nextTimeIndex = timeIndex+1;
@@ -944,7 +991,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         {
             checkCommands();
             if( cmd.cmd_request != BAL_ZMP_WALKING )
+            {
+                fprintf(stdout, "Received new command -- Exiting walk at line %d", __LINE__); fflush(stdout); 
                 keepWalking = false;
+            }
 
             if( keepWalking )
             {
@@ -965,7 +1015,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                 {
                     bal_state.m_walk_mode = WALK_WAITING;
                     bal_state.m_walk_error = WALK_FAILED_SWAP;
-                    fprintf(stderr, "WARNING: Discontinuous trajectory passed in. Discarding it.\n");
+                    fprintf(stdout, "WARNING: Discontinuous trajectory passed in. Discarding it.\n");
                 }
                 haveNewTrajectory = false;
             }
@@ -975,7 +1025,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         {
             checkCommands();
             if( cmd.cmd_request != BAL_ZMP_WALKING )
+            {
+                fprintf(stdout, "Received new command -- Exiting walk at line %d", __LINE__); fflush(stdout); 
                 keepWalking = false;
+            }
         }
 
         prevTimeIndex = timeIndex;
@@ -983,6 +1036,8 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
         sendState();
     }
 
+    
+    std::cout << "Walker has exited at " << timeIndex << " from size of " << currentTrajectory->count << std::endl;
     bal_state.m_walk_mode = WALK_INACTIVE;
     sendState();
 }
@@ -1100,6 +1155,7 @@ void Walker::sendState()
 void Walker::checkCommands()
 {
     size_t fs;
-    ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
+    ach_status_t r = ach_get( &bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST );
+//    if( ACK_OK != r || ACH_MISSED_FRAME != r )
 }
 
