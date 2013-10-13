@@ -52,6 +52,7 @@ typedef enum {
     BAL_LEGS_ONLY,
     BAL_ZMP_WALKING,
     BAL_CRPC,
+    BAL_TRAJ,
     LOAD_CRPC,
     SAVE_CRPC
 
@@ -100,6 +101,21 @@ typedef struct crpc_params {
     double hip_crouch;
 
 }__attribute__((packed)) crpc_params_t;
+
+
+typedef struct com_balance_params {
+
+    double zmp_ref_x;
+    double zmp_ref_y;
+
+    double kp_zmp_com;
+
+    double zmp_com_max;
+
+    int negate_moments;
+
+}__attribute__((packed)) com_balance_params_t;
+
 
 typedef struct crpc_state {
 
@@ -157,6 +173,7 @@ typedef struct balance_params {
 
     balance_gains_t balance_gains; // FIXME: Name these better
     walking_gains_t walking_gains;
+    com_balance_params_t com_params;
 
 }__attribute__((packed)) balance_params_t;
 
@@ -164,7 +181,7 @@ typedef struct balance_cmd {
 
     balance_mode_t cmd_request;
 
-    char filename[50];
+    char filename[100];
     
     double height;
     double com_x_offset;

@@ -321,6 +321,11 @@ void initializeHubo( Hubo_Control &hubo )
     hubo.setJointMaxPWM(LSY, 15);
     hubo.setJointMaxPWM(LWY, 15);
     hubo.setJointMaxPWM(LWP, 15);
+
+    hubo.setJointMaxPWM(RSR, 15);
+    hubo.setJointMaxPWM(RSY, 15);
+    hubo.setJointMaxPWM(RWY, 15);
+    hubo.setJointMaxPWM(RWP, 15);
 }
 
 

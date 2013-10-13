@@ -51,6 +51,11 @@ ach_channel_t manip_state_chan;
 ach_channel_t crpc_param_chan;
 ach_channel_t crpc_state_chan;
 
+ach_channel_t motion_cmd_chan;
+ach_channel_t motion_traj_chan;
+ach_channel_t motion_upper_state_chan;
+ach_channel_t motion_state_chan;
+
 /**
  * \brief Balance while not moving the legs (in a static lower body pose)
  * using the Velocity mode in the control daemon
@@ -65,6 +70,9 @@ ach_channel_t crpc_state_chan;
  * \return void
 */
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt);
+
+
+void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cmd, BalanceOffsets &offsets);
 
 /**
  * \brief Takes the torque in the ankles and drives them to zero by
@@ -91,6 +99,54 @@ void moveHips(Hubo_Control &hubo, DrcHuboKin &kin, std::vector<LegVector, Eigen:
 */
 void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc,
                            crpc_state_t &crpc_state, BalanceOffsets &offsets);
+
+void initializeHubo( Hubo_Control &hubo, bool compliance )
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        hubo.setJointMaxPWM(i, 8);
+
+    hubo.setJointMaxPWM(LSR, 15);
+    hubo.setJointMaxPWM(LSY, 15);
+    hubo.setJointMaxPWM(LWY, 15);
+    hubo.setJointMaxPWM(LWP, 15);
+
+    hubo.setJointMaxPWM(RSR, 15);
+    hubo.setJointMaxPWM(RSY, 15);
+    hubo.setJointMaxPWM(RWY, 15);
+    hubo.setJointMaxPWM(RWP, 15);
+
+    ArmVector highGainsP;
+    highGainsP *= 80;
+    highGainsP(SR) = 100;
+    highGainsP(SY) = 150;
+    highGainsP(WY) = 100;
+    highGainsP(WP) = 120;
+
+    hubo.setArmCompliance(LEFT, compliance, highGainsP);
+    hubo.setArmCompliance(RIGHT, compliance, highGainsP);
+}
+
+void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &elem, motion_traj_params_t &params)
+{
+    for(int side=0; side<2; side++)
+        hubo.setArmCompliance(side, params.upper_body_compliance);
+
+    if(params.upper_body_compliance)
+    {
+        ArmVector torques;
+        kin.updateHubo(hubo);
+        for(int side=0; side<2; side++)
+        {
+            kin.armTorques(side, torques);
+            hubo.setArmTorques(side, torques);
+        }
+    }
+
+    if(params.pose_correction && params.com_balancing)
+        kin.applyBalanceAndEndEffectorOffsets(elem, offsets);
+    else if(params.com_balancing)
+        kin.applyBalanceOffsets(elem, offsets);
+}
 
 
 int main(int argc, char **argv)
@@ -121,6 +177,15 @@ int main(int argc, char **argv)
     daemon_assert( r==ACH_OK, __LINE__ );
 
     r = ach_open( &crpc_state_chan, CRPC_STATE_CHAN, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
+
+    r = ach_open( &motion_cmd_chan, MOTION_TRAJ_CMD_CHAN, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
+
+    r = ach_open( &motion_state_chan, MOTION_STATE_CHAN, NULL );
+    daemon_assert( r==ACH_OK, __LINE__ );
+
+    r = ach_open( &motion_traj_chan, MOTION_TRAJ_CHAN, NULL );
     daemon_assert( r==ACH_OK, __LINE__ );
 
     Walker walk;
@@ -229,6 +294,24 @@ int main(int argc, char **argv)
             crpcPostureController(hubo, kin, cmd, crpc, crpc_state, offsets);
             cmd.cmd_request = BAL_READY;
         }
+        else if( BAL_TRAJ == cmd.cmd_request )
+        {
+            ach_get( &manip_state_chan, &manip_state, sizeof(manip_state),
+                     &fs, NULL, ACH_O_LAST );
+
+            if( OVR_SOVEREIGN == manip_state.override )
+            {
+                ovr.m_override = OVR_ACQUIESCENT;
+                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+            }
+            else if( OVR_ACQUIESCENT == manip_state.override )
+            {
+                motionTrajectory(hubo, kin, cmd, offsets);
+                ovr.m_override = OVR_SOVEREIGN;
+                ach_put( &manip_override_chan, &ovr, sizeof(ovr) );
+                hubo.releaseUpperBody();
+            }
+        }
         else if( LOAD_CRPC == cmd.cmd_request )
         {
             offsets.loadCRPCFromText(cmd.filename);
@@ -246,6 +329,9 @@ int main(int argc, char **argv)
 
     return 0;
 }
+
+
+
 
 
 void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, crpc_params_t &crpc, crpc_state_t &crpc_state, BalanceOffsets &offsets)
@@ -463,7 +549,104 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
 }
 
+LegVector getElementLegVector(int side, motion_element_t& elem)
+{
+    LegVector q; q.setZero();
 
+    if(side == LEFT)
+    {
+        for(int i=LHY; i<LHY+6; i++)
+            q[i-LHY] = elem.angles[i];
+    }
+    else
+    {
+        for(int i=RHY; i<RHY+6; i++)
+            q[i-RHY] = elem.angles[i];
+    }
+}
+
+
+void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cmd, BalanceOffsets &offsets)
+{
+    size_t fs;
+    motion_state_t state;
+    memset(state, 0, sizeof(state));
+    state.mode = TRAJ_PARSING;
+    ach_put(&motion_state_chan, &state, sizeof(state));
+
+    motion_traj_cmd_t motion_cmd;
+
+    ach_status_t r;
+    struct timespec t;
+    do {
+        clock_gettime( ACH_DEFAULT_CLOCK, &t );
+        t.tv_sec += 1;
+        r = ach_get(&motion_cmd_chan, &motion_cmd, sizeof(motion_cmd),
+                    &fs, &t, ACH_O_WAIT | ACH_O_LAST );
+
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
+
+    } while(!daemon_sig_quit && r==ACH_TIMEOUT && bal_cmd.cmd_request==BAL_TRAJ);
+
+    if(bal_cmd.cmd_request != BAL_TRAJ)
+    {
+        fprintf(stdout, "Trajectory running has been canceled!\n"); fflush(stdout);
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        return;
+    }
+
+    if(r==ACH_OK || r==ACH_MISSED_FRAME)
+    {
+        fprintf(stdout, "Received new trajectory command\n"); fflush(stdout);
+    }
+    else
+    {
+        fprintf(stdout, "Unexpected ach result: %s (%d)\n", ach_result_to_string(r), (int)r);
+        state.mode = TRAJ_OFF;
+        ach_put(&motion_state_chan, &state, sizeof(state));
+        bal_cmd.cmd_request = BAL_READY;
+        return;
+    }
+
+    motion_trajectory_t motion_trajectory;
+
+    if(motion_cmd.params.useFile)
+        fillMotionTrajectoryFromText(motion_cmd.params.filename, motion_trajectory);
+
+    state.mode = TRAJ_INITIALIZING;
+    ach_put(&motion_state_chan, &state, sizeof(state));
+
+    hubo.update();
+
+    initializeHubo(hubo, motion_cmd.params.upper_body_compliance);
+
+    setMotionScheme(hubo, kin, motion_trajectory[0], motion_cmd.params);
+
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+    {
+        // Don't worry about where these joint are
+        if( LF1!=i && LF2!=i && LF3!=i && LF4!=i && LF5!=i
+         && RF1!=i && RF2!=i && RF3!=i && RF4!=i && RF5!=i
+         && NK1!=i && NK2!=i && NKY!=i)
+        {
+            hubo.setJointAngle( i, motion_trajectory[0].angles[i] );
+            hubo.setJointNominalSpeed( i, 0.4 );
+            hubo.setJointNominalAcceleration( i, 0.4 );
+        }
+    }
+
+    hubo.setJointNominalSpeed( RKN, 0.8 );
+    hubo.setJointNominalAcceleration( RKN, 0.8 );
+    hubo.setJointNominalSpeed( LKN, 0.8 );
+    hubo.setJointNominalAcceleration( LKN, 0.8 );
+
+    hubo.sendControls();
+
+
+
+
+}
 
 void staticBalance(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &cmd, balance_gains_t &gains, double dt)
 {

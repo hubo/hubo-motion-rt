@@ -68,12 +68,16 @@ file(GLOB balance_daemon_source "src/balance-daemon.cpp"
                                 "include/Walker.h"
                                 "src/ImpedanceController.cpp"
                                 "include/ImpedanceController.h"
-                                "include/hubo-zmp.h" )
+                                "include/hubo-zmp.h"
+                                "src/MotionTrajectory.cpp"
+                                "include/MotionTrajectory.h")
 
 file(GLOB manip_daemon_source "src/manip-daemon.cpp"
                               "include/manip.h"
                               "src/Slerper.cpp"
-                              "include/Slerper.h" )
+                              "include/Slerper.h"
+                              "src/MotionTrajectory.cpp"
+                              "include/MotionTrajectory.h")
 
 file(GLOB gravityTest_source "src/gravityTest.cpp")
 

@@ -6,6 +6,7 @@
 #include <Hubo_Control.h>
 #include "balance-daemon.h"
 #include "hubo-zmp.h"
+#include "MotionTrajectory.h"
 
 typedef Eigen::Matrix< double, 6, 7 > ArmJacobian;
 
@@ -55,6 +56,8 @@ public:
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target, const ArmVector &qPrev);
     RobotKin::rk_result_t armIK(int side, ArmVector &q, const RobotKin::TRANSFORM target);
 
+    RobotKin::rk_result_t elementArmIK(int side, motion_element_t &elem, const RobotKin::TRANSFORM target);
+
     ArmJacobian armJacobian(int side);
     ArmJacobian armJacobian(int side, ArmVector &q);
 
@@ -65,12 +68,17 @@ public:
     bool haveLastQ[2];
 
     void applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets);
-    void applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffsets &offsets);
+    void applyBalanceOffsets(zmp_traj_element_t &elem, const BalanceOffsets &offsets);
+    void applyBalanceOffsets(motion_element_t &elem, const BalanceOffsets &offsets);
+
+    void applyBalanceAndEndEffectorOffsets(motion_element_t &elem, const BalanceOffsets &offsets);
 
     void updateArmJoints(int side, const ArmVector& jointValues);
     void updateLegJoints(int side, const LegVector& jointValues);
 
     void updateHubo(Hubo_Control& hubo, bool state=true);
+
+    void updateWithElement(motion_element_t &elem);
 
     Eigen::VectorXd armRestValues;
 

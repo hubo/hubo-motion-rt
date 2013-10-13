@@ -16,7 +16,7 @@
 
 
 # M.X. Grey ( mxgrey@gatech.edu )
-# Last updated: 04/26/2013
+# Last updated: 10/12/2013
 # Contact the author for support or questions regarding operation.
 
 #HUBO_BITRATE=0x0014 # 1 Mbit/s
@@ -55,6 +55,9 @@ HUBO_BAL_STATE_CHAN='balance-state'
 HUBO_BAL_PARAM_CHAN='balance-param'
 HUBO_CRPC_PARAM_CHAN='crpc-param'
 HUBO_CRPC_STATE_CHAN='crpc-state'
+HUBO_MOTION_TRAJ_CMD='motion-cmd'
+HUBO_MOTION_TRAJ='motion-traj'
+HUBO_MOTION_STATE='motion-state'
 LIBERTY_CHAN='liberty'
 
 DAEMON_DIR='/etc/hubo-daemon'
@@ -65,75 +68,81 @@ Ach()
 {
 	case "$1" in
 	'help')
-		echo
-		echo
-		echo 'Use this to open and close'
-		echo 'the ach channels.'
-		echo
-		echo 'Adding "close" as an arugment'
-		echo 'will close (instead of'
-		echo 'openning) the channels.'
-		echo
-		echo
+            echo
+            echo
+            echo 'Use this to open and close'
+            echo 'the ach channels.'
+            echo
+            echo 'Adding "close" as an arugment'
+            echo 'will close (instead of'
+            echo 'openning) the channels.'
+            echo
+            echo
 	;;
 
 	'close')
 		
-		sudo ach -U $HUBO_REF_CHAN
-		sudo ach -U $HUBO_STATE_CHAN
-		sudo ach -U $HUBO_BOARD_CHAN
-		sudo ach -U $HUBO_RL_CTRL_CHAN
-		sudo ach -U $HUBO_LL_CTRL_CHAN
-		sudo ach -U $HUBO_RA_CTRL_CHAN
-		sudo ach -U $HUBO_LA_CTRL_CHAN
-		sudo ach -U $HUBO_RF_CTRL_CHAN
-		sudo ach -U $HUBO_LF_CTRL_CHAN
-        sudo ach -U $HUBO_BOD_CTRL_CHAN
-        sudo ach -U $HUBO_NCK_CTRL_CHAN
-        sudo ach -U $HUBO_CTRL_STATE_CHAN
-        sudo ach -U $HUBO_MANIP_CMD_CHAN
-        sudo ach -U $HUBO_MANIP_STATE_CHAN
-        sudo ach -U $HUBO_MANIP_PARAM_CHAN
-        sudo ach -U $HUBO_MANIP_TRAJ_CHAN
-        sudo ach -U $HUBO_MANIP_OVR_CHAN
-        sudo ach -U $HUBO_ZMP_TRAJ_CHAN
-        sudo ach -U $HUBO_ZMP_CMD_CHAN
-        sudo ach -U $HUBO_BAL_CMD_CHAN
-        sudo ach -U $HUBO_BAL_STATE_CHAN
-        sudo ach -U $HUBO_BAL_PARAM_CHAN
-        sudo ach -U $HUBO_CRPC_PARAM_CHAN
-        sudo ach -U $HUBO_CRPC_STATE_CHAN
+            sudo ach -U $HUBO_REF_CHAN
+            sudo ach -U $HUBO_STATE_CHAN
+            sudo ach -U $HUBO_BOARD_CHAN
+            sudo ach -U $HUBO_RL_CTRL_CHAN
+            sudo ach -U $HUBO_LL_CTRL_CHAN
+            sudo ach -U $HUBO_RA_CTRL_CHAN
+            sudo ach -U $HUBO_LA_CTRL_CHAN
+            sudo ach -U $HUBO_RF_CTRL_CHAN
+            sudo ach -U $HUBO_LF_CTRL_CHAN
+            sudo ach -U $HUBO_BOD_CTRL_CHAN
+            sudo ach -U $HUBO_NCK_CTRL_CHAN
+            sudo ach -U $HUBO_CTRL_STATE_CHAN
+            sudo ach -U $HUBO_MANIP_CMD_CHAN
+            sudo ach -U $HUBO_MANIP_STATE_CHAN
+            sudo ach -U $HUBO_MANIP_PARAM_CHAN
+            sudo ach -U $HUBO_MANIP_TRAJ_CHAN
+            sudo ach -U $HUBO_MANIP_OVR_CHAN
+            sudo ach -U $HUBO_ZMP_TRAJ_CHAN
+            sudo ach -U $HUBO_ZMP_CMD_CHAN
+            sudo ach -U $HUBO_BAL_CMD_CHAN
+            sudo ach -U $HUBO_BAL_STATE_CHAN
+            sudo ach -U $HUBO_BAL_PARAM_CHAN
+            sudo ach -U $HUBO_CRPC_PARAM_CHAN
+            sudo ach -U $HUBO_CRPC_STATE_CHAN
+            sudo ach -U $HUBO_MOTION_TRAJ_CMD
+            sudo ach -U $HUBO_MOTION_UPPER_STATE
+            sudo ach -U $HUBO_MOTION_LOWER_STATE
+            sudo ach -U &HUBO_MOTION_TRAJ
 
 	;;	
 
 	*)
 
-        sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 6000 -o 666
-        sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
-        sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_BOD_CTRL_CHAN      -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_NCK_CTRL_CHAN      -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_MANIP_STATE_CHAN   -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN   -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_MANIP_TRAJ_CHAN    -m 3  -n 1000000 -o 666
-        sudo ach -1 -C $HUBO_MANIP_OVR_CHAN     -m 10 -n 1000 -o 666
-        sudo ach -1 -C $HUBO_ZMP_TRAJ_CHAN      -m 3  -n 8000000 -o 666
-        sudo ach -1 -C $HUBO_ZMP_CMD_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_FULLBODY_TRAJ_CHAN -m 3  -n 1000000 -o 666
-        sudo ach -1 -C $HUBO_TRAJ_STATE_CHAN    -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_BAL_CMD_CHAN       -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_BAL_STATE_CHAN     -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_BAL_PARAM_CHAN     -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_CRPC_PARAM_CHAN    -m 10 -n 3000 -o 666
-        sudo ach -1 -C $HUBO_CRPC_STATE_CHAN    -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_CTRL_STATE_CHAN    -m 10 -n 6000 -o 666
+            sudo ach -1 -C $HUBO_REF_CHAN           -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_STATE_CHAN         -m 10 -n 8000 -o 666
+            sudo ach -1 -C $HUBO_BOARD_CHAN         -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_RL_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_LL_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_RA_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_LA_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_RF_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_LF_CTRL_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_BOD_CTRL_CHAN      -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_NCK_CTRL_CHAN      -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MANIP_CMD_CHAN     -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MANIP_STATE_CHAN   -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MANIP_PARAM_CHAN   -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MANIP_TRAJ_CHAN    -m 3  -n 1000000 -o 666
+            sudo ach -1 -C $HUBO_MANIP_OVR_CHAN     -m 10 -n 1000 -o 666
+            sudo ach -1 -C $HUBO_ZMP_TRAJ_CHAN      -m 3  -n 8000000 -o 666
+            sudo ach -1 -C $HUBO_ZMP_CMD_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_TRAJ_STATE_CHAN    -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_BAL_CMD_CHAN       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_BAL_STATE_CHAN     -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_BAL_PARAM_CHAN     -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_CRPC_PARAM_CHAN    -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_CRPC_STATE_CHAN    -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MOTION_TRAJ_CMD    -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MOTION_STATE       -m 10 -n 3000 -o 666
+            sudo ach -1 -C $HUBO_MOTION_TRAJ        -m 3  -n 1000000 -o 666
         
 	;;
 	esac

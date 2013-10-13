@@ -186,6 +186,24 @@ RobotKin::rk_result_t DrcHuboKin::armTorques(int side, ArmVector &jointTorque, c
     return armTorques(side, jointTorque, eeWrench, jointAngles);
 }
 
+void DrcHuboKin::updateWithElement(motion_element_t &elem)
+{
+    for(int i=0; i<HUBO_JOINT_COUNT; i++)
+        if( !(strcmp(jointNames[i], "RF1")==0
+                || strcmp(jointNames[i], "RF2")==0
+                || strcmp(jointNames[i], "RF3")==0
+                || strcmp(jointNames[i], "RF4")==0
+                || strcmp(jointNames[i], "RF5")==0
+                || strcmp(jointNames[i], "LF1")==0
+                || strcmp(jointNames[i], "LF2")==0
+                || strcmp(jointNames[i], "LF3")==0
+                || strcmp(jointNames[i], "LF4")==0
+                || strcmp(jointNames[i], "LF5")==0
+                || hubo.H_State.joint[i].active==0) )
+            setJointValue(jointNames[i], hubo.getJointAngleState(i), true);
+    updateFrames();
+}
+
 void DrcHuboKin::updateHubo(Hubo_Control &hubo, bool state)
 {
     if(state)
@@ -303,23 +321,80 @@ RobotKin::rk_result_t DrcHuboKin::armIK(int side, ArmVector &q, const TRANSFORM 
     return result;
 }
 
-void DrcHuboKin::applyBalanceOffsets(zmp_traj_element_t &traj, const BalanceOffsets &offsets)
+void DrcHuboKin::applyBalanceOffsets(zmp_traj_element_t &elem, const BalanceOffsets &offsets)
 {
     LegVector q; q.setZero();
     
     
     for(int i=LHY; i<LHY+6; i++)
-        q[i-LHY] = traj.angles[i];
+        q[i-LHY] = elem.angles[i];
     applyBalanceOffsets(LEFT, q, offsets);
     for(int i=LHY; i<LHY+6; i++)
-        traj.angles[i] = q[i-LHY];
+        elem.angles[i] = q[i-LHY];
     
     
     for(int i=RHY; i<RHY+6; i++)
-        q[i-RHY] = traj.angles[i];
+        q[i-RHY] = elem.angles[i];
     applyBalanceOffsets(RIGHT, q, offsets);
     for(int i=RHY; i<RHY+6; i++)
-        traj.angles[i] = q[i-RHY];
+        elem.angles[i] = q[i-RHY];
+}
+
+void DrcHuboKin::applyBalanceAndEndEffectorOffsets(motion_element_t &elem, const BalanceOffsets &offsets)
+{
+    updateWithElement(elem);
+    TRANSFORM ee[2];
+    for(int side=0; side<2; side++)
+        ee[side] = armFK(side);
+
+    applyBalanceOffsets(elem, offsets);
+
+    for(int side=0; side<2; side++)
+        elementArmIK(side, elem, ee[side]);
+}
+
+rk_result_t DrcHuboKin::elementArmIK(int side, motion_element_t &elem, const TRANSFORM target)
+{
+    ArmVector q; q.setZero();
+    updateWithElement(elem);
+
+    if(side==LEFT)
+        for(int i=0; i<7; i++)
+            q[i] = elem.angles[LHY+i];
+    else
+        for(int i=0; i<7; i++)
+            q[i] = elem.angles[RHY+i];
+
+    rk_result_t result = armIK(side, q, target);
+
+    if(side==LEFT)
+        for(int i=0; i<7; i++)
+            elem.angles[LHY+i] = q[i];
+    else
+        for(int i=0; i<7; i++)
+            elem.angles[RHY+i] = q[i];
+
+    return result;
+}
+
+
+void DrcHuboKin::applyBalanceOffsets(motion_element_t &elem, const BalanceOffsets &offsets)
+{
+    LegVector q; q.setZero();
+
+
+    for(int i=LHY; i<LHY+6; i++)
+        q[i-LHY] = elem.angles[i];
+    applyBalanceOffsets(LEFT, q, offsets);
+    for(int i=LHY; i<LHY+6; i++)
+        elem.angles[i] = q[i-LHY];
+
+
+    for(int i=RHY; i<RHY+6; i++)
+        q[i-RHY] = elem.angles[i];
+    applyBalanceOffsets(RIGHT, q, offsets);
+    for(int i=RHY; i<RHY+6; i++)
+        elem.angles[i] = q[i-RHY];
 }
 
 void DrcHuboKin::applyBalanceOffsets(int side, LegVector &q, const BalanceOffsets &offsets)
