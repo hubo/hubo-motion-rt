@@ -200,6 +200,7 @@ void controlLoop()
     double dtMax = 0.1;
     double errorFactor = 100; // This makes the error checking basically meaningless
     double timeElapse[HUBO_JOINT_COUNT];
+    double trajStep;
     double amp=0;
     double ampUpper;
     double ampLower;
@@ -449,7 +450,9 @@ void controlLoop()
                             if( timeElapse[jnt] == 0 )
                                 startWaypoint[jnt] = H_ref.ref[jnt];
 
-                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+//                            if( timeElapse[jnt] > ctrl.joint[jnt].timeOut )
+//                                ctrl.joint[jnt].velocity = 0.0;
+                            if( timeElapse[jnt] > fabs(1.1/ctrl.joint[jnt].frequency) )
                                 ctrl.joint[jnt].velocity = 0.0;
 
                             if( ctrl.joint[jnt].position < ctrl.joint[jnt].pos_min )
@@ -465,12 +468,14 @@ void controlLoop()
                                 ctrl.joint[jnt].correctness = 1;
                             else if( ctrl.joint[jnt].correctness < 0 )
                                 ctrl.joint[jnt].correctness = 0;
-
+                            
+                            trajStep = (timeElapse[jnt]+dt)*ctrl.joint[jnt].frequency;
+                            if(trajStep > 1.0)
+                                trajStep = 1.0;
 
                             dr[jnt] = (1-ctrl.joint[jnt].correctness)*ctrl.joint[jnt].velocity*dt
                                     + ctrl.joint[jnt].correctness*(
-                                        (ctrl.joint[jnt].position - startWaypoint[jnt])
-                                        *(timeElapse[jnt]+dt)*ctrl.joint[jnt].frequency
+                                        (ctrl.joint[jnt].position - startWaypoint[jnt])*trajStep
                                         - (H_ref.ref[jnt] - startWaypoint[jnt])
                                         );
 
@@ -480,7 +485,7 @@ void controlLoop()
 
                             H_ref.ref[jnt] += dr[jnt];
 
-                            fprintf(stdout, "%f\n", H_ref.ref[jnt]);
+//                            fprintf(stdout, "%f\n", H_ref.ref[jnt]);
 
                             V[jnt] = dr[jnt]/dt;
                         }

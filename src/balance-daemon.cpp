@@ -383,6 +383,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
         if( time-stime >= max_time )
         {
             fprintf(stderr, "Warning: could not reach the initial stance in within %f seconds\n", max_time);
+            size_t fs;
+            ach_get(&bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST);
             cmd.cmd_request = BAL_READY;
             return;
         }
@@ -569,8 +571,9 @@ void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
                 continue;
         }
 
-        hubo.setJointTraj(i, currentElem.angles[i],
-                          (currentElem.angles[i]-prevElem.angles[i])/dt);
+//        hubo.setJointTraj(i, currentElem.angles[i],
+//                          (currentElem.angles[i]-prevElem.angles[i])/dt);
+        hubo.passJointAngle(i, currentElem.angles[i]);
     }
     hubo.sendControls();
 }
@@ -607,22 +610,29 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     if(r==ACH_OK || r==ACH_MISSED_FRAME)
     {
-        fprintf(stdout, "Received new trajectory command\n"); fflush(stdout);
+        fprintf(stdout, "Received new trajectory command\n");
+        if(motion_cmd.params.useFile)
+            fprintf(stdout, " -- Parsing file %s!\n", motion_cmd.params.filename);
+        else
+            fprintf(stdout, "Looking for file from ROS\n");
+        fflush(stdout);
     }
     else
     {
-        fprintf(stdout, "Unexpected ach result: %s (%d)\n", ach_result_to_string(r), (int)r);
+        fprintf(stdout, "Unexpected ach result: %s (%d)\n", ach_result_to_string(r), (int)r); fflush(stdout);
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
     }
 
     if(motion_cmd.type != TRAJ_GOTO_INIT && motion_cmd.type != TRAJ_RUN)
     {
-        fprintf(stdout, "Unexpected trajectory command type: %d\n", motion_cmd.type);
+        fprintf(stdout, "Unexpected trajectory command type: %d\n", motion_cmd.type); fflush(stdout);
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
     }
@@ -637,21 +647,27 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
 
     if(!validFile)
     {
-        fprintf(stdout, "Trajectory file %s could not be successfully parsed!\n"
-                        " -- We are exiting trajectory mode!\n", motion_cmd.params.filename);
+        fprintf(stdout, "Trajectory file %s could NOT be successfully parsed!\n"
+                        " -- We are exiting trajectory mode!\n", motion_cmd.params.filename); fflush(stdout);
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
+    }
+    else if(motion_cmd.params.useFile)
+    {
+        fprintf(stdout, "Trajectory file %s was successfully parsed\n", motion_cmd.params.filename); fflush(stdout);
     }
 
 
     if(motion_trajectory.size()==0)
     {
         fprintf(stdout, "The requested trajectory does not have any waypoints!\n"
-                        " -- We are exiting trajectory mode!\n");
+                        " -- We are exiting trajectory mode!\n"); fflush(stdout);
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
     }
@@ -668,7 +684,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     initializeHubo(hubo, motion_cmd.params.upper_body_compliance);
 
     setMotionScheme(hubo, kin, motion_trajectory[0], motion_cmd.params, offsets);
-
+    fprintf(stdout, "Transitioning to the start of the trajectory\n"); fflush(stdout);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
     {
         // Don't worry about where these joint are
@@ -721,12 +737,17 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         fprintf(stdout, "Warning: could not reach the starting Trajectory within %f seconds\n"
                         " -- Biggest ref error was %f radians in joint %s\n"
                         " -- We will give up on this trajectory!\n",
-                        maxInitTime, refErr, jointNames[worstOffender] );
+                        maxInitTime, refErr, jointNames[worstOffender] ); fflush(stdout);
 
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
+    }
+    else
+    {
+        fprintf(stdout, "Arrived at the start of the trajectory\n"); fflush(stdout);
     }
 
     if( bal_cmd.cmd_request != BAL_TRAJ ||
@@ -744,9 +765,10 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         }
         hubo.sendControls();
         fprintf(stdout, "Received an interrupting command while going to initial configuration\n"
-                        " -- Halting robot and leaving trajectory mode!\n");
+                        " -- Halting robot and leaving trajectory mode!\n"); fflush(stdout);
         state.mode = TRAJ_OFF;
         ach_put(&motion_state_chan, &state, sizeof(state));
+        ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
         bal_cmd.cmd_request = BAL_READY;
         return;
     }
@@ -765,6 +787,11 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     time = hubo.getTime();
     motion_traj_cmd_t newCommand = motion_cmd;
     manip_override_t ovr; memset(&ovr, 0, sizeof(ovr));
+
+    if(keepRunning && !daemon_sig_quit)
+    {
+        fprintf(stdout, "Beginning the trajectory loop\n"); fflush(stdout);
+    }
     while(!daemon_sig_quit && keepRunning )
 //          && index < motion_trajectory.size()) // TODO: Decide if this condition is desirable
     {
@@ -783,16 +810,17 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         else if(newCommand.type==TRAJ_STOP)
         {
             fprintf(stdout, "Received a stop command while running through the trajectory\n"
-                            " -- Halting robot and leaving trajectory mode!\n");
+                            " -- Halting robot and leaving trajectory mode!\n"); fflush(stdout);
             state.mode = TRAJ_OFF;
             ach_put(&motion_state_chan, &state, sizeof(state));
+            ach_get(&bal_cmd_chan, &bal_cmd, sizeof(bal_cmd), &fs, NULL, ACH_O_LAST);
             bal_cmd.cmd_request = BAL_READY;
             return;
         }
         else if(newCommand.type==TRAJ_GOTO_INIT && index>0)
         {
             fprintf(stdout, "Either stop the trajectory or wait until it's finished before\n"
-                            "   going to the initial configuration!\n");
+                            "   going to the initial configuration!\n"); fflush(stdout);
             if(pauseAck)
                 newCommand = motion_cmd;
             else
@@ -831,14 +859,17 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
             }
         }
         else
+        {
             fprintf(stdout, "Something unnatural has happened while running trajectories: %f!\n", dt);
+            fflush(stdout);
+        }
 
 
         if(motion_cmd.type==TRAJ_PAUSE)
         {
             if(!pauseAck)
             {
-                fprintf(stdout, "Pause command received!\n");
+                fprintf(stdout, "Pause command received!\n"); fflush(stdout);
                 state.mode = TRAJ_PAUSED;
                 pauseAck = true;
             }

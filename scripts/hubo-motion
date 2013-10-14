@@ -107,9 +107,8 @@ Ach()
             sudo ach -U $HUBO_CRPC_PARAM_CHAN
             sudo ach -U $HUBO_CRPC_STATE_CHAN
             sudo ach -U $HUBO_MOTION_TRAJ_CMD
-            sudo ach -U $HUBO_MOTION_UPPER_STATE
-            sudo ach -U $HUBO_MOTION_LOWER_STATE
-            sudo ach -U &HUBO_MOTION_TRAJ
+            sudo ach -U $HUBO_MOTION_STATE
+            sudo ach -U $HUBO_MOTION_TRAJ
 
 	;;	
 
@@ -347,8 +346,8 @@ KillHubo()
             pid=$(sudo cat $LOCK_DIR/$entry)
             if [ "$pid" != "" ]
             then
-                echo "Killing the $entry with \"kill -v -s SIGKILL pid\""
-                sudo kill -v -s SIGKILL $pid
+                echo "Killing the $entry with \"kill -s SIGKILL pid\""
+                sudo kill -s SIGKILL $pid
             else
                 echo "Killing the $entry with \"killall -v -s SIGKILL\""
                 sudo killall -v -s SIGKILL $entry

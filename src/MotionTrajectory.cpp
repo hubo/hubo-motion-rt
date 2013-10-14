@@ -43,7 +43,7 @@ bool parseNextElement(const char *filename, int line, FILE *fp, motion_element_t
 
         if( c == EOF || c == '\n' )
         {
-            fprintf(stderr, "Line %d has ended abruptly!\n", line); fflush(stderr);
+            fprintf(stderr, "Line %d has ended abruptly after reading %d values!\n", line, j); fflush(stderr);
             return false;
         }
 
@@ -54,7 +54,7 @@ bool parseNextElement(const char *filename, int line, FILE *fp, motion_element_t
             return false;
         }
 
-        if( fscanf(fp, "%lf", &(elem.angles[j])) != 1 )
+        if( fscanf(fp, "%lf", &(elem.angles[joint_order[j]])) != 1 )
         {
             fprintf(stderr, "%s:%d: error parsing number\n", filename, line); fflush(stderr);
             return false;
@@ -70,6 +70,10 @@ bool parseNextElement(const char *filename, int line, FILE *fp, motion_element_t
         fprintf(stderr, "%s:%d: too many tokens after numbers\n", filename, line);
     }
 
+    if (c == EOF) {
+        fprintf(stderr, "at end of file on line %d\n", line); fflush(stderr);
+    }
+
     return true;
 }
 
@@ -83,18 +87,23 @@ bool fillMotionTrajectoryFromText(const char *filename, motion_trajectory_t &mot
     if(fp = fopen(filename, "r"))
         validFile = true;
     else
-        fprintf(stderr, "Cannot open trajectory file name %s!", filename);
+    {
+        fprintf(stderr, "Cannot open trajectory file name %s!", filename); fflush(stderr);
+        return false;
+    }
 
     motion_element_t elem;
 
     motion_trajectory.resize(0);
 
-    int line=0;
+    int line=1;
     while(!feof(fp) && validFile)
     {
         validFile = parseNextElement(filename, line, fp, elem);
         if(validFile)
             motion_trajectory.push_back(elem);
+        int next = peek(fp);
+        if (next == EOF) { break; }
         line++;
     }
 
