@@ -392,7 +392,8 @@ void Walker::landingControllerAlwaysOn( Hubo_Control &hubo, zmp_traj_element_t &
         offsets.foot_translation[side].z() += state.dFeetOffset[side](2);
 
         // for plotting
-        bal_state.foot_translation[side] = offsets.foot_translation[side].z();
+        bal_state.foot_translation[side] = state.dFeetOffset[side](5);
+        bal_state.foot_velocity[side] = state.dFeetOffset[side](5);
 
         //----------------------
         //   DEBUG PRINT OUT
@@ -434,7 +435,7 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
     Eigen::Vector3d spring_gain, damping_gain;
     Eigen::Vector3d forceTorqueErr[2];
     int start_foot, end_foot;
-
+    int support_foot = m_lastLandingFoot == RIGHT ? LEFT : RIGHT;
     //------------------------------
     //  MASS, SPRING, DAMPING GAINS
     //------------------------------
@@ -452,16 +453,20 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
 
     // Three phases:
         // single: within certain threshold on landing foot
-        // double: over certain threshold on landing foot
-        // equilibriate: reached end of trajectory
+        // double: over certain threshold on landing foot, decay
+        // equilibriate: reached end of trajectory, decay
 
-    if(fz(m_lastLandingFoot) > gains.force_min_threshold && fz(m_lastLandingFoot) < gains.force_max_threshold && m_landing_phase <= LANDING_SINGLE && !m_equilibriate)
+    if(   fz(m_lastLandingFoot) > gains.force_min_threshold
+       && fz(m_lastLandingFoot) < gains.force_max_threshold
+       && fz(support_foot) > gains.force_max_threshold
+       && m_landing_phase <= LANDING_SINGLE
+       && !m_equilibriate)
     {
         m_landing_phase = LANDING_SINGLE;
         start_foot = m_lastLandingFoot;
         end_foot = start_foot;
     }
-    else if(fz(LEFT) > gains.force_max_threshold && fz(RIGHT) > gains.force_max_threshold && !m_equilibriate && m_landing_phase <= LANDING_DOUBLE)
+    else if(fz(LEFT) + fz(RIGHT) > 2*gains.force_max_threshold && !m_equilibriate && m_landing_phase <= LANDING_DOUBLE)
     {
         m_landing_phase = LANDING_DOUBLE;
         start_foot = 0;
@@ -494,13 +499,12 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
         //  IMPEDANCE CONTROLLER
         //------------------------
         // Run impedance controller on swing leg
-        double fzVel = fz(side) - state.prevFz(side);
-        state.prevFz = fz; // save current forces for next iteration
         offsets.foot_translation[side].z() -= state.dFeetOffset[side](2);
-        if(fz(side) < gains.force_max_threshold && fz(side) > gains.force_min_threshold) // side is relatively landing, using landing controller
-            impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
-        else // otherwise just decay offset for that leg
+        if(LANDING_SINGLE != m_landing_phase)
+        {
             state.dFeetOffset[side] -= gains.decay_gain * state.dFeetOffset[side];
+        }
+        impCtrl.run(state.dFeetOffset[side], forceTorqueErr[side], dt);
 
         //------------------------
         //    CAP BODY OFFSET
@@ -520,7 +524,8 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
         offsets.foot_translation[side].z() += state.dFeetOffset[side](2);
 
         // for plotting
-        bal_state.foot_translation[side] = offsets.foot_translation[side].z();
+        bal_state.foot_translation[side] = state.dFeetOffset[side](2);
+        bal_state.foot_velocity[side] = state.dFeetOffset[side](5);
 
         //----------------------
         //   DEBUG PRINT OUT

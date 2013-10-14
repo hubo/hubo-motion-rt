@@ -182,6 +182,7 @@ typedef struct balance_state {
     bipedStance_t biped_stance;
     double force[2];
     double foot_translation[2];
+    double foot_velocity[2];
 
 }__attribute__((packed)) balance_state_t;
 
