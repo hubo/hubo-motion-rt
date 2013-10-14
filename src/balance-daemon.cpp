@@ -673,6 +673,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     }
 
     motion_element_t rawFirst = motion_trajectory[0];
+    motion_element_t rawPause = motion_trajectory[0];
     motion_element_t rawLast = motion_trajectory[motion_trajectory.size()-1];
 
     state.mode = TRAJ_INITIALIZING;
@@ -792,6 +793,8 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
     {
         fprintf(stdout, "Beginning the trajectory loop\n"); fflush(stdout);
     }
+    motion_element_t lastElement = motion_trajectory[0];
+    motion_element_t currentElement = motion_trajectory[0];
     while(!daemon_sig_quit && keepRunning )
 //          && index < motion_trajectory.size()) // TODO: Decide if this condition is desirable
     {
@@ -831,40 +834,6 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
             motion_cmd = newCommand;
         }
 
-
-        if(dt > 0)
-        {
-            if(motion_cmd.type==TRAJ_GOTO_INIT && index==0)
-            {
-                motion_element_t dummyFirst = rawFirst;
-                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[0], dummyFirst, offsets,
-                        motion_cmd.params, dt);
-                motion_trajectory[0] = dummyFirst;
-                state.mode = TRAJ_INITIALIZED;
-            }
-            else if(motion_cmd.type==TRAJ_RUN && index < motion_trajectory.size())
-            {
-                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[index-1], motion_trajectory[index],
-                        offsets, motion_cmd.params, dt);
-                index++;
-                state.mode = TRAJ_RUNNING;
-            }
-            else if(motion_cmd.type==TRAJ_RUN && index==motion_trajectory.size())
-            {
-                motion_element_t dummyLast = rawLast;
-                executeTrajectoryTimeStep(hubo, kin, motion_trajectory[motion_trajectory.size()],
-                        dummyLast, offsets, motion_cmd.params, dt);
-                motion_trajectory[motion_trajectory.size()] = dummyLast;
-                state.mode = TRAJ_FINISHED;
-            }
-        }
-        else
-        {
-            fprintf(stdout, "Something unnatural has happened while running trajectories: %f!\n", dt);
-            fflush(stdout);
-        }
-
-
         if(motion_cmd.type==TRAJ_PAUSE)
         {
             if(!pauseAck)
@@ -878,6 +847,45 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         {
             pauseAck = false;
         }
+
+        if(dt > 0)
+        {
+            if(motion_cmd.type==TRAJ_GOTO_INIT && index==0)
+            {
+                currentElement = rawFirst;
+                state.mode = TRAJ_INITIALIZED;
+            }
+            else if(motion_cmd.type==TRAJ_RUN && index < motion_trajectory.size())
+            {
+                currentElement = motion_trajectory[index];
+                state.mode = TRAJ_RUNNING;
+            }
+            else if(motion_cmd.type==TRAJ_PAUSE && index < motion_trajectory.size())
+            {
+                currentElement = motion_trajectory[index];
+                state.mode = TRAJ_PAUSED;
+            }
+            else if(motion_cmd.type==TRAJ_RUN && index==motion_trajectory.size())
+            {
+                currentElement = rawLast;
+                state.mode = TRAJ_FINISHED;
+            }
+
+            executeTrajectoryTimeStep(hubo, kin, lastElement, currentElement, offsets, motion_cmd.params, dt);
+            lastElement = currentElement;
+
+            if(motion_cmd.type==TRAJ_RUN && index < motion_trajectory.size())
+            {
+                index++;
+            }
+
+        }
+        else
+        {
+            fprintf(stdout, "Something unnatural has happened while running trajectories: %f!\n", dt);
+            fflush(stdout);
+        }
+
 
         ovr.m_override = OVR_ACQUIESCENT;
         ovr.hands = !motion_cmd.params.hands;
