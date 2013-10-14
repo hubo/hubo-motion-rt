@@ -433,6 +433,7 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
     int counterMax = 40;
     Eigen::Vector3d spring_gain, damping_gain;
     Eigen::Vector3d forceTorqueErr[2];
+    int start_foot, end_foot;
 
     //------------------------------
     //  MASS, SPRING, DAMPING GAINS
@@ -449,19 +450,33 @@ void Walker::landingControllerLastStep( Hubo_Control &hubo, zmp_traj_element_t &
     for(int i=0; i<2; i++)
         fz(i) = hubo.getFootFz(i);
 
-    // Get last landing foot
-    if(!state.haveLandingFoot)
-    {
-        if(fz(LEFT) > fz(RIGHT) && fz(RIGHT) > -5 && fz(RIGHT) < 12)
-            state.landingFoot = RIGHT;
-        else if(fz(LEFT) > -10 && fz(LEFT) < 10)
-            state.landingFoot = LEFT;
-        else
-            return;
-        state.haveLandingFoot = true;
-    }
+    // Three phases:
+        // single: within certain threshold on landing foot
+        // double: over certain threshold on landing foot
+        // equilibriate: reached end of trajectory
 
-    for(int side=state.landingFoot; side<state.landingFoot+1; side++)
+    if(fz(m_lastLandingFoot) > gains.force_min_threshold && fz(m_lastLandingFoot) < gains.force_max_threshold && m_landing_phase <= LANDING_SINGLE && !m_equilibriate)
+    {
+        m_landing_phase = LANDING_SINGLE;
+        start_foot = m_lastLandingFoot;
+        end_foot = start_foot;
+    }
+    else if(fz(LEFT) > gains.force_max_threshold && fz(RIGHT) > gains.force_max_threshold && !m_equilibriate && m_landing_phase <= LANDING_DOUBLE)
+    {
+        m_landing_phase = LANDING_DOUBLE;
+        start_foot = 0;
+        end_foot = 1;
+    }
+    else if(m_equilibriate)
+    {
+        m_landing_phase = EQUILIBRIATE;
+        start_foot = 0;
+        end_foot = 1;
+    }
+    else
+        return;
+
+    for(int side=start_foot; side<end_foot+1; side++)
     {
         //-------------------------
         //   FORCE/TORQUE ERROR
@@ -1142,6 +1157,7 @@ bool Walker::checkForNewTrajectory(zmp_traj_t &newTrajectory, bool haveNewTrajAl
         m_walkDirection = newTrajectory.walkDirection;
         m_doubleSupportTicks = newTrajectory.doubleSupportTicks;
         m_lastLandingTick = newTrajectory.lastLandingTick;
+        m_lastLandingFoot = newTrajectory.lastLandingFoot;
 
         return true;
     }

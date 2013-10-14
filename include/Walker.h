@@ -71,6 +71,13 @@ typedef struct nudge_state {
     
 } nudge_state_t;
 
+typedef enum
+{
+    LANDING_SINGLE=0,
+    LANDING_DOUBLE,
+    EQUILIBRIATE
+} landing_phase_t;
+
 
 class Walker
 {
@@ -117,6 +124,8 @@ public:
     walktype_t m_walkDirection;
     int m_doubleSupportTicks;
     int m_lastLandingTick;
+    int m_lastLandingFoot;
+    landing_phase_t m_landing_phase;
     bool m_equilibriate;
 
 protected:

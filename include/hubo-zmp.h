@@ -141,6 +141,7 @@ typedef struct zmp_traj {
   size_t periodEndTick;     //!< end timestep of periodic portion of trajectory
   walktype_t walkDirection; //!< walk direction for trajectory
   int lastLandingTick;      //!< tick of the start of the last landing step
+  int lastLandingFoot;      //!< last landing foot
   int doubleSupportTicks;   //!< number of double support ticks in each step
   int reuse;                //!< whether or not to reuse the current trajectory's periodic portion
 }__attribute__((packed)) zmp_traj_t;
