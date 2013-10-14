@@ -110,7 +110,7 @@ void Slerper::commenceSlerping(int side, hubo_manip_cmd_t &cmd, Hubo_Control &hu
         nomSpeed = cmd.eeNomSpeed;
 
     if(cmd.eeRotationalSpeedOverride==1)
-        nomSpeed = cmd.eeNomRotationalSpeed;
+        nomRotSpeed = cmd.eeNomRotationalSpeed;
     
     int alt;
     if(side==LEFT)
