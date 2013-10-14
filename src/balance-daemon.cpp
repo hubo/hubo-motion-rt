@@ -342,13 +342,16 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
     if(!crpc.from_current_ref)
     {
         LegVector legSpeed; legSpeed.setOnes();
-        legSpeed *= 0.4;
+        LegVector legAccel; legAccel.setOnes();
+        legSpeed *= 0.1;
         legSpeed(KN) *= 2;
+        legAccel *= 0.2;
+        legAccel(KN) *= 2;
         
         hubo.setLegNomSpeeds(LEFT, legSpeed);
-        hubo.setLegNomAcc(LEFT, legSpeed);
+        hubo.setLegNomAcc(LEFT, legAccel);
         hubo.setLegNomSpeeds(RIGHT, legSpeed);
-        hubo.setLegNomAcc(RIGHT, legSpeed);
+        hubo.setLegNomAcc(RIGHT, legAccel);
         
         
         LegVector q[2]; q[LEFT].setZero(); q[RIGHT].setZero();
@@ -365,7 +368,7 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
         hubo.sendControls();
         
         LegVector qreal[2]; qreal[LEFT].setZero(); qreal[RIGHT].setZero();
-        double max_time = 10, stime, time, tolerance = 0.0075;
+        double max_time = 10, stime, time;
         stime = hubo.getTime();
         
         do {
@@ -376,8 +379,8 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
                 hubo.getLegAngles(side, qreal[side]);
             
         } while(!daemon_sig_quit && time-stime < max_time
-                    && ( (q[LEFT]-qreal[LEFT]).norm() > tolerance
-                         || (q[RIGHT]-qreal[RIGHT]).norm() > tolerance )
+                    && ( (q[LEFT]-qreal[LEFT]).norm() > 0
+                         || (q[RIGHT]-qreal[RIGHT]).norm() > 0 )
                 );
         
         if( time-stime >= max_time )
@@ -387,6 +390,26 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
             ach_get(&bal_cmd_chan, &cmd, sizeof(cmd), &fs, NULL, ACH_O_LAST);
             cmd.cmd_request = BAL_READY;
             return;
+        }
+
+        // Reset speeds and accelerations
+        legSpeed.setOnes(); legAccel.setOnes();
+        legSpeed *= 0.4;
+        legSpeed(KN) *= 2;
+        legAccel *= 0.4;
+        legAccel(KN) *= 2;
+
+        hubo.setLegNomSpeeds(LEFT, legSpeed);
+        hubo.setLegNomAcc(LEFT, legAccel);
+        hubo.setLegNomSpeeds(RIGHT, legSpeed);
+        hubo.setLegNomAcc(RIGHT, legAccel);
+
+        // Wait a bit for oscillations to die down
+        hubo.update();
+        double stopWaitingTime = hubo.getTime() + 4;
+        while(hubo.getTime() < stopWaitingTime)
+        {
+            hubo.update();
         }
     }
 
@@ -550,6 +573,11 @@ void crpcPostureController(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &c
 
     ach_put( &crpc_state_chan, &crpc_state, sizeof(crpc_state) );
     fprintf(stdout, "Posture Controller -- All Phases Finished\n"); fflush(stdout);
+
+    // Print out the offsets
+    std::ostringstream offsetsPrintout;
+    offsets.flushCRPCToStream(offsetsPrintout);
+    std::cout << "Offsets:\n" << offsetsPrintout.str() << std::endl;
 }
 
 void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
