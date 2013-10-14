@@ -115,7 +115,7 @@ void initializeHubo( Hubo_Control &hubo, bool compliance )
     hubo.setJointMaxPWM(RWY, 15);
     hubo.setJointMaxPWM(RWP, 15);
 
-    ArmVector highGainsP;
+    ArmVector highGainsP; highGainsP.setOnes();
     highGainsP *= 80;
     highGainsP(SR) = 100;
     highGainsP(SY) = 150;
