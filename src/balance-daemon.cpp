@@ -904,6 +904,11 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
                 currentElement = rawLast;
                 state.mode = TRAJ_FINISHED;
             }
+            else
+            {
+                // TODO: Probably print out an error here
+                continue;
+            }
 
             executeTrajectoryTimeStep(hubo, kin, lastElement, currentElement, offsets, motion_cmd.params, dt);
             lastElement = currentElement;
