@@ -559,7 +559,11 @@ void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
 
 
     // TODO: Put a controller in here
-
+    if(!params.hands)
+    {
+        hubo.releaseFingers(LEFT);
+        hubo.releaseFingers(RIGHT);
+    }
 
     setMotionScheme(hubo, kin, currentElem, params, offsets);
     for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -568,7 +572,9 @@ void executeTrajectoryTimeStep(Hubo_Control &hubo, DrcHuboKin &kin,
         {
             if( i==LF1 || i==LF2 || i==LF3 || i==LF4 || i==LF5
              || i==RF1 || i==RF2 || i==RF3 || i==RF4 || i==RF5 )
+            {
                 continue;
+            }
         }
 
 //        hubo.setJointTraj(i, currentElem.angles[i],

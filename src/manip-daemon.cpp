@@ -75,8 +75,8 @@ void initializeHubo(Hubo_Control &hubo);
 
 int main( int argc, char **argv )
 {
-//    Hubo_Control hubo("manip-daemon");
-    Hubo_Control hubo;
+    Hubo_Control hubo("manip-daemon");
+//    Hubo_Control hubo;
     initializeHubo(hubo);
 
     DrcHuboKin kin;
