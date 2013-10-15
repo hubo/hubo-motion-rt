@@ -124,12 +124,21 @@ void initializeHubo( Hubo_Control &hubo, bool compliance )
 
     hubo.setArmCompliance(LEFT, compliance, highGainsP);
     hubo.setArmCompliance(RIGHT, compliance, highGainsP);
+    if(!compliance)
+    {
+        hubo.releaseArmTorques(LEFT);
+        hubo.releaseArmTorques(RIGHT);
+    }
 }
 
 void setMotionScheme( Hubo_Control &hubo, DrcHuboKin &kin, motion_element_t &elem, motion_traj_params_t &params, BalanceOffsets &offsets)
 {
     for(int side=0; side<2; side++)
+    {
         hubo.setArmCompliance(side, params.upper_body_compliance);
+        if(!params.upper_body_compliance)
+            hubo.releaseArmTorques(side);
+    }
 
     if(params.upper_body_compliance)
     {

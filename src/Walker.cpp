@@ -784,6 +784,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
          && NK1!=i && NK2!=i && NKY!=i) //FIXME
         {
             hubo.setJointCompliance( i, false );
+            hubo.releaseJointTorque( i );
             hubo.setJointAngle( i, hubo.getJointAngle(i) );
             hubo.setJointNominalSpeed( i, 0.4 );
             hubo.setJointNominalAcceleration( i, 0.4 );
@@ -799,7 +800,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
     hubo.update();
     bool complyCheck = true;
-    while(complyCheck)
+    double m_maxInitTime = 10;
+    double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
+    int compliantJoint = -1;
+    while(complyCheck && time-stime < m_maxInitTime)
     {
         complyCheck = false;
         for(int i=0; i<HUBO_JOINT_COUNT; i++)
@@ -807,10 +811,25 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
             if( hubo.getComplianceMode(i) != 0 )
             {
                 complyCheck = true;
+                compliantJoint = i;
             }
         }
         hubo.update();
+        time = hubo.getTime();
     }
+
+    if( time-stime >= m_maxInitTime )
+    {
+        fprintf(stdout, "Warning: could not turn off compliance within %f seconds\n"
+                        " -- Joint %d is still compliant\n",
+                        m_maxInitTime, compliantJoint );
+        fflush(stdout);
+        bal_state.m_walk_error = WALK_INIT_FAILED;
+        return;
+    }
+
+
+
 
     if(false)
     {
@@ -852,11 +871,10 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
 
     // Wait specified time for joints to get into initial configuration,
     // otherwise time out and alert user.
-    double m_maxInitTime = 10;
     double biggestErr = 0;
     int worstJoint=-1;
     
-    double dt, time, stime; stime=hubo.getTime(); time=hubo.getTime();
+    stime=hubo.getTime(); time=hubo.getTime();
     double refErr = m_jointSpaceTolerance+1; // make sure this fails initially
     double stateErr = m_jointSpaceTolerance+1; 
     int worstStateJoint = 0;
@@ -893,6 +911,7 @@ void Walker::commenceWalking(balance_state_t &parent_state, nudge_state_t &state
                         " -- Biggest state error was %f radians in joint %s\n"
                         " -- Biggest ref error was %f radians in joint %s\n",
                         m_maxInitTime, stateErr, jointNames[worstStateJoint], refErr, jointNames[worstRefJoint] );
+        fflush(stdout);
 
         keepWalking = false;
         
