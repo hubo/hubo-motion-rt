@@ -858,6 +858,7 @@ void motionTrajectory(Hubo_Control &hubo, DrcHuboKin &kin, balance_cmd_t &bal_cm
         {
             fprintf(stdout, "Either stop the trajectory or wait until it's finished before\n"
                             "   going to the initial configuration!\n"); fflush(stdout);
+            // TODO: vvv Why is this here??? vvv
             if(pauseAck)
                 newCommand = motion_cmd;
             else
